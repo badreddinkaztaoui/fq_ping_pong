@@ -6,7 +6,7 @@ export default defineConfig({
   publicDir: "public",
   server: {
     port: 3000,
-    host: true,
+    host: '0.0.0.0',
     strictPort: true,
     hmr: {
       protocol: "ws",

@@ -1,5 +1,5 @@
-# api/views.py
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, renderer_classes
+from rest_framework.renderers import JSONRenderer
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
@@ -12,13 +12,10 @@ import os
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@renderer_classes([JSONRenderer])
 def health_check(request):
     """
-    A comprehensive health check endpoint that verifies critical system components:
-    - Database connectivity
-    - Redis connection (if configured)
-    - System resources (CPU, memory)
-    - Basic service status
+    A comprehensive health check endpoint that verifies critical system components
     """
     health_status = {
         'status': 'healthy',
