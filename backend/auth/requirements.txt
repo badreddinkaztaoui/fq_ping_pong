@@ -1,0 +1,29 @@
+# Core Django dependencies
+Django==5.0.1
+djangorestframework==3.14.0
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+
+# Database and caching
+psycopg2-binary==2.9.9
+redis==5.0.1
+django-redis==5.4.0
+
+# Authentication and security
+PyJWT==2.8.0
+python-jose==3.3.0
+django-oauth-toolkit==2.3.0
+passlib==1.7.4
+
+# ASGI server and WebSocket support
+daphne==4.0.0
+channels==4.0.0
+channels-redis==4.1.0
+
+# Environment and configuration
+python-dotenv==1.0.0
+gunicorn==21.2.0
+
+# Monitoring and utilities
+psutil==5.9.8
+requests==2.31.0
