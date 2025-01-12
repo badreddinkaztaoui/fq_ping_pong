@@ -29,7 +29,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend/auth:/app
-      # - /app/static:/app/static
+      # - /app/static
     env_file:
       - .env
       - ./backend/auth/.env

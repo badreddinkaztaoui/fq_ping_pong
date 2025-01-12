@@ -1,177 +1,73 @@
-import { View } from "../core/View.js";
-import "../styles/home.css";
+import { View } from '../core/View.js';
+import "../styles/home.css"
 
-export class HomeView extends View {
+export class ValorantPongView extends View {
   constructor() {
     super();
-    this.currentStep = 0;
-    this.totalSteps = 4;
+    this.isAnimating = false;
   }
 
   async render() {
     const element = document.createElement("div");
-    element.classList.add("generator-landing");
+    element.classList.add("valorant-pong-landing");
 
     element.innerHTML = `
-      <div class="header">
-        <div class="logo">
-          <div class="logo-icon">🎮</div>
-          <h1>ft_transcendence Generator</h1>
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-background">
+          ${Array.from({ length: 20 }, (_, i) => `
+            <div class="bg-line" style="--index: ${i}"></div>
+          `).join('')}
         </div>
-        <div class="github-link">
-          <a href="https://github.com/yourusername/ft_transcendence_generator" target="_blank" class="github-button">
-            View on GitHub
-          </a>
+        
+        <div class="hero-content">
+          <h1 class="hero-title">TACTICAL PONG</h1>
+          <p class="hero-subtitle">Where precision meets power</p>
+          <button class="play-button">
+            PLAY NOW
+            <svg class="play-icon" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </button>
         </div>
       </div>
 
-      <div class="main-content">
-        <div class="intro-section">
-          <h2>Create Your Full-Stack Game Platform</h2>
-          <p>A powerful generator for building a modern gaming platform with microservices architecture.</p>
-          
-          <div class="tech-stack">
-            <div class="tech-item">
-              <span class="tech-icon">🇯‌🇸‌</span>
-              <span>Javascript</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-icon">🐍</span>
-              <span>Django</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-icon">🐳</span>
-              <span>Docker</span>
-            </div>
-            <div class="tech-item">
-              <span class="tech-icon">🔄</span>
-              <span>WebSocket</span>
-            </div>
+      <!-- Features Grid -->
+      <div class="features-grid">
+        ${[
+          {
+            icon: '👥',
+            title: 'Multiplayer Battles',
+            description: 'Challenge your friends in intense 1v1 matches'
+          },
+          {
+            icon: '⚔️',
+            title: 'Tournament Mode',
+            description: 'Compete in ranked tournaments to prove your skills'
+          },
+          {
+            icon: '🏆',
+            title: 'Global Rankings',
+            description: 'Climb the leaderboards and become a Pong champion'
+          }
+        ].map(feature => `
+          <div class="feature-card">
+            <div class="feature-icon">${feature.icon}</div>
+            <h3 class="feature-title">${feature.title}</h3>
+            <p class="feature-description">${feature.description}</p>
           </div>
-        </div>
+        `).join('')}
+      </div>
 
-        <div class="generator-guide">
-          <div class="steps-progress">
-            <div class="progress-bar">
-              <div class="progress" style="width: 0%"></div>
-            </div>
-            <div class="steps-counter">Step <span class="current-step">1</span> of ${this.totalSteps}</div>
-          </div>
-
-          <div class="steps-container">
-            <div class="step active" data-step="0">
-              <h3>1. Prerequisites</h3>
-              <div class="step-content">
-                <p>Ensure you have the following installed:</p>
-                <div class="prerequisites-list">
-                  <div class="prerequisite-item">
-                    <div class="check-icon">✓</div>
-                    <div class="prerequisite-details">
-                      <h4>Docker & Docker Compose</h4>
-                      <code>docker --version</code>
-                      <code>docker-compose --version</code>
-                    </div>
-                  </div>
-                  <div class="prerequisite-item">
-                    <div class="check-icon">✓</div>
-                    <div class="prerequisite-details">
-                      <h4>Git</h4>
-                      <code>git --version</code>
-                    </div>
-                  </div>
-                  <div class="prerequisite-item">
-                    <div class="check-icon">✓</div>
-                    <div class="prerequisite-details">
-                      <h4>Bash Shell</h4>
-                      <code>bash --version</code>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="step" data-step="1">
-              <h3>2. Project Structure</h3>
-              <div class="step-content">
-                <p>The generator will create the following structure:</p>
-                <div class="structure-tree">
-                  <pre>
-ft_transcendence/
-├── frontend/         # React frontend
-├── backend/
-│   ├── auth/        # Authentication service
-│   ├── game/        # Game service
-│   └── chat/        # Chat service
-├── nginx/           # Reverse proxy
-└── docker-compose.yml</pre>
-                </div>
-              </div>
-            </div>
-
-            <div class="step" data-step="2">
-              <h3>3. Installation</h3>
-              <div class="step-content">
-                <div class="installation-steps">
-                  <div class="code-block">
-                    <div class="code-header">
-                      <span>Clone the repository</span>
-                      <button class="copy-button" data-code="git clone <repository-url>">Copy</button>
-                    </div>
-                    <code>git clone &lt;repository-url&gt;</code>
-                  </div>
-
-                  <div class="code-block">
-                    <div class="code-header">
-                      <span>Make scripts executable</span>
-                      <button class="copy-button" data-code="chmod +x *.sh">Copy</button>
-                    </div>
-                    <code>chmod +x *.sh</code>
-                  </div>
-
-                  <div class="code-block">
-                    <div class="code-header">
-                      <span>Run the generator</span>
-                      <button class="copy-button" data-code="./generate.sh">Copy</button>
-                    </div>
-                    <code>./generate.sh</code>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="step" data-step="3">
-              <h3>4. Usage</h3>
-              <div class="step-content">
-                <div class="usage-guide">
-                  <div class="usage-step">
-                    <h4>Start the Application</h4>
-                    <div class="code-block">
-                      <div class="code-header">
-                        <span>Navigate and start</span>
-                        <button class="copy-button" data-code="cd ft_transcendence && docker-compose up --build">Copy</button>
-                      </div>
-                      <code>cd ft_transcendence && docker-compose up --build</code>
-                    </div>
-                  </div>
-
-                  <div class="usage-step">
-                    <h4>Access Services</h4>
-                    <ul>
-                      <li>Frontend: <code>http://localhost:8000</code></li>
-                      <li>API Endpoints: <code>http://localhost:8000/api/{service}</code></li>
-                      <li>Health Checks: <code>http://localhost:8000/api/{service}/health</code></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="step-navigation">
-            <button class="nav-button prev" disabled>Previous</button>
-            <button class="nav-button next">Next</button>
-          </div>
-        </div>
+      <!-- Call to Action -->
+      <div class="cta-section">
+        <h2>Ready to Challenge?</h2>
+        <button class="start-button">
+          START GAME
+          <svg class="arrow-icon" viewBox="0 0 24 24">
+            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
+          </svg>
+        </button>
       </div>
     `;
 
@@ -179,74 +75,68 @@ ft_transcendence/
   }
 
   async setupEventListeners() {
-    const prevButton = this.$(".nav-button.prev");
-    const nextButton = this.$(".nav-button.next");
+    const playButton = this.$('.play-button');
+    const startButton = this.$('.start-button');
+    const featureCards = this.$$('.feature-card');
 
-    this.addListener(prevButton, "click", () => this.navigateStep(-1));
-    this.addListener(nextButton, "click", () => this.navigateStep(1));
+    this.addListener(playButton, 'click', () => this.handlePlayClick());
+    this.addListener(startButton, 'click', () => this.handleStartClick());
 
-    // Copy button functionality
-    const copyButtons = this.$$(".copy-button");
-    copyButtons.forEach((button) => {
-      this.addListener(button, "click", (e) => this.handleCopy(e));
+    featureCards.forEach(card => {
+      this.addListener(card, 'mouseenter', (e) => this.handleCardHover(e, true));
+      this.addListener(card, 'mouseleave', (e) => this.handleCardHover(e, false));
     });
   }
 
   async afterMount() {
-    this.updateStepVisibility();
-  }
-
-  navigateStep(direction) {
-    const newStep = this.currentStep + direction;
-    if (newStep >= 0 && newStep < this.totalSteps) {
-      this.currentStep = newStep;
-      this.updateStepVisibility();
-    }
-  }
-
-  updateStepVisibility() {
-    const steps = this.$$(".step");
-    const prevButton = this.$(".nav-button.prev");
-    const nextButton = this.$(".nav-button.next");
-    const progressBar = this.$(".progress");
-    const currentStepElement = this.$(".current-step");
-
-    steps.forEach((step, index) => {
-      if (index === this.currentStep) {
-        step.classList.add("active");
-      } else {
-        step.classList.remove("active");
-      }
-    });
-
-    prevButton.disabled = this.currentStep === 0;
-    nextButton.disabled = this.currentStep === this.totalSteps - 1;
-    nextButton.textContent =
-      this.currentStep === this.totalSteps - 1 ? "Finish" : "Next";
-
-    // Update progress bar and step counter
-    progressBar.style.width = `${
-      (this.currentStep / (this.totalSteps - 1)) * 100
-    }%`;
-    currentStepElement.textContent = this.currentStep + 1;
-  }
-
-  async handleCopy(e) {
-    const code = e.target.dataset.code;
-    try {
-      await navigator.clipboard.writeText(code);
-
-      // Visual feedback
-      const originalText = e.target.textContent;
-      e.target.textContent = "Copied!";
-      e.target.classList.add("copied");
-
+    // Trigger entrance animations
+    this.element.classList.add('mounted');
+    
+    // Animate features sequentially
+    const features = this.$$('.feature-card');
+    features.forEach((feature, index) => {
       setTimeout(() => {
-        e.target.textContent = originalText;
-        e.target.classList.remove("copied");
-      }, 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
+        feature.classList.add('visible');
+      }, 200 + (index * 150));
+    });
+  }
+
+  handlePlayClick() {
+    if (this.isAnimating) return;
+    this.isAnimating = true;
+    
+    const button = this.$('.play-button');
+    button.classList.add('clicked');
+    
+    setTimeout(() => {
+      button.classList.remove('clicked');
+      this.isAnimating = false;
+    }, 500);
+    
+    // Trigger game start logic here
+  }
+
+  handleStartClick() {
+    if (this.isAnimating) return;
+    this.isAnimating = true;
+    
+    const button = this.$('.start-button');
+    button.classList.add('clicked');
+    
+    setTimeout(() => {
+      button.classList.remove('clicked');
+      this.isAnimating = false;
+    }, 500);
+    
+    // Trigger game start logic here
+  }
+
+  handleCardHover(event, isEntering) {
+    const card = event.currentTarget;
+    if (isEntering) {
+      card.classList.add('hovered');
+    } else {
+      card.classList.remove('hovered');
     }
   }
 }

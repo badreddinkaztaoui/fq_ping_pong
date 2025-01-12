@@ -27,16 +27,13 @@ def health_check(request):
         }
     }
 
-    # Check database connection
     try:
-        # Attempt to connect to the database
         connections['default'].ensure_connection()
         health_status['database'] = 'available'
     except OperationalError:
         health_status['status'] = 'unhealthy'
         health_status['database'] = 'unavailable'
 
-    # Check Redis connection if configured
     try:
         redis_client = redis.Redis(
             host=settings.REDIS_HOST,
@@ -47,10 +44,8 @@ def health_check(request):
         redis_client.ping()
         health_status['redis'] = 'available'
     except (redis.RedisError, AttributeError):
-        # AttributeError is caught in case Redis settings are not configured
         health_status['redis'] = 'unavailable'
 
-    # Add system resource information
     try:
         health_status['system'] = {
             'cpu_usage': psutil.cpu_percent(interval=1),
@@ -62,7 +57,6 @@ def health_check(request):
             'error': str(e)
         }
 
-    # Determine response status code based on overall health
     response_status = status.HTTP_200_OK if health_status['status'] == 'healthy' else status.HTTP_503_SERVICE_UNAVAILABLE
 
     return Response(health_status, status=response_status)
