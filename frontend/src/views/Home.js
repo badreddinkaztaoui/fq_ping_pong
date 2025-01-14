@@ -1,142 +1,90 @@
-import { View } from '../core/View.js';
-import "../styles/home.css"
+import { View } from '../core/View';
+import { State } from "../core/State"
+import "../styles/home.css";
 
-export class ValorantPongView extends View {
+export class HomeView extends View {
   constructor() {
     super();
-    this.isAnimating = false;
+    this.state = new State({
+      topPlayers: [],
+      recentMatches: []
+    });
   }
 
   async render() {
-    const element = document.createElement("div");
-    element.classList.add("valorant-pong-landing");
-
-    element.innerHTML = `
-      <!-- Hero Section -->
-      <div class="hero-section">
-        <div class="hero-background">
-          ${Array.from({ length: 20 }, (_, i) => `
-            <div class="bg-line" style="--index: ${i}"></div>
-          `).join('')}
-        </div>
-        
-        <div class="hero-content">
-          <h1 class="hero-title">TACTICAL PONG</h1>
-          <p class="hero-subtitle">Where precision meets power</p>
-          <button class="play-button">
-            PLAY NOW
-            <svg class="play-icon" viewBox="0 0 24 24">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Features Grid -->
-      <div class="features-grid">
-        ${[
-          {
-            icon: '👥',
-            title: 'Multiplayer Battles',
-            description: 'Challenge your friends in intense 1v1 matches'
-          },
-          {
-            icon: '⚔️',
-            title: 'Tournament Mode',
-            description: 'Compete in ranked tournaments to prove your skills'
-          },
-          {
-            icon: '🏆',
-            title: 'Global Rankings',
-            description: 'Climb the leaderboards and become a Pong champion'
-          }
-        ].map(feature => `
-          <div class="feature-card">
-            <div class="feature-icon">${feature.icon}</div>
-            <h3 class="feature-title">${feature.title}</h3>
-            <p class="feature-description">${feature.description}</p>
+    const template = document.createElement('template');
+    template.innerHTML = `
+      <main class="home-view" role="main">
+        <!-- Hero Section -->
+        <section class="hero" aria-labelledby="hero-title">
+          <h1 id="hero-title" class="hero__title">ft_transcendence</h1>
+          <p class="hero__subtitle">Welcome to the Ultimate Pong Experience</p>
+          <div class="hero__cta">
+            <a href="/login" class="btn btn-primary" role="button">Start Playing</a>
+            <a href="/signup" class="btn btn-secondary" role="button">Create Account</a>
           </div>
-        `).join('')}
-      </div>
+        </section>
 
-      <!-- Call to Action -->
-      <div class="cta-section">
-        <h2>Ready to Challenge?</h2>
-        <button class="start-button">
-          START GAME
-          <svg class="arrow-icon" viewBox="0 0 24 24">
-            <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/>
-          </svg>
-        </button>
-      </div>
+        <!-- Features Section -->
+        <section class="features" aria-labelledby="features-title">
+          <h2 id="features-title" class="features__title">Game Features</h2>
+          <div class="features__grid">
+            <div class="feature-card" role="article">
+              <h3>Real-time Multiplayer</h3>
+              <p>Challenge players worldwide in intense Pong matches</p>
+            </div>
+            <div class="feature-card" role="article">
+              <h3>Global Rankings</h3>
+              <p>Compete for the top spot on our global leaderboard</p>
+            </div>
+            <div class="feature-card" role="article">
+              <h3>Tournament Mode</h3>
+              <p>Join tournaments and prove your skills</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Live Matches Section -->
+        <section class="live-matches" aria-labelledby="matches-title">
+          <h2 id="matches-title">Live Matches</h2>
+          <div class="matches-grid" role="list" aria-live="polite"></div>
+        </section>
+      </main>
     `;
 
-    return element;
+    return template.content.firstElementChild;
   }
 
   async setupEventListeners() {
-    const playButton = this.$('.play-button');
-    const startButton = this.$('.start-button');
-    const featureCards = this.$$('.feature-card');
-
-    this.addListener(playButton, 'click', () => this.handlePlayClick());
-    this.addListener(startButton, 'click', () => this.handleStartClick());
-
-    featureCards.forEach(card => {
-      this.addListener(card, 'mouseenter', (e) => this.handleCardHover(e, true));
-      this.addListener(card, 'mouseleave', (e) => this.handleCardHover(e, false));
+    // Subscribe to state changes
+    this.state.subscribe((state) => {
+      this.updateTopPlayers(state.topPlayers);
+      this.updateRecentMatches(state.recentMatches);
     });
+
+    // Load initial data
+    await this.loadInitialData();
   }
 
-  async afterMount() {
-    // Trigger entrance animations
-    this.element.classList.add('mounted');
-    
-    // Animate features sequentially
-    const features = this.$$('.feature-card');
-    features.forEach((feature, index) => {
-      setTimeout(() => {
-        feature.classList.add('visible');
-      }, 200 + (index * 150));
-    });
+  async loadInitialData() {
+    // try {
+    //   const [topPlayers, recentMatches] = await Promise.all([
+    //     fetch('/api/leaderboard').then(res => res.json()),
+    //     fetch('/api/recent-matches').then(res => res.json())
+    //   ]);
+
+    //   this.state.setState({ topPlayers, recentMatches });
+    // } catch (error) {
+    //   console.error('Failed to load initial data:', error);
+    // }
   }
 
-  handlePlayClick() {
-    if (this.isAnimating) return;
-    this.isAnimating = true;
-    
-    const button = this.$('.play-button');
-    button.classList.add('clicked');
-    
-    setTimeout(() => {
-      button.classList.remove('clicked');
-      this.isAnimating = false;
-    }, 500);
-    
-    // Trigger game start logic here
+  updateTopPlayers(players) {
+    // Update top players section
   }
 
-  handleStartClick() {
-    if (this.isAnimating) return;
-    this.isAnimating = true;
-    
-    const button = this.$('.start-button');
-    button.classList.add('clicked');
-    
-    setTimeout(() => {
-      button.classList.remove('clicked');
-      this.isAnimating = false;
-    }, 500);
-    
-    // Trigger game start logic here
-  }
-
-  handleCardHover(event, isEntering) {
-    const card = event.currentTarget;
-    if (isEntering) {
-      card.classList.add('hovered');
-    } else {
-      card.classList.remove('hovered');
-    }
+  updateRecentMatches(matches) {
+    // Update recent matches section
   }
 }
+

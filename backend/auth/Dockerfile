@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-alpine
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -6,18 +6,21 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+
+RUN apk add --no-cache \
+    postgresql-dev \
+    curl \
+    gcc \
+    python3-dev \
+    musl-dev \
+    linux-headers \
+    && pip3 install --no-cache-dir -r requirements.txt
 
 COPY . /app
 
-RUN mkdir -p /app/static /app/media
+RUN mkdir -p /app/static /app/media \
+    && chmod -R 755 /app/static /app/media
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8001/api/auth/health/ || exit 1

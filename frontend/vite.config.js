@@ -3,7 +3,7 @@ import path from "path";
 
 export default defineConfig({
   root: "src",
-  publicDir: "public",
+  publicDir: "../public",
   server: {
     port: 3000,
     host: '0.0.0.0',
@@ -21,7 +21,6 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
-      "/public": path.resolve(__dirname, "./public"),
     },
   },
 });
