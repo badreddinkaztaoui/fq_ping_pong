@@ -20,13 +20,6 @@ export class DashboardView extends View {
           <!-- Profile Section -->
           <section class="profile-section">
             <div class="profile-info">
-              <img 
-                src="/default-avatar.png" 
-                alt="Profile avatar" 
-                class="profile-avatar"
-                width="64" 
-                height="64"
-              >
               <h1>Welcome, <span class="username">Player</span></h1>
             </div>
             
@@ -81,58 +74,15 @@ export class DashboardView extends View {
     }
   
     async loadDashboardData() {
-      try {
-        const [user, stats] = await Promise.all([
-          this.fetchUser(),
-          this.fetchStats()
-        ]);
-  
-        this.state.setState({
-          user,
-          stats,
-          loading: false
-        });
-      } catch (error) {
-        this.state.setState({
-          error: 'Failed to load data',
-          loading: false
-        });
-      }
+     
     }
   
     async fetchUser() {
-      const response = await fetch('/api/user', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      return response.json();
-    }
   
-    async fetchStats() {
-      const response = await fetch('/api/stats', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        }
-      });
-      return response.json();
     }
   
     async handlePlayGame() {
-      try {
-        const response = await fetch('/api/game/queue', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-          }
-        });
-  
-        if (response.ok) {
-          this.router.navigate('/game');
-        }
-      } catch (error) {
-        console.error('Failed to join game:', error);
-      }
+    
     }
   
     updateUI(state) {

@@ -88,54 +88,21 @@ export class LoginView extends View {
   
       this.addListener(form, 'submit', this.handleSubmit.bind(this));
       this.addListener(oauth42Btn, 'click', this.handle42Login.bind(this));
+
   
-      // State subscription for loading and error states
       this.state.subscribe((state) => {
         this.updateUIState(state);
       });
     }
+
   
     async handleSubmit(event) {
       event.preventDefault();
       
-    //   this.state.setState({ loading: true, error: null });
-  
-    //   const formData = new FormData(event.target);
-      
-    //   try {
-    //     const response = await fetch('/api/login', {
-    //       method: 'POST',
-    //       headers: {
-    //         'Content-Type': 'application/json'
-    //       },
-    //       body: JSON.stringify({
-    //         username: formData.get('username'),
-    //         password: formData.get('password'),
-    //         remember: formData.get('remember') === 'on'
-    //       })
-    //     });
-  
-    //     if (!response.ok) {
-    //       throw new Error('Invalid credentials');
-    //     }
-  
-    //     const data = await response.json();
-        
-    //     // Store the token
-    //     localStorage.setItem('auth_token', data.token);
-        
-    //     // Navigate to dashboard
-    //     this.router.navigate('/dashboard');
-    //   } catch (error) {
-    //     this.state.setState({ 
-    //       error: error.message,
-    //       loading: false 
-    //     });
-    //   }
     }
   
     async handle42Login() {
-    //   window.location.href = '/api/auth/42';
+
     }
   
     updateUIState(state) {
