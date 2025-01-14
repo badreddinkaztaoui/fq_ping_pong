@@ -1,72 +1,92 @@
+@font-face {
+  font-family: "DIN-Next-W1G";
+  src: url("../../public/fonts/dinnextw1g.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "Tungsten-bold";
+  src: url("../../public/fonts/Tungsten-Bold.ttf") format("truetype");
+}
+@font-face {
+  font-family: "VALORANT";
+  src: url("../../public/fonts/Valorant Font.ttf") format("truetype");
+}
+
 :root {
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
-  --success-color: #22c55e;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --max-width: 1200px;
-  --header-height: 60px;
-  --primary-color: #4a90e2;
-  --secondary-color: #2c3e50;
-  --background-color: #f5f6fa;
-  --text-color: #2c3e50;
-  --error-color: #e74c3c;
-  --success-color: #2ecc71;
-  --border-radius: 8px;
+  --bg-color: #ece8e1;
+  --principale: #bb3b3b;
+  --text-game: #38bda2;
+  --body-color: #e4e9f7;
+  --sidebar-color: #fff;
+  --primary-color: #f4f2f2;
+  --primary-color-light: #f4f2f2;
+  --toggle-color: #ddd;
+  --text-color: #707070;
+  --text: #ece8e1;
+  --dark-color: #000;
+  --sidebar: #0f1923;
+
+  --trans-02: all 0.2s ease;
+  --trans-03: all 0.3s ease;
+  --trans-04: all 0.4s ease;
+  --trans-04: all 0.5s ease;
+  --principale: #bb3b3b;
+
+  --principale: #ff4655;
+  --principale-dark: #ff1f30;
+  --valorant-dark: #1f2326;
+  --background: #0f1923;
+  --menu-timing: 0.6s;
 }
 
 body {
-  font-family: 'Arial', sans-serif;
-  line-height: 1.6;
-  color: var(--text-color);
-  background-color: var(--background-color);
+  background-color: #ece8e1;
+  overflow-x: hidden;
+  color: #333;
 }
 
-.container {
-  max-width: var(--max-width);
-  margin: 0 auto;
-  padding: 0 1rem;
+/* Modern browsers - Standard property */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--principale) transparent;
 }
 
-.loading,
-.error {
-  text-align: center;
-  padding: 3rem;
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
 
-.loading {
-  color: var(--text-secondary);
-  font-size: 1.25rem;
+::-webkit-scrollbar-thumb {
+  background-color: var(--principale);
+  border-radius: 3px;
 }
 
-.error {
-  color: var(--error-color);
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.error button {
-  margin-top: 1rem;
+/* For Firefox */
+* {
+  scroll-behavior: smooth;
 }
 
-
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: var(--border-radius);
-  cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s, transform 0.2s;
+/* For Edge */
+@supports (-ms-overflow-style: none) {
+  * {
+    -ms-overflow-style: auto;
+    scrollbar-width: thin;
+  }
 }
 
-.btn:hover {
-  transform: translateY(-1px);
+/* For Internet Explorer */
+@media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
+  * {
+    -ms-overflow-style: auto;
+  }
 }
-
-.btn-primary {
-  background-color: var(--primary-color);
-  color: white;
-}
-
-.btn-secondary {
-  background-color: var(--secondary-color);
-  color: white;
+.layout {
+  /* min-height: 100vh; */
+  display: flex;
+  flex-direction: column;
 }

@@ -18,7 +18,7 @@ const routes = [
   { path: '/login', view: LoginView },
   { path: '/signup', view: SignupView },
   { path: '/dashboard', view: DashboardView },
-  { path: '*', view: HomeView } // Fallback route
+  { path: '*', view: HomeView }
 ];
 
 const router = new Router(routes);

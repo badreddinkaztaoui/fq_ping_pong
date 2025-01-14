@@ -15,109 +15,112 @@ export class SignupView extends View {
     async render() {
       const template = document.createElement('template');
       template.innerHTML = `
-        <main class="signup-view" role="main">
-          <section class="auth-container" aria-labelledby="signup-title">
-            <h1 id="signup-title">Create Your Account</h1>
-            
-            <form id="signup-form" class="auth-form" novalidate>
-              <div class="form-group">
-                <label for="username">Username</label>
-                <input 
-                  type="text" 
-                  id="username" 
-                  name="username" 
-                  required 
-                  autocomplete="username"
-                  aria-required="true"
-                  pattern="[a-zA-Z0-9_]{3,20}"
-                >
-                <span class="form-hint">3-20 characters, letters, numbers and underscore only</span>
-              </div>
-  
-              <div class="form-group">
-                <label for="email">Email</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email" 
-                  required
-                  autocomplete="email"
-                  aria-required="true"
-                >
-              </div>
-  
-              <div class="form-group">
-                <label for="password">Password</label>
-                <input 
-                  type="password" 
-                  id="password" 
-                  name="password" 
-                  required
-                  autocomplete="new-password"
-                  aria-required="true"
-                  minlength="8"
-                >
-                <span class="form-hint">Minimum 8 characters</span>
-              </div>
-  
-              <div class="form-group">
-                <label for="confirm-password">Confirm Password</label>
-                <input 
-                  type="password" 
-                  id="confirm-password" 
-                  name="confirmPassword" 
-                  required
-                  autocomplete="new-password"
-                  aria-required="true"
-                >
-              </div>
-  
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    name="terms" 
-                    id="terms" 
-                    required
-                    aria-required="true"
-                  >
-                  I agree to the Terms and Conditions
-                </label>
-              </div>
-  
-              <div class="form-error" role="alert" aria-live="polite"></div>
-  
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                aria-label="Create your account"
-              >
-                Create Account
-              </button>
-            </form>
-  
-            <div class="auth-alternatives">
-              <p>Already have an account? <a href="/login">Log In</a></p>
+            <div class="signup-container">
+                <div class="signup-image">
+                    <div class="image-overlay"></div>
+                </div>
+
+                <div class="signup-form">
+                    <div class="form-wrapper">
+                        <div class="logo">
+                            <!-- Logo placeholder -->
+                        </div>
+                        
+                        <h1 class="title">Create Account</h1>
+                        
+                        <form id="signup-form" novalidate>
+                            <div class="input-container">
+                                <div class="input-icon">👤</div>
+                                <input 
+                                    type="text" 
+                                    id="username" 
+                                    name="username" 
+                                    placeholder="USERNAME" 
+                                    required 
+                                    pattern="[a-zA-Z0-9_]{3,20}"
+                                />
+                                <div class="input-border"></div>
+                                <span class="error-message" id="username-error"></span>
+                            </div>
+
+                            <div class="input-container">
+                                <div class="input-icon">✉️</div>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email" 
+                                    placeholder="EMAIL" 
+                                    required 
+                                />
+                                <div class="input-border"></div>
+                                <span class="error-message" id="email-error"></span>
+                            </div>
+
+                            <div class="input-container">
+                                <div class="input-icon">🔒</div>
+                                <input 
+                                    type="password" 
+                                    id="password" 
+                                    name="password" 
+                                    placeholder="PASSWORD" 
+                                    required 
+                                    minlength="6"
+                                />
+                                <div class="input-border"></div>
+                                <span class="error-message" id="password-error"></span>
+                            </div>
+
+                            <div class="input-container">
+                                <div class="input-icon">🔒</div>
+                                <input 
+                                    type="password" 
+                                    id="confirm-password" 
+                                    name="confirmPassword" 
+                                    placeholder="CONFIRM PASSWORD" 
+                                    required 
+                                />
+                                <div class="input-border"></div>
+                                <span class="error-message" id="confirm-password-error"></span>
+                            </div>
+
+                            <div class="form-error" role="alert" aria-live="polite"></div>
+
+                            <button type="submit" class="submit-btn-up">
+                                CREATE ACCOUNT
+                            </button>
+
+                            <div class="signin-link">
+                                <a href="/login" data-link>Already have an account? Sign in</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="success-message" class="success-popup">
+                    ACCOUNT CREATED SUCCESSFULLY
+                </div>
+
+                <div id="toast" class="toast"></div>
             </div>
-          </section>
-        </main>
-      `;
+        `;
   
       return template.content.firstElementChild;
     }
   
     async setupEventListeners() {
-      const form = this.$('#signup-form');
-      const passwordInput = this.$('#password');
-      const confirmPasswordInput = this.$('#confirm-password');
+      const form = this.$("#signup-form");
+      const passwordInput = this.$("#password");
+      const confirmPasswordInput = this.$("#confirm-password");
   
-      this.addListener(form, 'submit', this.handleSubmit.bind(this));
-      this.addListener(passwordInput, 'input', () => this.validatePassword());
-      this.addListener(confirmPasswordInput, 'input', () => this.validatePassword());
+      this.addListener(form, "submit", this.handleSubmit.bind(this));
+      this.addListener(passwordInput, "input", () => this.validatePassword());
+      this.addListener(confirmPasswordInput, "input", () =>
+        this.validatePassword()
+      );
   
       // Real-time validation
-      this.addListener(form, 'input', (event) => {
-        if (event.target.matches('input[required]')) {
+      this.addListener(form, "input", (event) => {
+        if (event.target.matches("input[required]")) {
           this.validateField(event.target);
         }
       });
@@ -129,86 +132,104 @@ export class SignupView extends View {
   
     validateField(field) {
       const errors = this.state.getState().validationErrors || {};
-      
+  
       if (field.validity.valueMissing) {
-        errors[field.name] = 'This field is required';
-      } else if (field.validity.patternMismatch && field.name === 'username') {
-        errors[field.name] = 'Username can only contain letters, numbers and underscore';
-      } else if (field.validity.typeMismatch && field.name === 'email') {
-        errors[field.name] = 'Please enter a valid email address';
+        errors[field.name] = `${field.placeholder} IS REQUIRED`;
+      } else if (field.name === "username" && field.value.length < 3) {
+        errors[field.name] = "USERNAME MUST BE AT LEAST 3 CHARACTERS";
+      } else if (field.name === "email") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(field.value)) {
+          errors[field.name] = "PLEASE ENTER A VALID EMAIL";
+        } else {
+          delete errors[field.name];
+        }
       } else {
         delete errors[field.name];
       }
   
-      this.state.setState({ validationErrors: errors });
+      this.state.update({ validationErrors: errors });
     }
   
     validatePassword() {
-      const password = this.$('#password').value;
-      const confirmPassword = this.$('#confirm-password').value;
+      const password = this.$("#password").value;
+      const confirmPassword = this.$("#confirm-password").value;
       const errors = this.state.getState().validationErrors || {};
   
-      if (password.length < 8) {
-        errors.password = 'Password must be at least 8 characters';
-      } else if (password !== confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match';
+      if (password.length < 6) {
+        errors.password = "PASSWORD MUST BE AT LEAST 6 CHARACTERS";
+      } else if (password !== confirmPassword && confirmPassword) {
+        errors.confirmPassword = "PASSWORDS DO NOT MATCH";
       } else {
         delete errors.password;
         delete errors.confirmPassword;
       }
   
-      this.state.setState({ validationErrors: errors });
+      this.state.update({ validationErrors: errors });
+    }
+  
+    showToast(message) {
+      const toast = this.$("#toast");
+      toast.textContent = message;
+      toast.style.display = "block";
+      setTimeout(() => {
+        toast.style.display = "none";
+      }, 3000);
+    }
+  
+    displaySuccessMessage() {
+      const successMessage = this.$("#success-message");
+      successMessage.style.display = "block";
+  
+      //! hna navigi l login
     }
   
     async handleSubmit(event) {
       event.preventDefault();
-      
-    //   if (!this.validateForm()) {
-    //     return;
-    //   }
   
-    //   this.state.setState({ loading: true, error: null });
+      // Clear previous errors
+      this.state.update({ validationErrors: {}, error: null });
   
-    //   const formData = new FormData(event.target);
-      
-    //   try {
-    //     const response = await fetch('/api/signup', {
-    //       method: 'POST',
-    //       headers: {
-    //         'Content-Type': 'application/json'
-    //       },
-    //       body: JSON.stringify({
-    //         username: formData.get('username'),
-    //         email: formData.get('email'),
-    //         password: formData.get('password')
-    //       })
-    //     });
+      // Validate all fields
+      const form = event.target;
+      const isValid = this.validateForm();
   
-    //     if (!response.ok) {
-    //       throw new Error('Registration failed');
-    //     }
+      if (!isValid) {
+        return;
+      }
   
-    //     const data = await response.json();
-        
-    //     // Store the token
-    //     localStorage.setItem('auth_token', data.token);
-        
-    //     // Navigate to dashboard
-    //     this.router.navigate('/dashboard');
-    //   } catch (error) {
-    //     this.state.setState({ 
-    //       error: error.message,
-    //       loading: false 
-    //     });
-    //   }
+      this.state.update({ loading: true });
+  
+      try {
+        const formData = new FormData(form);
+        const userData = {
+          username: formData.get("username"),
+          email: formData.get("email"),
+          password: formData.get("password"),
+        };
+  
+        //! hnaya dir API call
+  
+        this.displaySuccessMessage();
+  
+        // Reset form
+        form.reset();
+      } catch (error) {
+        this.state.update({
+          error: error.message || "Registration failed. Please try again.",
+          loading: false,
+        });
+        this.showToast(error.message || "Registration failed. Please try again.");
+      } finally {
+        this.state.update({ loading: false });
+      }
     }
   
     validateForm() {
-      const form = this.$('#signup-form');
-      const errors = {};
-      
+      const form = this.$("#signup-form");
+  
       // Check all required fields
-      form.querySelectorAll('input[required]').forEach(field => {
+      form.querySelectorAll("input[required]").forEach((field) => {
         this.validateField(field);
       });
   
@@ -221,32 +242,36 @@ export class SignupView extends View {
   
     updateUIState(state) {
       const submitBtn = this.$('button[type="submit"]');
-      const errorDiv = this.$('.form-error');
+      const errorDiv = this.$(".form-error");
   
       if (state.loading) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Creating Account...';
+        submitBtn.textContent = "CREATING ACCOUNT...";
       } else {
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Create Account';
+        submitBtn.textContent = "CREATE ACCOUNT";
       }
   
       if (state.error) {
         errorDiv.textContent = state.error;
-        errorDiv.classList.add('visible');
+        errorDiv.classList.add("visible");
       } else {
-        errorDiv.textContent = '';
-        errorDiv.classList.remove('visible');
+        errorDiv.textContent = "";
+        errorDiv.classList.remove("visible");
       }
   
       // Update validation error messages
+      const errorMessages = document.querySelectorAll(".error-message");
+      errorMessages.forEach((message) => {
+        message.style.display = "none";
+        message.textContent = "";
+      });
+  
       Object.entries(state.validationErrors || {}).forEach(([field, error]) => {
-        const input = this.$(`#${field}`);
-        const errorSpan = input.nextElementSibling;
-        
-        if (errorSpan && errorSpan.classList.contains('form-hint')) {
-          errorSpan.textContent = error;
-          errorSpan.classList.add('error');
+        const errorElement = this.$(`#${field}-error`);
+        if (errorElement) {
+          errorElement.textContent = error;
+          errorElement.style.display = "block";
         }
       });
     }

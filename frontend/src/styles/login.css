@@ -1,58 +1,309 @@
-.login-view {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    padding: 2rem;
-    background: var(--background-color);
-  }
-  
-  .auth-container {
-    background: white;
-    padding: 2rem;
-    border-radius: var(--border-radius);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    width: 100%;
-    max-width: 400px;
-  }
-  
-  .auth-container h1 {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .form-group {
-    margin-bottom: 1rem;
-  }
-  
-  .form-group label {
+.signin-container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #0f1923;
+  color: #f9f9f9;
+}
+
+.signin-image {
+  display: none;
+  width: 66.666%;
+  position: relative;
+  background: url("/images/login/bg-login-1.png") center/cover no-repeat;
+}
+
+@media (min-width: 768px) {
+  .signin-image {
     display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
   }
-  
-  .form-group input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: var(--border-radius);
+}
+
+.image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    rgba(0, 0, 0, 0.2),
+    rgba(123, 97, 255, 0.2)
+  );
+}
+
+.signin-form {
+  width: 100%;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .signin-form {
+    width: 33.333%;
   }
-  
-  .form-error {
-    color: var(--error-color);
-    font-size: 0.875rem;
-    margin-top: 0.5rem;
+}
+
+.form-wrapper {
+  max-width: 400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.title {
+  font-family: "VALORANT", sans-serif;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.input-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+input {
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f9f9f9;
+  font-size: 0.875rem;
+  transition: border-color 0.3s ease, background-color 0.3s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: #ff4655;
+}
+
+.input-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #ff4655;
+  transition: width 0.3s ease;
+}
+
+input:focus + .input-border {
+  width: 100%;
+}
+
+.forgot-password {
+  text-align: right;
+  margin-bottom: 1.5rem;
+}
+
+.forgot-password a {
+  color: #f9f9f9;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.submit-btn-sign-in {
+  width: 100%;
+  padding: 1rem;
+  background-color: #ff4655 !important;
+  color: #f9f9f9;
+  border: none;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  border-radius: 10px;
+}
+
+.submit-btn-sign-in:hover {
+  background: #db777e !important;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.divider span {
+  background: #0f1923;
+  padding: 0 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.social-signin {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.social-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #f9f9f9;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 0.3s ease;
+}
+
+.social-btn:hover {
+  border-color: #ff4655;
+}
+
+.signup-link {
+  text-align: center;
+}
+
+.signup-link a {
+  color: #f9f9f9;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.signup-link a:hover {
+  color: #ff4655;
+}
+
+.error-message {
+  display: none;
+  color: #f44336;
+  font-size: 14px;
+  margin-top: 5px;
+  font-family: "Arial", sans-serif;
+  text-align: left;
+}
+
+.error-message.visible {
+  display: block;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.input-container input.error {
+  border-color: #f44336;
+  background-color: #f8d7da;
+}
+
+.input-container input.error:focus {
+  border-color: #f44336;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
   }
-  
-  .auth-alternatives {
-    margin-top: 1.5rem;
-    text-align: center;
+  100% {
+    opacity: 1;
   }
-  
-  .oauth-section {
-    margin-top: 2rem;
-    text-align: center;
-    padding-top: 1rem;
-    border-top: 1px solid #ddd;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  width: 300px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content p {
+  font-size: 16px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+#closeModal {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#closeModal:hover {
+  background-color: #d32f2f;
+}
+
+.toast {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f44336;
+  color: white;
+  padding: 10px;
+  border-radius: 5px;
+  font-size: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  opacity: 0;
+  animation: toastAnimation 3s forwards;
+}
+
+@keyframes toastAnimation {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
   }
-  
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+}
+
+.error-message.visible {
+  display: block;
+  color: #f44336;
+  font-size: 14px;
+  margin-top: 5px;
+  font-family: "Arial", sans-serif;
+  text-align: left;
+}
+
+input[type="email"].error,
+input[type="password"].error {
+  border-color: #f44336;
+  background-color: #f8d7da;
+}
