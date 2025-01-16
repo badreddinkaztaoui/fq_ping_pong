@@ -180,51 +180,8 @@ export class SignupView extends View {
     displaySuccessMessage() {
       const successMessage = this.$("#success-message");
       successMessage.style.display = "block";
-  
-      //! hna navigi l login
     }
-  
-    async handleSubmit(event) {
-      event.preventDefault();
-  
-      // Clear previous errors
-      this.state.update({ validationErrors: {}, error: null });
-  
-      // Validate all fields
-      const form = event.target;
-      const isValid = this.validateForm();
-  
-      if (!isValid) {
-        return;
-      }
-  
-      this.state.update({ loading: true });
-  
-      try {
-        const formData = new FormData(form);
-        const userData = {
-          username: formData.get("username"),
-          email: formData.get("email"),
-          password: formData.get("password"),
-        };
-  
-        //! hnaya dir API call
-  
-        this.displaySuccessMessage();
-  
-        // Reset form
-        form.reset();
-      } catch (error) {
-        this.state.update({
-          error: error.message || "Registration failed. Please try again.",
-          loading: false,
-        });
-        this.showToast(error.message || "Registration failed. Please try again.");
-      } finally {
-        this.state.update({ loading: false });
-      }
-    }
-  
+
     validateForm() {
       const form = this.$("#signup-form");
   
@@ -233,12 +190,70 @@ export class SignupView extends View {
         this.validateField(field);
       });
   
-      // Validate password match
       this.validatePassword();
   
       const currentErrors = this.state.getState().validationErrors;
       return Object.keys(currentErrors).length === 0;
     }
+  
+    async handleSubmit(event) {
+      event.preventDefault();
+      
+      if (!this.validateForm()) {
+        return;
+      }
+      
+      const formData = new FormData(event.target);
+      const data = {
+        email: formData.get('email'),
+        username: formData.get('username'),
+        password: formData.get('password'),
+        password2: formData.get('confirmPassword'),
+        display_name: formData.get('username')
+      };
+      
+      this.state.setState({ loading: true, error: null });
+      
+      try {
+        const response = await fetch(`${this.API_URL}/api/auth/signup/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(responseData.error || 'Registration failed');
+        }
+        
+        // Store tokens
+        localStorage.setItem('accessToken', responseData.tokens.access);
+        localStorage.setItem('refreshToken', responseData.tokens.refresh);
+        
+        // Show success message
+        this.displaySuccessMessage();
+        
+        // Redirect to dashboard after brief delay
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+        
+      } catch (error) {
+        console.error('Registration error:', error);
+        this.state.setState({ 
+          error: error.message || 'Failed to create account. Please try again.' 
+        });
+      } finally {
+        this.state.setState({ loading: false });
+      }
+    }
+  
+    
+
+    
   
     updateUIState(state) {
       const submitBtn = this.$('button[type="submit"]');

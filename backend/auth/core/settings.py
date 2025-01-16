@@ -42,7 +42,6 @@ ASGI_APPLICATION = 'core.asgi.application'
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
     'http://localhost:8000',
 ]
 CORS_ALLOW_METHODS = [
@@ -63,12 +62,14 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'your@email.com')
 
+SITE_URL = 'http://localhost:8000'
+
 # OAuth 2.0 Settings
-OAUTH2_CLIENT_ID = os.getenv('SOCIAL_AUTH_42_KEY')
-OAUTH2_CLIENT_SECRET = os.getenv('SOCIAL_AUTH_42_SECRET')
+SOCIAL_AUTH_42_KEY = os.getenv('SOCIAL_AUTH_42_KEY')
+SOCIAL_AUTH_42_SECRET = os.getenv('SOCIAL_AUTH_42_SECRET')
 OAUTH2_AUTHORIZATION_URL = 'https://api.intra.42.fr/oauth/authorize'
 OAUTH2_TOKEN_URL = 'https://api.intra.42.fr/oauth/token'
-OAUTH2_REDIRECT_URL = 'http://localhost:8000/oauth/callback'
+OAUTH2_REDIRECT_URL = 'http://localhost:8000/api/auth/42/callback'
 OAUTH2_SCOPE = 'public'
 
 # Authentication Settings

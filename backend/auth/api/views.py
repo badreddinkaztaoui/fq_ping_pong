@@ -47,7 +47,7 @@ class LoginView(views.APIView):
                 password=serializer.validated_data['password']
             )
             
-            if user is not None:
+            if user:
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     'user': UserSerializer(user).data,
@@ -65,105 +65,76 @@ class LoginView(views.APIView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_42_login(request):
-    redirect_uri = settings.OAUTH2_REDIRECT_URL.rstrip('/')
+    """Initiates 42 OAuth flow"""
+    oauth_url = 'https://api.intra.42.fr/oauth/authorize'
     params = {
-        'client_id': settings.OAUTH2_CLIENT_ID,
-        'redirect_uri': redirect_uri,
+        'client_id': settings.SOCIAL_AUTH_42_KEY,
+        'redirect_uri': f"{settings.SITE_URL}/api/auth/42/callback",
         'response_type': 'code',
-        'scope': settings.OAUTH2_SCOPE,
+        'scope': 'public'
     }
-    
-    print("Full OAuth params:", params)
-    auth_url = f"{settings.OAUTH2_AUTHORIZATION_URL}?{urlencode(params)}"
-    print("Full auth URL:", auth_url)
-    return redirect(auth_url)
+    authorization_url = f"{oauth_url}?{urlencode(params)}"
+    return redirect(authorization_url)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_42_callback(request):
-    """
-    Handles the OAuth 2.0 callback from 42
-    """
+    """Handles 42 OAuth callback"""
     code = request.GET.get('code')
+    
     if not code:
         return Response(
-            {'error': 'No authorization code provided'}, 
+            {'error': 'Authorization code not provided'}, 
             status=status.HTTP_400_BAD_REQUEST
         )
 
-    try:
-        # Exchange authorization code for access token
-        token_response = requests.post(
-            settings.OAUTH2_TOKEN_URL,
-            data={
-                'client_id': settings.OAUTH2_CLIENT_ID,
-                'client_secret': settings.OAUTH2_CLIENT_SECRET,
-                'code': code,
-                'redirect_uri': settings.OAUTH2_REDIRECT_URL,
-                'grant_type': 'authorization_code',
-            },
-            headers={'Accept': 'application/json'}
-        )
-        token_data = token_response.json()
-
-        if 'access_token' not in token_data:
-            return Response(
-                {'error': 'Failed to obtain access token'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Get user info from 42 API
-        user_response = requests.get(
-            'https://api.intra.42.fr/v2/me',
-            headers={'Authorization': f"Bearer {token_data['access_token']}"}
-        )
-        user_data = user_response.json()
-
-        # Get or create user
-        email = user_data.get('email')
-        if not email:
-            return Response(
-                {'error': 'Email not provided by 42 API'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Create or update user
-        user, created = User.objects.get_or_create(
-            email=email,
-            defaults={
-                'username': user_data.get('login'),
-                'display_name': user_data.get('displayname', user_data.get('login')),
-                'avatar_url': user_data.get('image', {}).get('link'),  # Updated path to image URL
-            }
+    token_url = 'https://api.intra.42.fr/oauth/token'
+    token_data = {
+        'grant_type': 'authorization_code',
+        'client_id': settings.SOCIAL_AUTH_42_KEY,
+        'client_secret': settings.SOCIAL_AUTH_42_SECRET,
+        'code': code,
+        'redirect_uri': f"{settings.SITE_URL}/api/auth/42/callback"
+    }
+    
+    token_response = requests.post(token_url, data=token_data)
+    
+    if token_response.status_code != 200:
+        return Response(
+            {'error': 'Failed to obtain access token'}, 
+            status=status.HTTP_400_BAD_REQUEST
         )
 
-        if not created:
-            # Update existing user data
-            user.display_name = user_data.get('displayname', user_data.get('login'))
-            user.avatar_url = user_data.get('image', {}).get('link')
-            user.save()
-
-        # Generate JWT tokens
-        refresh = RefreshToken.for_user(user)
+    access_token = token_response.json().get('access_token')
+    
+    user_info_response = requests.get(
+        'https://api.intra.42.fr/v2/me',
+        headers={'Authorization': f'Bearer {access_token}'}
+    )
+    
+    if user_info_response.status_code != 200:
+        return Response(
+            {'error': 'Failed to get user info'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
         
-        return Response({
-            'user': UserSerializer(user).data,
-            'tokens': {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        })
-
-    except requests.exceptions.RequestException as e:
-        return Response(
-            {'error': f'Failed to authenticate: {str(e)}'}, 
-            status=status.HTTP_400_BAD_REQUEST
+    user_info = user_info_response.json()
+    
+    try:
+        user = User.objects.get(email=user_info['email'])
+    except User.DoesNotExist:
+        user = User.objects.create_user(
+            email=user_info['email'],
+            username=user_info['login'],
+            display_name=user_info['displayname'],
+            avatar_url=user_info.get('image_url')
         )
-    except Exception as e:
-        return Response(
-            {'error': str(e)}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    
+    refresh = RefreshToken.for_user(user)
+    
+    # Redirect to frontend with tokens
+    redirect_url = f"{settings.SITE_URL}/oauth/callback?access={str(refresh.access_token)}&refresh={str(refresh)}"
+    return redirect(redirect_url)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

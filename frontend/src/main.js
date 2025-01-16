@@ -10,28 +10,29 @@ import { DashboardView } from './views/Dashboard.js';
 
 const errorBoundary = new ErrorBoundary();
 
-// Authentication guard
 function authGuard(View) {}
+
+function setupAPIInterceptors() {}
 
 const routes = [
   { path: '/', view: HomeView },
   { path: '/login', view: LoginView },
   { path: '/signup', view: SignupView },
   { path: '/dashboard', view: DashboardView },
+  { 
+    path: '/oauth/callback', 
+    handler: (params) => LoginView.handleOAuthCallback(),
+    view: LoginView 
+  },
   { path: '*', view: HomeView }
 ];
 
 const router = new Router(routes);
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Add auth token to all API requests
-  setupAPIInterceptors();
-  
   router.handleRoute();
 });
 
-// Setup API interceptors for authentication
-function setupAPIInterceptors() {}
 
 window.addEventListener('unhandledrejection', (event) => {
   console.error('Unhandled promise rejection:', event.reason);

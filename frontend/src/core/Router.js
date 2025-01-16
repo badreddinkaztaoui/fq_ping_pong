@@ -47,6 +47,15 @@ export class Router {
     const path = window.location.pathname;
     const { route, params } = this.findRoute(path);
 
+    if (route.handler) {
+      try {
+        await route.handler(params);
+        return;
+      } catch (error) {
+        console.error('Route handler error:', error);
+      }
+    }
+
     if (this.currentView) {
       await this.currentView.unmount();
     }

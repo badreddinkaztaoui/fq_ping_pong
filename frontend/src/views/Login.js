@@ -82,21 +82,7 @@ export class LoginView extends View {
   
       return template.content.firstElementChild;
     }
-  
-    async setupEventListeners() {
-      const form = this.$('#login-form');
-      const oauth42Btn = this.$('.btn-42');
-  
-      this.addListener(form, 'submit', this.handleSubmit.bind(this));
-      this.addListener(oauth42Btn, 'click', this.handle42Login.bind(this));
 
-  
-      this.state.subscribe((state) => {
-        this.updateUIState(state);
-      });
-    }
-
-  
     async handleSubmit(event) {
       event.preventDefault();
       
@@ -129,7 +115,6 @@ export class LoginView extends View {
         console.log('User info:', data.user);
         console.log('Access token:', data.tokens.access);
         
-        // Store tokens in localStorage or secure storage
         localStorage.setItem('accessToken', data.tokens.access);
         localStorage.setItem('refreshToken', data.tokens.refresh);
   
@@ -147,57 +132,51 @@ export class LoginView extends View {
     }
   
     async handle42Login() {
-      console.log("handle42Login")
-      // Store the current URL for potential redirection after login
-      localStorage.setItem('preLoginPage', window.location.href);
-      
-      // Redirect to 42 OAuth login endpoint
-      window.location.href = `${this.API_URL}/api/auth/login/42/`;
+      try {
+        window.location.href = `${this.API_URL}/api/auth/42/login/`;
+      } catch (error) {
+        console.error('42 OAuth error:', error);
+        this.state.setState({ 
+          error: 'Failed to initialize 42 login. Please try again.' 
+        });
+      }
     }
-  
-    // Add a method to handle OAuth callback
+
     static async handleOAuthCallback() {
-      console.log("handleOAuthCallback")
-      // This method could be called from your OAuth callback route
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      const error = urlParams.get('error');
-  
-      if (error) {
-        console.error('OAuth error:', error);
-        return;
-      }
-  
-      if (code) {
-        try {
-          const response = await fetch(`${this.API_URL}/oauth/callback?code=${code}`, {
-            method: 'GET',
-            credentials: 'include'
-          });
-  
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.error || 'OAuth login failed');
-          }
-  
-          console.log('42 OAuth login successful!', data);
-          console.log('User info:', data.user);
-          console.log('Access token:', data.tokens.access);
-  
-          // Store tokens
-          localStorage.setItem('accessToken', data.tokens.access);
-          localStorage.setItem('refreshToken', data.tokens.refresh);
-  
-          // Redirect to the stored pre-login page or dashboard
-          const redirectUrl = localStorage.getItem('preLoginPage') || '/dashboard';
-          window.location.href = redirectUrl;
-          
-        } catch (error) {
-          console.error('OAuth callback error:', error);
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get('access');
+        const refreshToken = params.get('refresh');
+        
+        if (!accessToken || !refreshToken) {
+          throw new Error('Missing authentication tokens');
         }
+
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', refreshToken);
+        
+        window.history.replaceState({}, document.title, '/dashboard');
+        
+        window.location.reload();
+      } catch (error) {
+        console.error('OAuth callback error:', error);
+        window.location.href = '/login?error=' + encodeURIComponent(error.message);
       }
     }
+
+    async setupEventListeners() {
+      const form = this.$('#login-form');
+      const oauth42Btn = this.$('.btn-42');
+  
+      this.addListener(form, 'submit', this.handleSubmit.bind(this));
+      this.addListener(oauth42Btn, 'click', this.handle42Login.bind(this));
+
+  
+      this.state.subscribe((state) => {
+        this.updateUIState(state);
+      });
+    }
+
   
     updateUIState(state) {
       const submitBtn = this.$('button[type="submit"]');
