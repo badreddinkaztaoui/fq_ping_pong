@@ -13,10 +13,13 @@ export default defineConfig({
       host: process.env.VITE_HMR_HOST || "localhost",
       port: 3000,
       clientPort: 8000,
+      overlay: true,
+      timeout: 30000
     },
     watch: {
       usePolling: process.env.USE_POLLING === "true",
     },
+    cors: true
   },
   resolve: {
     alias: {

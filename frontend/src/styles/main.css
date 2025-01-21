@@ -45,13 +45,11 @@ body {
   color: #333;
 }
 
-/* Modern browsers - Standard property */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--principale) transparent;
 }
 
-/* Webkit browsers (Chrome, Safari, Edge) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -66,12 +64,10 @@ body {
   background: transparent;
 }
 
-/* For Firefox */
 * {
   scroll-behavior: smooth;
 }
 
-/* For Edge */
 @supports (-ms-overflow-style: none) {
   * {
     -ms-overflow-style: auto;
@@ -79,14 +75,9 @@ body {
   }
 }
 
-/* For Internet Explorer */
 @media screen and (-ms-high-contrast: active), (-ms-high-contrast: none) {
   * {
     -ms-overflow-style: auto;
   }
 }
-.layout {
-  /* min-height: 100vh; */
-  display: flex;
-  flex-direction: column;
-}
+

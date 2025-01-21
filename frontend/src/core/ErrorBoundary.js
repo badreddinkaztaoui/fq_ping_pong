@@ -7,8 +7,6 @@ export class ErrorBoundary {
   
     handleError(error) {
       console.error('Application Error:', error);
-      // You can implement custom error handling logic here
-      // such as showing an error modal or redirecting to an error page
     }
   
     destroy() {

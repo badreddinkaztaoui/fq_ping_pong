@@ -22,12 +22,12 @@ services:
 
   auth:
     container_name: auth
+    hostname: auth
     build:
       context: ./backend/auth
       dockerfile: Dockerfile
     volumes:
       - ./backend/auth:/app
-      # - /app/static
     env_file:
       - .env
       - ./backend/auth/.env

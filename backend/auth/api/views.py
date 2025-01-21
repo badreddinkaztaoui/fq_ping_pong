@@ -1,140 +1,106 @@
 import os
 import redis
 import psutil
-import requests
-from urllib.parse import urlencode
 from django.conf import settings
 from django.db import connections
 from django.db.utils import OperationalError
-from django.shortcuts import redirect
-from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status, views
-from rest_framework.decorators import api_view, permission_classes, renderer_classes
+from django.contrib.auth import get_user_model, login, logout, authenticate
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, authentication_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
-from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import UserSerializer, SignUpSerializer, LoginSerializer
+from django.middleware.csrf import get_token
+from rest_framework.authentication import SessionAuthentication
+from rest_framework.permissions import IsAuthenticated
+from .serializers import UserSerializer
 
 User = get_user_model()
 
-class SignUpView(views.APIView):
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        serializer = SignUpSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            
-            return Response({
-                'user': UserSerializer(user).data,
-                'tokens': {
-                    'refresh': str(refresh),
-                    'access': str(refresh.access_token),
-                }
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class LoginView(views.APIView):
-    permission_classes = [AllowAny]
-    
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = authenticate(
-                email=serializer.validated_data['email'],
-                password=serializer.validated_data['password']
-            )
-            
-            if user:
-                refresh = RefreshToken.for_user(user)
-                return Response({
-                    'user': UserSerializer(user).data,
-                    'tokens': {
-                        'refresh': str(refresh),
-                        'access': str(refresh.access_token),
-                    }
-                })
-            return Response(
-                {'error': 'Invalid credentials'}, 
-                status=status.HTTP_401_UNAUTHORIZED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET'])
+@api_view(['POST'])
 @permission_classes([AllowAny])
-def oauth_42_login(request):
-    """Initiates 42 OAuth flow"""
-    oauth_url = 'https://api.intra.42.fr/oauth/authorize'
-    params = {
-        'client_id': settings.SOCIAL_AUTH_42_KEY,
-        'redirect_uri': f"{settings.SITE_URL}/api/auth/42/callback",
-        'response_type': 'code',
-        'scope': 'public'
-    }
-    authorization_url = f"{oauth_url}?{urlencode(params)}"
-    return redirect(authorization_url)
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def oauth_42_callback(request):
-    """Handles 42 OAuth callback"""
-    code = request.GET.get('code')
-    
-    if not code:
-        return Response(
-            {'error': 'Authorization code not provided'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    token_url = 'https://api.intra.42.fr/oauth/token'
-    token_data = {
-        'grant_type': 'authorization_code',
-        'client_id': settings.SOCIAL_AUTH_42_KEY,
-        'client_secret': settings.SOCIAL_AUTH_42_SECRET,
-        'code': code,
-        'redirect_uri': f"{settings.SITE_URL}/api/auth/42/callback"
-    }
-    
-    token_response = requests.post(token_url, data=token_data)
-    
-    if token_response.status_code != 200:
-        return Response(
-            {'error': 'Failed to obtain access token'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    access_token = token_response.json().get('access_token')
-    
-    user_info_response = requests.get(
-        'https://api.intra.42.fr/v2/me',
-        headers={'Authorization': f'Bearer {access_token}'}
-    )
-    
-    if user_info_response.status_code != 200:
-        return Response(
-            {'error': 'Failed to get user info'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
+def register_view(request):
+    """Handle user registration"""
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        user.set_password(request.data['password'])
+        user.save()
         
-    user_info = user_info_response.json()
+        return Response({
+            'message': 'User registered successfully',
+            'user': UserSerializer(user).data
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def login_view(request):
+    """Handle user login and session creation"""
+    email = request.data.get('email')
+    password = request.data.get('password')
+    
+    if not email or not password:
+        return Response({
+            'error': 'Please provide both email and password'
+        }, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        user = User.objects.get(email=user_info['email'])
-    except User.DoesNotExist:
-        user = User.objects.create_user(
-            email=user_info['email'],
-            username=user_info['login'],
-            display_name=user_info['displayname'],
-            avatar_url=user_info.get('image_url')
+        user = User.objects.get(email=email)
+        
+        authenticated_user = authenticate(
+            request, 
+            username=user.username,
+            password=password
         )
+        
+        if authenticated_user is not None:
+            login(request, authenticated_user)
+            
+            response = Response({
+                'message': 'Login successful',
+                'user': UserSerializer(authenticated_user).data,
+                'csrf_token': get_token(request)
+            })
+            
+            response.set_cookie(
+                settings.SESSION_COOKIE_NAME,
+                request.session.session_key,
+                max_age=settings.SESSION_COOKIE_AGE,
+                httponly=True,
+                samesite=settings.SESSION_COOKIE_SAMESITE,
+                secure=settings.SESSION_COOKIE_SECURE
+            )
+            
+            return response
+            
+        return Response({
+            'error': 'Invalid credentials'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+        
+    except User.DoesNotExist:
+        return Response({
+            'error': 'No user found with this email'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+def logout_view(request):
+    """Handle user logout"""
+    logout(request)
     
-    refresh = RefreshToken.for_user(user)
+    response = Response({'message': 'Logged out successfully'})
+    response.delete_cookie(settings.SESSION_COOKIE_NAME)
     
-    # Redirect to frontend with tokens
-    redirect_url = f"{settings.SITE_URL}/oauth/callback?access={str(refresh.access_token)}&refresh={str(refresh)}"
-    return redirect(redirect_url)
+    return response
+
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """Get current authenticated user information"""
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

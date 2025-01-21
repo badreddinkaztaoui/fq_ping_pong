@@ -1,7 +1,11 @@
+import { userState } from '../utils/UserState.js';
+
+
 export class Router {
   constructor(routes) {
     this.routes = routes;
     this.currentView = null;
+    this.userState = userState;
     
     window.addEventListener('popstate', this.handleRoute.bind(this));
     document.addEventListener('DOMContentLoaded', this.handleRoute.bind(this));
@@ -16,6 +20,14 @@ export class Router {
     const routeParts = routePath.split('/');
     const currentParts = currentPath.split('/');
     const params = {};
+
+    if (routePath.endsWith('*')) {
+      const baseRouteParts = routePath.slice(0, -2).split('/');
+      if (currentPath.startsWith(baseRouteParts.join('/'))) {
+        return params;
+      }
+      return null;
+    }
 
     if (routeParts.length !== currentParts.length) return null;
 
@@ -46,23 +58,29 @@ export class Router {
   async handleRoute() {
     const path = window.location.pathname;
     const { route, params } = this.findRoute(path);
-
-    if (route.handler) {
-      try {
-        await route.handler(params);
-        return;
-      } catch (error) {
-        console.error('Route handler error:', error);
+  
+    try {
+      while (this.userState.getState().loading) {
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
+  
+      if (route.handler) {
+        const canProceed = await route.handler(params, this);
+        if (!canProceed) {
+          return;
+        }
+      }
+  
+      if (this.currentView) {
+        await this.currentView.unmount();
+      }
+  
+      this.currentView = new route.view(params);
+      this.currentView.router = this;
+  
+      await this.currentView.mount(document.getElementById('app'));
+    } catch (error) {
+      console.error('Route handling error:', error);
     }
-
-    if (this.currentView) {
-      await this.currentView.unmount();
-    }
-
-    this.currentView = new route.view(params);
-    this.currentView.router = this;
-
-    await this.currentView.mount(document.getElementById('app'));
   }
 }

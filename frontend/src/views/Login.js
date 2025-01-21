@@ -1,15 +1,19 @@
 import { View } from '../core/View';
 import { State } from "../core/State"
+import { userState } from '../utils/UserState';
+import { Validation } from '../utils/Validation';
+// CSS
 import "../styles/login.css";
 
 export class LoginView extends View {
     constructor() {
       super();
+      this.userState = userState;
+      this.validation = new Validation();
       this.state = new State({
         loading: false,
         error: null
       });
-      this.API_URL = 'http://localhost:8000';
     }
   
     async render() {
@@ -70,7 +74,7 @@ export class LoginView extends View {
               </div>
               
               <div class="signup-link">
-                <a href="/signup" data-link>Can't login? | Create an account</a>
+                <a data-link>Can't login? | Create an account</a>
               </div>
             </form>
           </div>
@@ -87,86 +91,65 @@ export class LoginView extends View {
       event.preventDefault();
       
       const formData = new FormData(event.target);
-      const username = formData.get('username');
+      const email = formData.get('email');
       const password = formData.get('password');
-  
+    
+      if (!this.validateForm(email, password)) {
+        return;
+      }
+    
       this.state.setState({ loading: true, error: null });
-  
+    
       try {
-        const response = await fetch(`${this.API_URL}/api/auth/login/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: username,
-            password: password
-          }),
-          credentials: 'include'
+        await this.userState.login({
+          email: email.toLowerCase().trim(),
+          password: password
         });
-  
-        const data = await response.json();
-  
-        if (!response.ok) {
-          throw new Error(data.error || 'Login failed');
-        }
-  
-        console.log('Login successful!', data);
-        console.log('User info:', data.user);
-        console.log('Access token:', data.tokens.access);
-        
-        localStorage.setItem('accessToken', data.tokens.access);
-        localStorage.setItem('refreshToken', data.tokens.refresh);
-  
-        // Redirect to dashboard or home page
-        // window.location.href = '/dashboard';
-        
+    
+        // this.showToast('Login successful! Redirecting...');
+    
+        setTimeout(() => {
+          this.router.navigate('/dashboard');
+        }, 1000);
       } catch (error) {
-        console.error('Login error:', error);
-        this.state.setState({ 
-          error: error.message || 'Failed to log in. Please try again.' 
+        this.state.setState({
+          error: error.message || 'Login failed. Please check your credentials.',
+          loading: false
         });
-      } finally {
-        this.state.setState({ loading: false });
-      }
-    }
-  
-    async handle42Login() {
-      try {
-        window.location.href = `${this.API_URL}/api/auth/42/login/`;
-      } catch (error) {
-        console.error('42 OAuth error:', error);
-        this.state.setState({ 
-          error: 'Failed to initialize 42 login. Please try again.' 
-        });
+        // this.showToast('Login failed. Please try again.');
+        console.error(error);
       }
     }
 
-    static async handleOAuthCallback() {
-      try {
-        const params = new URLSearchParams(window.location.search);
-        const accessToken = params.get('access');
-        const refreshToken = params.get('refresh');
-        
-        if (!accessToken || !refreshToken) {
-          throw new Error('Missing authentication tokens');
-        }
-
-        localStorage.setItem('accessToken', accessToken);
-        localStorage.setItem('refreshToken', refreshToken);
-        
-        window.history.replaceState({}, document.title, '/dashboard');
-        
-        window.location.reload();
-      } catch (error) {
-        console.error('OAuth callback error:', error);
-        window.location.href = '/login?error=' + encodeURIComponent(error.message);
+    validateForm(email, password) {
+      const errors = {};
+    
+      if (!this.validation.email(email)) {
+        errors.email = 'Please enter a valid email address';
       }
+    
+      if (!this.validation.required(password)) {
+        errors.password = 'Password is required';
+      }
+    
+      if (Object.keys(errors).length > 0) {
+        this.state.setState({ validationErrors: errors });
+        return false;
+      }
+    
+      return true;
     }
+  
+    async handle42Login() {}
+
+    static async handleOAuthCallback() {}
 
     async setupEventListeners() {
       const form = this.$('#login-form');
       const oauth42Btn = this.$('.btn-42');
+      const signupLink = this.$('.signup-link a');
+
+      this.addListener(signupLink, 'click', this.router.navigate.bind(this.router, '/signup'));
   
       this.addListener(form, 'submit', this.handleSubmit.bind(this));
       this.addListener(oauth42Btn, 'click', this.handle42Login.bind(this));

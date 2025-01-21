@@ -1,18 +1,18 @@
 from django.urls import path, include
 from .views import (
-    SignUpView, 
-    LoginView, 
-    oauth_42_login,
-    oauth_42_callback,
-    health_check
+    health_check,
+    register_view,
+    login_view,
+    logout_view,
+    me_view
 )
 
 urlpatterns = [
     path('auth/', include([
-        path('signup/', SignUpView.as_view(), name='signup'),
-        path('login/', LoginView.as_view(), name='login'),
-        path('42/login/', oauth_42_login, name='42_login'),
-        path('42/callback/', oauth_42_callback, name='42_callback'),
         path('health/', health_check, name='health_check'),
+        path('register/', register_view, name='register'),
+        path('login/', login_view, name='login'),
+        path('logout/', logout_view, name='logout'),
+        path('me/', me_view, name='me'),
     ])),
 ]

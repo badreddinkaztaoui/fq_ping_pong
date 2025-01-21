@@ -1,10 +1,15 @@
 import { View } from '../core/View';
 import { State } from "../core/State"
+import { Validation } from '../utils/Validation';
+import { userState } from '../utils/UserState';
+// CSS
 import "../styles/register.css";
 
 export class SignupView extends View {
     constructor() {
       super();
+      this.userState = userState;
+      this.validation = new Validation();
       this.state = new State({
         loading: false,
         error: null,
@@ -90,7 +95,7 @@ export class SignupView extends View {
                             </button>
 
                             <div class="signin-link">
-                                <a href="/login" data-link>Already have an account? Sign in</a>
+                                <a data-link>Already have an account? Sign in</a>
                             </div>
                         </form>
                     </div>
@@ -111,61 +116,16 @@ export class SignupView extends View {
       const form = this.$("#signup-form");
       const passwordInput = this.$("#password");
       const confirmPasswordInput = this.$("#confirm-password");
-  
+      const loginLink = this.$(".signin-link a");
+
+      this.addListener(loginLink, "click", this.router.navigate.bind(this.router, "/login"));
       this.addListener(form, "submit", this.handleSubmit.bind(this));
-      this.addListener(passwordInput, "input", () => this.validatePassword());
-      this.addListener(confirmPasswordInput, "input", () =>
-        this.validatePassword()
-      );
-  
-      // Real-time validation
-      this.addListener(form, "input", (event) => {
-        if (event.target.matches("input[required]")) {
-          this.validateField(event.target);
-        }
-      });
+    
+      //TODO: Add real time validation for the fields
   
       this.state.subscribe((state) => {
         this.updateUIState(state);
       });
-    }
-  
-    validateField(field) {
-      const errors = this.state.getState().validationErrors || {};
-  
-      if (field.validity.valueMissing) {
-        errors[field.name] = `${field.placeholder} IS REQUIRED`;
-      } else if (field.name === "username" && field.value.length < 3) {
-        errors[field.name] = "USERNAME MUST BE AT LEAST 3 CHARACTERS";
-      } else if (field.name === "email") {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(field.value)) {
-          errors[field.name] = "PLEASE ENTER A VALID EMAIL";
-        } else {
-          delete errors[field.name];
-        }
-      } else {
-        delete errors[field.name];
-      }
-  
-      this.state.update({ validationErrors: errors });
-    }
-  
-    validatePassword() {
-      const password = this.$("#password").value;
-      const confirmPassword = this.$("#confirm-password").value;
-      const errors = this.state.getState().validationErrors || {};
-  
-      if (password.length < 6) {
-        errors.password = "PASSWORD MUST BE AT LEAST 6 CHARACTERS";
-      } else if (password !== confirmPassword && confirmPassword) {
-        errors.confirmPassword = "PASSWORDS DO NOT MATCH";
-      } else {
-        delete errors.password;
-        delete errors.confirmPassword;
-      }
-  
-      this.state.update({ validationErrors: errors });
     }
   
     showToast(message) {
@@ -183,17 +143,37 @@ export class SignupView extends View {
     }
 
     validateForm() {
-      const form = this.$("#signup-form");
-  
-      // Check all required fields
-      form.querySelectorAll("input[required]").forEach((field) => {
-        this.validateField(field);
-      });
-  
-      this.validatePassword();
-  
-      const currentErrors = this.state.getState().validationErrors;
-      return Object.keys(currentErrors).length === 0;
+      const form = this.$('#signup-form');
+      const formData = new FormData(form);
+      const errors = {};
+    
+      const username = formData.get('username');
+      const email = formData.get('email');
+      const password = formData.get('password');
+      const confirmPassword = formData.get('confirmPassword');
+    
+      if (!this.validation.username(username)) {
+        errors.username = 'Username must be 3-20 characters long and contain only letters, numbers, and underscores';
+      }
+    
+      if (!this.validation.email(email)) {
+        errors.email = 'Please enter a valid email address';
+      }
+    
+      if (!this.validation.password(password)) {
+        errors.password = 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, and one number';
+      }
+    
+      if (password !== confirmPassword) {
+        errors['confirm-password'] = 'Passwords do not match';
+      }
+    
+      if (Object.keys(errors).length > 0) {
+        this.state.setState({ validationErrors: errors });
+        return false;
+      }
+    
+      return true;
     }
   
     async handleSubmit(event) {
@@ -205,55 +185,30 @@ export class SignupView extends View {
       
       const formData = new FormData(event.target);
       const data = {
-        email: formData.get('email'),
+        email: formData.get('email').toLowerCase().trim(),
         username: formData.get('username'),
         password: formData.get('password'),
-        password2: formData.get('confirmPassword'),
         display_name: formData.get('username')
       };
       
       this.state.setState({ loading: true, error: null });
       
       try {
-        const response = await fetch(`${this.API_URL}/api/auth/signup/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(data)
-        });
+        await this.userState.register(data);
         
-        const responseData = await response.json();
-        
-        if (!response.ok) {
-          throw new Error(responseData.error || 'Registration failed');
-        }
-        
-        // Store tokens
-        localStorage.setItem('accessToken', responseData.tokens.access);
-        localStorage.setItem('refreshToken', responseData.tokens.refresh);
-        
-        // Show success message
         this.displaySuccessMessage();
         
-        // Redirect to dashboard after brief delay
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          this.router.navigate('/login');
         }, 2000);
-        
       } catch (error) {
-        console.error('Registration error:', error);
-        this.state.setState({ 
-          error: error.message || 'Failed to create account. Please try again.' 
+        this.state.setState({
+          error: error.message || 'Registration failed. Please try again.',
+          loading: false
         });
-      } finally {
-        this.state.setState({ loading: false });
+        this.showToast('Registration failed. Please check your input.');
       }
-    }
-  
-    
-
-    
+    } 
   
     updateUIState(state) {
       const submitBtn = this.$('button[type="submit"]');
@@ -275,7 +230,6 @@ export class SignupView extends View {
         errorDiv.classList.remove("visible");
       }
   
-      // Update validation error messages
       const errorMessages = document.querySelectorAll(".error-message");
       errorMessages.forEach((message) => {
         message.style.display = "none";

@@ -173,6 +173,7 @@ input:focus + .input-border {
 
 .signup-link {
   text-align: center;
+  cursor: pointer;
 }
 
 .signup-link a {

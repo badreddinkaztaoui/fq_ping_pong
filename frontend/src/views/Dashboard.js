@@ -1,16 +1,20 @@
 import { View } from '../core/View';
 import { State } from "../core/State"
+import { userState } from "../utils/UserState";
+
 import "../styles/dashboard.css";
 
 export class DashboardView extends View {
     constructor() {
       super();
+      this.user = userState.state.user;
       this.state = new State({
-        user: null,
         stats: null,
         loading: true,
         error: null
       });
+
+      console.log(this.user);
     }
   
     async render() {
@@ -20,12 +24,13 @@ export class DashboardView extends View {
           <!-- Profile Section -->
           <section class="profile-section">
             <div class="profile-info">
-              <h1>Welcome, <span class="username">Player</span></h1>
+              <h1>Welcome, <span class="username">${this.user.username}</span></h1>
             </div>
             
             <!-- Quick Actions -->
             <div class="quick-actions">
               <button class="btn play-btn">Play Game</button>
+              <button class="btn logout-btn">Logout</button>
             </div>
           </section>
   
@@ -62,15 +67,36 @@ export class DashboardView extends View {
     }
   
     async setupEventListeners() {
-      // Play button
       const playBtn = this.$('.play-btn');
       this.addListener(playBtn, 'click', this.handlePlayGame.bind(this));
+      
+      const logoutBtn = this.$('.logout-btn');
+      this.addListener(logoutBtn, 'click', this.handleLogout.bind(this));
   
-      // Subscribe to state changes
       this.state.subscribe((state) => this.updateUI(state));
   
-      // Load initial data
       await this.loadDashboardData();
+    }
+    
+    async handleLogout() {
+      try {
+        const logoutBtn = this.$('.logout-btn');
+        const originalText = logoutBtn.textContent;
+        logoutBtn.textContent = 'Logging out...';
+        logoutBtn.disabled = true;
+        
+        await userState.logout();
+        
+        this.router.navigate('/login');
+      } catch (error) {
+        console.error('Logout failed:', error);
+        
+        const logoutBtn = this.$('.logout-btn');
+        logoutBtn.textContent = originalText;
+        logoutBtn.disabled = false;
+        
+        alert('Logout failed. Please try again.');
+      }
     }
   
     async loadDashboardData() {
@@ -103,7 +129,6 @@ export class DashboardView extends View {
       }
   
       if (state.error) {
-        // Handle error state if needed
         console.error(state.error);
       }
     }
