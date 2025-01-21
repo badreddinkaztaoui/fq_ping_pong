@@ -1,5 +1,5 @@
 import { userState } from '../utils/UserState.js';
-
+import { Layout } from "./Layout.js"
 
 export class Router {
   constructor(routes) {
@@ -78,7 +78,17 @@ export class Router {
       this.currentView = new route.view(params);
       this.currentView.router = this;
   
-      await this.currentView.mount(document.getElementById('app'));
+      const authPages = ['/login', '/signup'];
+      const isAuthPage = authPages.some(authPath => path === authPath);
+
+      if (isAuthPage) {
+        await this.currentView.mount(document.getElementById('app'));
+      } else {
+        const layoutType = path.startsWith('/dashboard') ? 'dashboard' : 'landing';
+        
+        const layout = new Layout(this.currentView, layoutType);
+        await layout.mount(document.getElementById('app'));
+      }
     } catch (error) {
       console.error('Route handling error:', error);
     }
