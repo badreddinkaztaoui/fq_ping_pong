@@ -4,7 +4,9 @@ from .views import (
     register_view,
     login_view,
     logout_view,
-    me_view
+    me_view,
+    oauth_42_login,
+    oauth_42_callback
 )
 
 urlpatterns = [
@@ -14,5 +16,8 @@ urlpatterns = [
         path('login/', login_view, name='login'),
         path('logout/', logout_view, name='logout'),
         path('me/', me_view, name='me'),
+        # 42 OAuth endpoints
+        path('42/login/', oauth_42_login, name='oauth_42_login'),
+        path('42/callback/', oauth_42_callback, name='oauth_42_callback'),
     ])),
 ]

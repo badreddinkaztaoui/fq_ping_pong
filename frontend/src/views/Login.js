@@ -14,6 +14,11 @@ export class LoginView extends View {
       error: null,
       validationErrors: {}
     });
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      this.handle42Callback(code);
+    }
   }
 
   async render() {
@@ -58,6 +63,15 @@ export class LoginView extends View {
               <button type="submit" class="submit-btn-sign-in">
                 Sign In
               </button>
+
+              <div class="divider">
+                <span>OR</span>
+              </div>
+
+              <button type="button" class="submit-btn-sign-in oauth-btn" id="login-42">
+                Sign in with
+                <img src="/images/42_logo.svg" alt="42 Logo" class="oauth-icon" />
+              </button>
               
               <div class="signup-link">
                 <a data-link>Create an account</a>
@@ -71,6 +85,14 @@ export class LoginView extends View {
     `;
 
     return template.content.firstElementChild;
+  }
+
+  async handle42Callback(code) {
+    try {
+      await this.userState.handle42Callback(code);
+    } catch (error) {
+      this.showToast(error.message);
+    }
   }
 
   validateForm(email, password) {
@@ -187,9 +209,17 @@ export class LoginView extends View {
     const form = this.$('#login-form');
     const signupLink = this.$('.signup-link a');
     const inputs = this.$$('input');
+    const login42Btn = this.$('#login-42');
 
     this.addListener(form, 'submit', this.handleSubmit.bind(this));
     this.addListener(signupLink, 'click', () => this.router.navigate('/signup'));
+    this.addListener(login42Btn, 'click', async () => {
+      try {
+        await this.userState.loginWith42();
+      } catch (error) {
+        this.showToast(error.message);
+      }
+    });
 
     inputs.forEach(input => {
       this.addListener(input, 'input', () => {

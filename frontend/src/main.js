@@ -7,6 +7,8 @@ import { LoginView } from './views/Login.js';
 import { SignupView } from './views/Register.js';
 import { HerosView } from './views/Heros.js';
 import { DashboardView } from './views/Dashboard.js';
+import { OAuthCallbackView } from './views/OAuthCallback.js';
+
 
 const errorBoundary = new ErrorBoundary();
 
@@ -14,6 +16,10 @@ const routes = [
   { 
     path: '/', 
     view: HomeView
+  },
+  {
+    path: '/auth/callback',
+    view: OAuthCallbackView
   },
   { 
     path: '/login', 

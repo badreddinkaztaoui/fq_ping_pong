@@ -58,6 +58,55 @@ export class UserState extends State {
     }
   }
 
+  async loginWith42() {
+    try {
+      // Get the authorization URL from our backend
+      const response = await this.http.get('/auth/42/login/');
+      
+      // Store the current URL to redirect back after login
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+      
+      // Redirect to 42's authorization page
+      window.location.href = response.authorization_url;
+    } catch (error) {
+      this.setState({
+        error: error.message,
+        loading: false
+      });
+      throw error;
+    }
+  }
+
+  async handle42Callback(code) {
+    this.setState({ loading: true, error: null });
+    
+    try {
+      const response = await this.http.get(`/auth/42/callback/?code=${code}`);
+      
+      this.setState({
+        user: response.user,
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      });
+      
+      // Get the stored redirect URL or default to dashboard
+      const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
+      sessionStorage.removeItem('redirectAfterLogin');
+      
+      // Navigate to the stored URL
+      window.location.href = redirectUrl;
+      
+      return response;
+    } catch (error) {
+      this.setState({
+        error: error.message,
+        loading: false
+      });
+      throw error;
+    }
+  }
+
   async register(userData) {
     this.setState({ loading: true, error: null });
     

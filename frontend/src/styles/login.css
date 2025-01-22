@@ -140,6 +140,55 @@ input:focus {
   box-shadow: 0 0 0 2px rgba(255, 70, 85, 0.2);
 }
 
+.oauth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background-color: #00babc !important;
+  margin-bottom: 1rem;
+}
+
+.oauth-btn:hover {
+  background-color: #00a5a7 !important;
+}
+
+.oauth-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.divider {
+  position: relative;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 45%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
+
+.divider span {
+  background-color: #0f1923;
+  padding: 0 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .toast {
   display: none;
   position: fixed;
