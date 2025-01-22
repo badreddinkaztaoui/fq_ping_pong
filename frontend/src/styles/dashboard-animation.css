@@ -1,0 +1,188 @@
+/* Enhanced Animations */
+@keyframes navLinkFade {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nav-container.active .nav-link {
+  animation: navLinkFade 0.5s ease forwards;
+}
+
+.nav-container.active .nav-link:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.nav-container.active .nav-link:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.nav-container.active .nav-link:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.nav-container.active .nav-link:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.nav-container.active .nav-link:nth-child(5) {
+  animation-delay: 0.5s;
+}
+.nav-container.active .nav-link:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+/* Notification Badge Animation */
+@keyframes notificationPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.notification-badge {
+  animation: notificationPulse 2s infinite;
+}
+
+/* User Profile Hover Effect */
+.user-profile {
+  transition: all 0.3s ease;
+}
+
+.user-profile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 70, 85, 0.2);
+}
+
+/*******************************************
+  /************ Notifications Animations
+  /* *******************************************/
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dropdownFadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+}
+
+@keyframes notificationBadgePulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 70, 85, 0.7);
+  }
+  70% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 6px rgba(255, 70, 85, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(255, 70, 85, 0);
+  }
+}
+
+@keyframes bellShake {
+  0% {
+    transform: rotate(0);
+  }
+  15% {
+    transform: rotate(5deg);
+  }
+  30% {
+    transform: rotate(-5deg);
+  }
+  45% {
+    transform: rotate(4deg);
+  }
+  60% {
+    transform: rotate(-4deg);
+  }
+  75% {
+    transform: rotate(2deg);
+  }
+  85% {
+    transform: rotate(-2deg);
+  }
+  92% {
+    transform: rotate(1deg);
+  }
+  100% {
+    transform: rotate(0);
+  }
+}
+
+@keyframes slideInMobile {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Apply animations */
+.notifications-dropdown {
+  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.notifications.active .notifications-dropdown {
+  animation: dropdownFadeIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.notification-badge {
+  animation: notificationBadgePulse 2s infinite;
+}
+
+.notifications:hover .notification-icon {
+  animation: bellShake 0.8s ease-in-out;
+}
+
+.notification-item {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.notifications.active .notification-item {
+  animation: dropdownFadeIn 0.3s ease forwards;
+}
+
+.notifications.active .notification-item:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.notifications.active .notification-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.notifications.active .notification-item:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Mobile animations */
+@media (max-width: 768px) {
+  .notifications.active .notifications-dropdown {
+    animation: slideInMobile 0.3s ease forwards;
+  }
+}
+
+/**************************************************/
+/************ Dashboard Home Animations ************/
+/**************************************************/

@@ -1,142 +1,411 @@
 
 import { userState } from '../utils/UserState'
+
 import "../styles/layout.css"
 
 export class Layout {
-    constructor(view, layoutType) {
-      this.view = view;
-      this.layoutType = layoutType;
-      this.element = null;
-      this.contentContainer = null;
-      this.userState = userState;
-    }
-  
-    async createDashboardLayout() {
-      const layout = document.createElement('div');
-      layout.className = 'dashboard-layout';
-      
-      const sidebar = document.createElement('aside');
-      sidebar.className = 'dashboard-sidebar';
-      sidebar.innerHTML = `
-        <nav>
-          <ul>
-            <li><a href="/dashboard">Dashboard Home</a></li>
-            <li><a href="/dashboard/profile">Profile</a></li>
-            <li><a href="/dashboard/settings">Settings</a></li>
-          </ul>
-        </nav>
-      `;
-  
-      const content = document.createElement('main');
-      content.className = 'dashboard-content';
-      
-      const header = document.createElement('header');
-      header.className = 'dashboard-header';
-      header.innerHTML = `
-        <div class="header-content">
-          <h1>Dashboard</h1>
-          <div class="user-menu">
-            <button id="logoutBtn">Logout</button>
+  constructor(view, layoutType, router) {
+    this.view = view;
+    this.layoutType = layoutType;
+    this.element = null;
+    this.contentContainer = null;
+    this.userState = userState;
+    this.router = router
+  }
+
+  async createDashboardLayout() {
+    const layout = document.createElement('div');
+    layout.className = "dashboard-container"
+    const nav = document.createElement('nav')
+    nav.innerHTML = `
+    <nav class="top-nav">
+          <div class="nav-left">
+            <div class="logo-section">
+              <img src="/images/logo.png" alt="logo" class="logo-img" />
+            </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle">
+              <span class="bar"></span>
+              <span class="bar"></span>
+              <span class="bar"></span>
+            </button>
+
+            <!-- Navigation Links -->
+            <div class="nav-container">
+              <ul class="nav-links">
+                <li class="nav-item">
+                  <a  class="nav-link active" data-link="/dashboard">
+                    <img src="/images/icons/home.png" alt="Home" class="nav-icon" />
+                    <span>Dashboard</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a  class="nav-link" data-link="/dashboard/classment">
+                    <img src="/images/icons/Classment.png" alt="Classment" class="nav-icon" />
+                    <span>Classment</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-link="/dashboard/chat">
+                    <img src="/images/icons/chat.png" alt="Chat" class="nav-icon" />
+                    <span>Chat</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-link="/dashboard/analytics">
+                    <img src="/images/icons/Analytics.png" alt="Analytics" class="nav-icon" />
+                    <span>Analytics</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-link="/dashboard/settings">
+                    <img src="/images/icons/settings.png" alt="Settings" class="nav-icon" />
+                    <span>Settings</span>
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link" data-link="/dashboard/gambling">
+                    <img src="/images/icons/casino.png" alt="Gambling" class="nav-icon" />
+                    <span>Gambling</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
-      `;
-  
-      layout.appendChild(sidebar);
-      layout.appendChild(content);
-      content.appendChild(header);
-  
-      this.contentContainer = document.createElement('div');
-      this.contentContainer.className = 'content-container';
-      content.appendChild(this.contentContainer);
-  
-      return layout;
-    }
-  
-    async createLandingLayout() {
-      const layout = document.createElement('div');
-      layout.className = 'landing-layout';
-  
-      const header = document.createElement('header');
-      header.className = 'landing-header';
-      header.innerHTML = `
-        <nav>
-          <a href="/" class="logo">Your Logo</a>
-          <ul>
-            <li><a href="/features">Features</a></li>
-            <li><a href="/pricing">Pricing</a></li>
-            <li><a href="/login">Login</a></li>
-            <li><a href="/signup">Sign Up</a></li>
-          </ul>
+
+          <div class="nav-right">
+            <div class="user-info">
+              <div class="coins">
+                <img src="/images/icons/coin.png" alt="Coins" class="coin-icon" />
+                <span>1,500</span>
+              </div>
+                <div class="notifications">
+                  <div class="notification-icon-wrapper">
+                    <img src="/images/icons/notification.svg" alt="Notifications" class="notification-icon" />
+                    <span class="notification-badge">3</span>
+                  </div>
+                  <div class="notifications-dropdown">
+                    <div class="dropdown-header">
+                      <h3>Notifications</h3>
+                      <button class="mark-all-read">Mark all as read</button>
+                    </div>
+                    <div class="notifications-list">
+                      <div class="notification-item unread">
+                        <div class="notification-avatar">
+                          <img src="/images/users/player-2.jpeg" alt="Player" />
+                        </div>
+                        <div class="notification-content">
+                          <p class="notification-text"><strong>John Doe</strong> challenged you to a match!</p>
+                          <span class="notification-time">2 minutes ago</span>
+                        </div>
+                        <div class="notification-status"></div>
+                      </div>
+                      <div class="notification-item unread">
+                        <div class="notification-avatar">
+                          <img src="/images/trophy.png" alt="Trophy" />
+                        </div>
+                        <div class="notification-content">
+                          <p class="notification-text">You won the tournament! Collect your rewards.</p>
+                          <span class="notification-time">1 hour ago</span>
+                        </div>
+                        <div class="notification-status"></div>
+                      </div>
+                      <div class="notification-item">
+                        <div class="notification-avatar">
+                          <img src="/images/coin.png" alt="Coins" />
+                        </div>
+                        <div class="notification-content">
+                          <p class="notification-text">You received 500 coins from daily login!</p>
+                          <span class="notification-time">1 day ago</span>
+                        </div>
+                        <div class="notification-status"></div>
+                      </div>
+                    </div>
+                    <div class="dropdown-footer">
+                      <a class="view-all" data-link="/dashboard/notifications" >View All Notifications</a>
+                    </div>
+                  </div>
+              </div>
+              <div class="user-profile">
+                <img src="/images/users/player-1.jpeg" alt="Avatar" class="avatar" />
+                <span class="username">Player123</span>
+              </div>
+              <a class="logout-btn" id="logoutBtn">
+                <img src="/images/icons/logout.png" alt="Logout" class="nav-icon log-out" />
+              </a>
+            </div>
+          </div>
         </nav>
+    `
+
+    const content = document.createElement('main');
+    content.className = "main-content"
+
+    layout.appendChild(nav)
+    layout.appendChild(content)
+
+    this.contentContainer = content
+
+    return layout;
+  }
+
+  async createLandingLayout() {
+    const layout = document.createElement('div');
+    layout.className = 'landing-layout';
+
+    const header = document.createElement('header');
+    header.className = 'landing-header';
+    header.innerHTML = `
+        <header>
+        <div id="burger-menu">
+          <span></span>
+        </div>
+        <div id="menu">
+          <ul>
+            <li style="--i: 1">
+              <a  class="navlink" data-link="/">Home</a>
+            </li>
+            <li style="--i: 2">
+              <a  class="navlink" data-link="/heros">Heroes</a>
+            </li>
+            <li style="--i: 3">
+              <a  class="navlink" data-link="/login">Login</a>
+            </li>
+            <li style="--i: 4">
+              <a  class="navlink" data-link="/signup">Sign Up</a>
+            </li>
+          </ul>
+        </div>
+      </header>
       `;
-  
-      const content = document.createElement('main');
-      content.className = 'landing-content';
-  
-      layout.appendChild(header);
-      layout.appendChild(content);
-  
-      this.contentContainer = document.createElement('div');
-      this.contentContainer.className = 'content-container';
-      content.appendChild(this.contentContainer);
-  
-      return layout;
+
+    const content = document.createElement('main');
+    content.className = 'landing-content';
+
+    layout.appendChild(header);
+    layout.appendChild(content);
+
+    this.contentContainer = document.createElement('div');
+    this.contentContainer.className = 'content-container';
+    content.appendChild(this.contentContainer);
+
+    return layout;
+  }
+
+  async mount(container) {
+    this.element = this.layoutType === 'dashboard'
+      ? await this.createDashboardLayout()
+      : await this.createLandingLayout();
+
+    container.innerHTML = '';
+    container.appendChild(this.element);
+
+    if (this.view) {
+      await this.view.mount(this.contentContainer);
     }
-  
-    async mount(container) {
-      this.element = this.layoutType === 'dashboard' 
-        ? await this.createDashboardLayout()
-        : await this.createLandingLayout();
-  
-      container.innerHTML = '';
-      container.appendChild(this.element);
-  
-      if (this.view) {
-        await this.view.mount(this.contentContainer);
-      }
-  
-      this.setupEventListeners();
+
+    this.setupEventListeners();
+  }
+
+  async unmount() {
+    if (this.view) {
+      await this.view.unmount();
     }
-  
-    async unmount() {
-      if (this.view) {
-        await this.view.unmount();
-      }
-  
-      this.removeEventListeners();
-  
-      if (this.element && this.element.parentNode) {
-        this.element.parentNode.removeChild(this.element);
-      }
-  
-      this.element = null;
-      this.contentContainer = null;
+
+    this.removeEventListeners();
+
+    if (this.element && this.element.parentNode) {
+      this.element.parentNode.removeChild(this.element);
     }
-  
-    setupEventListeners() {
-      if (this.layoutType === 'dashboard') {
-        const logoutBtn = this.element.querySelector('#logoutBtn');
-        if (logoutBtn) {
-          logoutBtn.addEventListener('click', this.handleLogout);
-        }
+
+    this.element = null;
+    this.contentContainer = null;
+  }
+
+  setupEventListeners() {
+    if (this.layoutType === 'dashboard') {
+      const logoutBtn = this.element.querySelector('#logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.addEventListener('click', this.handleLogout);
       }
-    }
-  
-    removeEventListeners() {
-      if (this.layoutType === 'dashboard') {
-        const logoutBtn = this.element.querySelector('#logoutBtn');
-        if (logoutBtn) {
-          logoutBtn.removeEventListener('click', this.handleLogout);
-        }
+      this.setupMenu()
+    } else {
+      const burgerMenu = document.getElementById('burger-menu');
+      const overlay = document.getElementById('menu');
+      const links = document.querySelectorAll(".navlink");
+
+      if (burgerMenu && overlay) {
+        burgerMenu.addEventListener('click', () => {
+          burgerMenu.classList.toggle('close');
+          overlay.classList.toggle('overlay');
+        });
+
+        overlay.addEventListener('click', () => {
+          burgerMenu.classList.remove('close');
+          overlay.classList.remove('overlay');
+        });
       }
+
+      links.forEach((link) => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const path = link.getAttribute('data-link="/"');
+          if (path && this.router) {
+            this.router.navigate(path);
+            burgerMenu?.classList.remove('close');
+            overlay?.classList.remove('overlay');
+          }
+        });
+      });
     }
-  
-    handleLogout = async () => {
-      try {
-        await this.userState.logout();
-        this.view.router.navigate('/login');
-      } catch (error) {
-        console.error('Logout failed:', error);
+  }
+
+  removeEventListeners() {
+    if (this.layoutType === 'dashboard') {
+      const logoutBtn = this.element.querySelector('#logoutBtn');
+      if (logoutBtn) {
+        logoutBtn.removeEventListener('click', this.handleLogout);
       }
     }
   }
+
+  setupMenu() {
+    const menuToggle = document.querySelector(".mobile-menu-toggle");
+    const navContainer = document.querySelector(".nav-container");
+    const topNav = document.querySelector(".top-nav");
+    const body = document.body;
+
+    // menu is hidden on initial load for mobile
+    if (window.innerWidth <= 992) {
+      navContainer.style.display = "none";
+    }
+
+    // Mobile menu toggle
+    menuToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      menuToggle.classList.toggle("active");
+
+      if (!navContainer.classList.contains("active")) {
+        // Show menu
+        navContainer.style.display = "flex";
+        // Force reflow
+        navContainer.offsetHeight;
+        navContainer.classList.add("active");
+      } else {
+        // Hide menu
+        navContainer.classList.remove("active");
+        // Wait for transition to complete before hiding
+        setTimeout(() => {
+          if (!navContainer.classList.contains("active")) {
+            navContainer.style.display = "none";
+          }
+        }, 300); // Match your transition duration
+      }
+
+      topNav.classList.toggle("menu-open");
+      body.style.overflow = body.style.overflow === "hidden" ? "" : "hidden";
+    });
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (window.innerWidth > 992) {
+          // Reset all states for desktop view
+          menuToggle.classList.remove("active");
+          navContainer.classList.remove("active");
+          navContainer.style.display = "flex";
+          topNav.classList.remove("menu-open");
+          body.style.overflow = "";
+        } else if (!navContainer.classList.contains("active")) {
+          // Ensure menu is hidden on mobile when not active
+          navContainer.style.display = "none";
+        }
+      }, 250);
+    });
+
+    // Close mobile menu when clicking on a link
+    const navLinks = document.querySelectorAll(".nav-link");
+    navLinks.forEach((link) => {
+      link.addEventListener("click", () => {
+        if (window.innerWidth <= 992) {
+          menuToggle.classList.remove("active");
+          navContainer.classList.remove("active");
+          setTimeout(() => {
+            navContainer.style.display = "none";
+          }, 300);
+          topNav.classList.remove("menu-open");
+          body.style.overflow = "";
+        }
+      });
+    });
+
+    // Add active class to current nav link
+    const currentPath = window.location.pathname;
+    navLinks.forEach((link) => {
+      if (link.getAttribute("href") === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    // *Notifications toggle
+    const notifications = document.querySelector(".notifications");
+    const notificationIcon = document.querySelector(".notification-icon-wrapper");
+
+    notificationIcon.addEventListener("click", (e) => {
+      e.stopPropagation();
+      notifications.classList.toggle("active");
+    });
+
+    // Close notifications when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!notifications.contains(e.target)) {
+        notifications.classList.remove("active");
+      }
+    });
+
+    // Mark all as read functionality
+    const markAllReadBtn = document.querySelector(".mark-all-read");
+    markAllReadBtn.addEventListener("click", () => {
+      const unreadItems = document.querySelectorAll(".notification-item.unread");
+      unreadItems.forEach((item) => {
+        item.classList.remove("unread");
+      });
+      document.querySelector(".notification-badge").textContent = "0";
+    });
+
+    // Individual notification click
+    const notificationItems = document.querySelectorAll(".notification-item");
+    notificationItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        item.classList.remove("unread");
+        // Update badge count
+        const unreadCount = document.querySelectorAll(".notification-item.unread").length;
+        document.querySelector(".notification-badge").textContent = unreadCount;
+      });
+    });
+  }
+
+  async handleLogout() {
+    try {
+      const logoutBtn = this.$('.logout-btn');
+      const originalText = logoutBtn.textContent;
+      logoutBtn.textContent = 'Logging out...';
+      logoutBtn.disabled = true;
+
+      await userState.logout();
+
+      this.router.navigate('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+
+      const logoutBtn = this.$('.logout-btn');
+      logoutBtn.textContent = originalText;
+      logoutBtn.disabled = false;
+
+      alert('Logout failed. Please try again.');
+    }
+  }
+}

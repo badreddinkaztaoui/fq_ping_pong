@@ -5,6 +5,7 @@ import { AuthGuard } from './utils/AuthGuard.js';
 import { HomeView } from './views/Home.js';
 import { LoginView } from './views/Login.js';
 import { SignupView } from './views/Register.js';
+import { HerosView } from './views/Heros.js';
 import { DashboardView } from './views/Dashboard.js';
 
 const errorBoundary = new ErrorBoundary();
@@ -22,6 +23,11 @@ const routes = [
   { 
     path: '/signup', 
     view: SignupView,
+    handler: AuthGuard.requireGuest
+  },
+  { 
+    path: '/heros', 
+    view: HerosView,
     handler: AuthGuard.requireGuest
   },
   { 

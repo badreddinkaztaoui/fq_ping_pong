@@ -6,7 +6,7 @@ export class Router {
     this.routes = routes;
     this.currentView = null;
     this.userState = userState;
-    
+
     window.addEventListener('popstate', this.handleRoute.bind(this));
     document.addEventListener('DOMContentLoaded', this.handleRoute.bind(this));
   }
@@ -49,7 +49,7 @@ export class Router {
         return { route, params };
       }
     }
-    return { 
+    return {
       route: this.routes.find(route => route.path === '*'),
       params: {}
     };
@@ -58,26 +58,26 @@ export class Router {
   async handleRoute() {
     const path = window.location.pathname;
     const { route, params } = this.findRoute(path);
-  
+
     try {
       while (this.userState.getState().loading) {
         await new Promise(resolve => setTimeout(resolve, 50));
       }
-  
+
       if (route.handler) {
         const canProceed = await route.handler(params, this);
         if (!canProceed) {
           return;
         }
       }
-  
+
       if (this.currentView) {
         await this.currentView.unmount();
       }
-  
+
       this.currentView = new route.view(params);
       this.currentView.router = this;
-  
+
       const authPages = ['/login', '/signup'];
       const isAuthPage = authPages.some(authPath => path === authPath);
 
@@ -85,8 +85,8 @@ export class Router {
         await this.currentView.mount(document.getElementById('app'));
       } else {
         const layoutType = path.startsWith('/dashboard') ? 'dashboard' : 'landing';
-        
-        const layout = new Layout(this.currentView, layoutType);
+
+        const layout = new Layout(this.currentView, layoutType, this);
         await layout.mount(document.getElementById('app'));
       }
     } catch (error) {
