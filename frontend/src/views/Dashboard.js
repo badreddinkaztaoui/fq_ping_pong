@@ -33,7 +33,6 @@ export class DashboardView extends View {
 
       <section class="right-section">
         <div class="last-matches">
-          <h3 class="last-matches-title">Last Matches</h3>
           ${MatchList()}
         </div>
       </section>

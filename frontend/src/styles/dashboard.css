@@ -15,10 +15,6 @@
   gap: 2rem;
 }
 
-/*****************************************************************/
-/************ Welcome Section Styles ************/
-/*****************************************************************/
-
 /* Game Modes Section */
 .game-modes-title {
   color: #ff4655;
@@ -129,53 +125,6 @@
   background: #ff5f6d;
 }
 
-/* Right Section Styles */
-.right-section {
-  background: rgba(23, 32, 43, 0.7);
-  border-radius: 12px;
-  padding: 1.5rem;
-}
-
-.last-matches-title {
-  color: #ff4655;
-  font-size: 1.2rem;
-  margin-bottom: 1.5rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.match-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.match-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 8px;
-}
-
-.player {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.player-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-}
-
-.match-score {
-  color: #ffd700;
-  font-weight: 600;
-}
-
 /* Responsive Design */
 @media (max-width: 1400px) {
   .game-modes-grid {
@@ -196,10 +145,6 @@
 
   .special-modes {
     grid-template-columns: 1fr;
-  }
-
-  .right-section {
-    margin-top: 2rem;
   }
 }
 
