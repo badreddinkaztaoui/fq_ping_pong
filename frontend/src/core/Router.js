@@ -5,6 +5,7 @@ export class Router {
   constructor(routes) {
     this.routes = routes;
     this.currentView = null;
+    this.currentLayout = null;
     this.userState = userState;
 
     window.addEventListener('popstate', this.handleRoute.bind(this));
@@ -73,6 +74,12 @@ export class Router {
 
       if (this.currentView) {
         await this.currentView.unmount();
+        this.currentView = null;
+      }
+
+      if (this.currentLayout) {
+        await this.currentLayout.unmount();
+        this.currentLayout = null;
       }
 
       this.currentView = new route.view(params);
@@ -80,14 +87,19 @@ export class Router {
 
       const authPages = ['/login', '/signup'];
       const isAuthPage = authPages.some(authPath => path === authPath);
+      const layoutType = path.startsWith('/dashboard') ? 'dashboard' : 'landing';
+      
+      const appContainer = document.getElementById('app');
+      
+      while (appContainer.firstChild) {
+        appContainer.removeChild(appContainer.firstChild);
+      }
 
       if (isAuthPage) {
-        await this.currentView.mount(document.getElementById('app'));
+        await this.currentView.mount(appContainer);
       } else {
-        const layoutType = path.startsWith('/dashboard') ? 'dashboard' : 'landing';
-
-        const layout = new Layout(this.currentView, layoutType, this);
-        await layout.mount(document.getElementById('app'));
+        this.currentLayout = new Layout(this.currentView, layoutType, this);
+        await this.currentLayout.mount(appContainer);
       }
     } catch (error) {
       console.error('Route handling error:', error);

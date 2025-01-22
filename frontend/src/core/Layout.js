@@ -10,7 +10,8 @@ export class Layout {
     this.element = null;
     this.contentContainer = null;
     this.userState = userState;
-    this.router = router
+    this.router = router;
+    this.boundEventListeners = new Map();
   }
 
   async createDashboardLayout() {
@@ -211,25 +212,35 @@ export class Layout {
   async unmount() {
     if (this.view) {
       await this.view.unmount();
+      this.view = null;
     }
 
     this.removeEventListeners();
 
+    if (this.contentContainer) {
+      while (this.contentContainer.firstChild) {
+        this.contentContainer.removeChild(this.contentContainer.firstChild);
+      }
+      this.contentContainer = null;
+    }
+
     if (this.element && this.element.parentNode) {
       this.element.parentNode.removeChild(this.element);
     }
-
     this.element = null;
-    this.contentContainer = null;
   }
 
   setupEventListeners() {
     if (this.layoutType === 'dashboard') {
       const logoutBtn = this.element.querySelector('#logoutBtn');
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', this.handleLogout);
+        logoutBtn.addEventListener('click', async (e) => {
+          e.preventDefault()
+          await userState.logout();
+          this.router.navigate("/login")
+        });
       }
-      this.setupMenu()
+      this.setupMenu();
     } else {
       const burgerMenu = document.getElementById('burger-menu');
       const overlay = document.getElementById('menu');
@@ -262,12 +273,13 @@ export class Layout {
   }
 
   removeEventListeners() {
-    if (this.layoutType === 'dashboard') {
-      const logoutBtn = this.element.querySelector('#logoutBtn');
-      if (logoutBtn) {
-        logoutBtn.removeEventListener('click', this.handleLogout);
+    for (const [key, handler] of this.boundEventListeners) {
+      const element = this.element?.querySelector(key === 'logout' ? '#logoutBtn' : key);
+      if (element) {
+        element.removeEventListener('click', handler);
       }
     }
+    this.boundEventListeners.clear();
   }
 
   setupMenu() {
@@ -276,57 +288,47 @@ export class Layout {
     const topNav = document.querySelector(".top-nav");
     const body = document.body;
 
-    // menu is hidden on initial load for mobile
     if (window.innerWidth <= 992) {
       navContainer.style.display = "none";
     }
 
-    // Mobile menu toggle
     menuToggle.addEventListener("click", (e) => {
       e.stopPropagation();
       menuToggle.classList.toggle("active");
 
       if (!navContainer.classList.contains("active")) {
-        // Show menu
         navContainer.style.display = "flex";
-        // Force reflow
         navContainer.offsetHeight;
         navContainer.classList.add("active");
       } else {
-        // Hide menu
         navContainer.classList.remove("active");
-        // Wait for transition to complete before hiding
         setTimeout(() => {
           if (!navContainer.classList.contains("active")) {
             navContainer.style.display = "none";
           }
-        }, 300); // Match your transition duration
+        }, 300);
       }
 
       topNav.classList.toggle("menu-open");
       body.style.overflow = body.style.overflow === "hidden" ? "" : "hidden";
     });
 
-    // Handle window resize
     let resizeTimeout;
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
         if (window.innerWidth > 992) {
-          // Reset all states for desktop view
           menuToggle.classList.remove("active");
           navContainer.classList.remove("active");
           navContainer.style.display = "flex";
           topNav.classList.remove("menu-open");
           body.style.overflow = "";
         } else if (!navContainer.classList.contains("active")) {
-          // Ensure menu is hidden on mobile when not active
           navContainer.style.display = "none";
         }
       }, 250);
     });
 
-    // Close mobile menu when clicking on a link
     const navLinks = document.querySelectorAll(".nav-link");
     navLinks.forEach((link) => {
       link.addEventListener("click", () => {
@@ -342,7 +344,6 @@ export class Layout {
       });
     });
 
-    // Add active class to current nav link
     const currentPath = window.location.pathname;
     navLinks.forEach((link) => {
       if (link.getAttribute("href") === currentPath) {
@@ -388,24 +389,5 @@ export class Layout {
     });
   }
 
-  async handleLogout() {
-    try {
-      const logoutBtn = this.$('.logout-btn');
-      const originalText = logoutBtn.textContent;
-      logoutBtn.textContent = 'Logging out...';
-      logoutBtn.disabled = true;
-
-      await userState.logout();
-
-      this.router.navigate('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-
-      const logoutBtn = this.$('.logout-btn');
-      logoutBtn.textContent = originalText;
-      logoutBtn.disabled = false;
-
-      alert('Logout failed. Please try again.');
-    }
-  }
+  async handleLogout() {}
 }

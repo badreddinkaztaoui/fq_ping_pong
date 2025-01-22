@@ -2,7 +2,6 @@ import { View } from '../core/View';
 import { State } from "../core/State"
 import { userState } from '../utils/UserState';
 import { Validation } from '../utils/Validation';
-// CSS
 import "../styles/login.css";
 
 export class LoginView extends View {
@@ -12,7 +11,8 @@ export class LoginView extends View {
     this.validation = new Validation();
     this.state = new State({
       loading: false,
-      error: null
+      error: null,
+      validationErrors: {}
     });
   }
 
@@ -26,8 +26,6 @@ export class LoginView extends View {
         
         <div class="signin-form">
           <div class="form-wrapper">
-            <div class="logo"></div>
-            
             <h1 class="title">Sign in</h1>
             
             <form id="login-form" novalidate>
@@ -58,23 +56,11 @@ export class LoginView extends View {
               </div>
               
               <button type="submit" class="submit-btn-sign-in">
-                PROCEED TO PLAY
+                Sign In
               </button>
               
-              <div class="form-error"></div>
-            
-              <div class="divider">
-                <span>OR</span>
-              </div>
-              
-              <div class="social-signin">
-                <button type="button" class="social-btn btn-42">
-                  <span class="social-icon">42</span>
-                </button>
-              </div>
-              
               <div class="signup-link">
-                <a data-link>Can't login? | Create an account</a>
+                <a data-link>Create an account</a>
               </div>
             </form>
           </div>
@@ -87,6 +73,85 @@ export class LoginView extends View {
     return template.content.firstElementChild;
   }
 
+  validateForm(email, password) {
+    const errors = {};
+    
+    if (!email || !this.validation.email(email) || email.length > 100) {
+      errors.email = !email ? 'Email is required' : 
+                    !this.validation.email(email) ? 'Please enter a valid email address' :
+                    'Email address is too long (maximum 100 characters)';
+    }
+
+    if (!password || password.length < 8 || password.length > 50) {
+      errors.password = !password ? 'Password is required' :
+                       password.length < 8 ? 'Password must be at least 8 characters long' :
+                       'Password is too long (maximum 50 characters)';
+    }
+
+    const hasErrors = Object.keys(errors).length > 0;
+    this.state.setState({ 
+      validationErrors: errors,
+      error: hasErrors ? 'Please correct the form errors before proceeding' : null
+    });
+
+    hasErrors ? this.showFieldErrors(errors) : this.clearFieldErrors();
+    return !hasErrors;
+  }
+
+  showFieldErrors(errors) {
+    Object.entries(errors).forEach(([field, message]) => {
+      const errorElement = this.$(`#${field}-error`);
+      const inputElement = this.$(`#${field}`);
+      
+      if (errorElement && inputElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        errorElement.classList.add('fade-in');
+        
+        inputElement.classList.add('input-error', 'shake');
+        inputElement.setAttribute('aria-invalid', 'true');
+        inputElement.setAttribute('aria-describedby', `${field}-error`);
+        
+        setTimeout(() => inputElement.classList.remove('shake'), 500);
+      }
+    });
+  }
+
+  clearFieldErrors() {
+    ['email', 'password'].forEach(field => {
+      const errorElement = this.$(`#${field}-error`);
+      const inputElement = this.$(`#${field}`);
+      
+      if (errorElement && inputElement) {
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        errorElement.classList.remove('fade-in');
+        
+        inputElement.classList.remove('input-error', 'shake');
+        inputElement.removeAttribute('aria-invalid');
+        inputElement.removeAttribute('aria-describedby');
+      }
+    });
+  }
+
+  showToast(message, type = 'error', duration = 5000) {
+    const toast = this.$('#toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type} visible`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    
+    setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => {
+        toast.textContent = '';
+        toast.className = 'toast';
+        toast.removeAttribute('role');
+      }, 300);
+    }, duration);
+  }
+
   async handleSubmit(event) {
     event.preventDefault();
 
@@ -94,91 +159,48 @@ export class LoginView extends View {
     const email = formData.get('email');
     const password = formData.get('password');
 
-    if (!this.validateForm(email, password)) {
-      console.error("email or password not valide")
-      return;
-    }
+    if (!this.validateForm(email, password)) return;
 
     this.state.setState({ loading: true, error: null });
+    const submitBtn = this.$('button[type="submit"]');
+    submitBtn.textContent = 'Signing in...';
+    submitBtn.disabled = true;
 
     try {
       await this.userState.login({
         email: email.toLowerCase().trim(),
-        password: password
+        password
       });
 
-      // this.showToast('Login successful! Redirecting...');
-
-      setTimeout(() => {
-        this.router.navigate('/dashboard');
-      }, 1000);
+      this.showToast('Login successful! Redirecting...', 'success', 3000);
+      setTimeout(() => this.router.navigate('/dashboard'), 1000);
     } catch (error) {
-      this.state.setState({
-        error: error.message || 'Login failed. Please check your credentials.',
-        loading: false
-      });
-      // this.showToast('Login failed. Please try again.');
-      console.error(error);
+      this.state.setState({ error, loading: false });
+      this.showToast(error);
+    } finally {
+      submitBtn.textContent = 'Sign In';
+      submitBtn.disabled = false;
     }
   }
-
-  validateForm(email, password) {
-    const errors = {};
-
-    if (!this.validation.email(email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    if (!this.validation.required(password)) {
-      errors.password = 'Password is required';
-    }
-
-    if (Object.keys(errors).length > 0) {
-      this.state.setState({ validationErrors: errors });
-      return false;
-    }
-    return true;
-  }
-
-  async handle42Login() { }
-
-  static async handleOAuthCallback() { }
 
   async setupEventListeners() {
     const form = this.$('#login-form');
-    const oauth42Btn = this.$('.btn-42');
     const signupLink = this.$('.signup-link a');
-
-    this.addListener(signupLink, 'click', this.router.navigate.bind(this.router, '/signup'));
+    const inputs = this.$$('input');
 
     this.addListener(form, 'submit', this.handleSubmit.bind(this));
-    this.addListener(oauth42Btn, 'click', this.handle42Login.bind(this));
+    this.addListener(signupLink, 'click', () => this.router.navigate('/signup'));
 
-
-    this.state.subscribe((state) => {
-      this.updateUIState(state);
+    inputs.forEach(input => {
+      this.addListener(input, 'input', () => {
+        const errorElement = this.$(`#${input.id}-error`);
+        if (errorElement) {
+          errorElement.textContent = '';
+          errorElement.style.display = 'none';
+        }
+        input.classList.remove('input-error');
+        input.removeAttribute('aria-invalid');
+      });
     });
-  }
-
-
-  updateUIState(state) {
-    const submitBtn = this.$('button[type="submit"]');
-    const errorDiv = this.$('.form-error');
-
-    if (state.loading) {
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Logging in...';
-    } else {
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Log In';
-    }
-
-    if (state.error) {
-      errorDiv.textContent = state.error;
-      errorDiv.classList.add('visible');
-    } else {
-      errorDiv.textContent = '';
-      errorDiv.classList.remove('visible');
-    }
   }
 }

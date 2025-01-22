@@ -22,8 +22,9 @@ export class View {
     this.childViews.clear();
     
     if (this.element && this.element.parentElement) {
-      this.element.remove();
+      this.element.parentElement.removeChild(this.element);
     }
+    this.element = null;
   }
 
   async render() {
