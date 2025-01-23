@@ -6,7 +6,8 @@ from .views import (
     logout_view,
     me_view,
     oauth_42_login,
-    oauth_42_callback
+    oauth_42_callback,
+    verify_token
 )
 
 urlpatterns = [
@@ -16,7 +17,7 @@ urlpatterns = [
         path('login/', login_view, name='login'),
         path('logout/', logout_view, name='logout'),
         path('me/', me_view, name='me'),
-        # 42 OAuth endpoints
+        path('verify/', verify_token, name='verify_token'),
         path('42/login/', oauth_42_login, name='oauth_42_login'),
         path('42/callback/', oauth_42_callback, name='oauth_42_callback'),
     ])),

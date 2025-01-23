@@ -6,5 +6,16 @@ backend/auth/static
 backend/auth/api/migrations/*.py
 backend/auth/api/migrations/*.pyc
 backend/auth/api/__pycache__/
-
 backend/auth/core/__pycache__/
+
+backend/game/static
+backend/game/api/migrations/*.py
+backend/game/api/migrations/*.pyc
+backend/game/api/__pycache__/
+backend/game/core/__pycache__/
+
+backend/chat/static
+backend/chat/api/migrations/*.py
+backend/chat/api/migrations/*.pyc
+backend/chat/api/__pycache__/
+backend/chat/core/__pycache__/

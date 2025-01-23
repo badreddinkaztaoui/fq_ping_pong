@@ -2,19 +2,27 @@
 set -e
 
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    -- Create database
+    -- Initialize Auth Service Database
     CREATE DATABASE $AUTH_DB_NAME;
-
-    -- Create user
     CREATE USER $AUTH_DB_USER WITH PASSWORD '$AUTH_DB_PASSWORD';
-
-    -- Grant all privileges on database
     GRANT ALL PRIVILEGES ON DATABASE $AUTH_DB_NAME TO $AUTH_DB_USER;
-    
-    -- Connect to the new database
     \c $AUTH_DB_NAME
-
-    -- Grant schema permissions
     GRANT ALL ON SCHEMA public TO $AUTH_DB_USER;
     ALTER USER $AUTH_DB_USER CREATEDB;
+
+    -- Initialize Chat Service Database
+    CREATE DATABASE $CHAT_DB_NAME;
+    CREATE USER $CHAT_DB_USER WITH PASSWORD '$CHAT_DB_PASSWORD';
+    GRANT ALL PRIVILEGES ON DATABASE $CHAT_DB_NAME TO $CHAT_DB_USER;
+    \c $CHAT_DB_NAME
+    GRANT ALL ON SCHEMA public TO $CHAT_DB_USER;
+    ALTER USER $CHAT_DB_USER CREATEDB;
+
+    -- Initialize Game Service Database
+    CREATE DATABASE $GAME_DB_NAME;
+    CREATE USER $GAME_DB_USER WITH PASSWORD '$GAME_DB_PASSWORD';
+    GRANT ALL PRIVILEGES ON DATABASE $GAME_DB_NAME TO $GAME_DB_USER;
+    \c $GAME_DB_NAME
+    GRANT ALL ON SCHEMA public TO $GAME_DB_USER;
+    ALTER USER $GAME_DB_USER CREATEDB;
 EOSQL

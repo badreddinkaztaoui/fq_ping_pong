@@ -57,6 +57,86 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+  
+  chat:
+    container_name: chat
+    hostname: chat
+    build:
+      context: ./backend/chat
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/chat:/app
+    env_file:
+      - .env
+      - ./backend/chat/.env
+    environment:
+      - DB_NAME=${CHAT_DB_NAME}
+      - DB_USER=${CHAT_DB_USER}
+      - DB_PASSWORD=${CHAT_DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python manage.py collectstatic --noinput &&
+        python manage.py makemigrations api &&
+        python manage.py migrate &&
+        daphne -b 0.0.0.0 -p 8002 core.asgi:application"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/chat/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  game:
+    container_name: game
+    hostname: game
+    build:
+      context: ./backend/game
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/game:/app
+    env_file:
+      - .env
+      - ./backend/game/.env
+    environment:
+      - DB_NAME=${GAME_DB_NAME}
+      - DB_USER=${GAME_DB_USER}
+      - DB_PASSWORD=${GAME_DB_PASSWORD}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    command: >
+      sh -c "
+        python manage.py collectstatic --noinput &&
+        python manage.py makemigrations api &&
+        python manage.py migrate &&
+        daphne -b 0.0.0.0 -p 8003 core.asgi:application"
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/api/game/health/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   postgres:
     container_name: postgres

@@ -13,6 +13,9 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django.middleware.csrf import get_token
 from rest_framework.authentication import SessionAuthentication
+from rest_framework_simplejwt.tokens import AccessToken
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated
 from .serializers import UserSerializer
 
@@ -183,6 +186,57 @@ def me_view(request):
     """Get current authenticated user information"""
     serializer = UserSerializer(request.user)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_token(request):
+    """
+    Verifies a JWT token and returns the associated user information.
+    This endpoint is primarily used by other microservices to validate tokens
+    and get user details.
+    """
+    token = request.headers.get('Authorization')
+    
+    if not token or not token.startswith('Bearer '):
+        return Response(
+            {'error': 'Authorization header must be provided with Bearer token'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    try:
+        token = token.split(' ')[1]
+        
+        access_token = AccessToken(token)
+        user_id = access_token.payload.get('user_id')
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except ObjectDoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return Response({
+            'valid': True,
+            'user': UserSerializer(user).data
+        })
+        
+    except TokenError as e:
+        return Response(
+            {'error': 'Token is invalid or expired'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    except InvalidToken as e:
+        return Response(
+            {'error': 'Token is invalid'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    except Exception as e:
+        return Response(
+            {'error': 'An error occurred while verifying the token'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
