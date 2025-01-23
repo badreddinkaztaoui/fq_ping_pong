@@ -12,6 +12,7 @@ import { ClassmentView } from './views/Classment.js';
 import { AnalyticsView } from './views/Analytics.js'
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
+import { NotFoundView } from "./views/404.js"
 
 
 
@@ -20,16 +21,8 @@ import { OAuthCallbackView } from './views/OAuthCallback.js';
 const errorBoundary = new ErrorBoundary();
 
 const routes = [
-  {
-    path: '/',
-    view: HomeView
-  },
-  {
-    path: '/auth/callback',
-    view: OAuthCallbackView
-  },
-  {
-    path: '/login',
+  { 
+    path: '/login', 
     view: LoginView,
     handler: AuthGuard.requireGuest
   },
@@ -38,10 +31,17 @@ const routes = [
     view: SignupView,
     handler: AuthGuard.requireGuest
   },
-  {
-    path: '/heros',
+  { 
+    path: '/', 
+    view: HomeView
+  },
+  { 
+    path: '/heros', 
     view: HerosView,
-    handler: AuthGuard.requireGuest
+  },
+  {
+    path: '/auth/callback',
+    view: OAuthCallbackView
   },
   {
     path: '/dashboard',
@@ -68,9 +68,9 @@ const routes = [
     view: DashboardView,
     handler: AuthGuard.requireAuth
   },
-  {
-    path: '*',
-    view: HomeView
+  { 
+    path: '*', 
+    view: NotFoundView
   }
 ];
 
