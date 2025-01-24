@@ -230,6 +230,20 @@ export class Layout {
     this.element = null;
   }
 
+  handleDashboardRoutes() {
+    const dashBoardLinks = document.querySelectorAll('.nav-link');
+    dashBoardLinks.forEach((route) => {
+      route.addEventListener("click", (e) => {
+        e.preventDefault();
+        const path = route.getAttribute('data-link'); // Corrected attribute name
+        console.log(path); // Should now log the correct value
+        if (path && this.router) {
+          this.router.navigate(path);
+        }
+      });
+    });
+  }
+
   setupEventListeners() {
     if (this.layoutType === 'dashboard') {
       const logoutBtn = this.element.querySelector('#logoutBtn');
@@ -240,6 +254,7 @@ export class Layout {
           this.router.navigate("/login")
         });
       }
+      this.handleDashboardRoutes()
       this.setupMenu();
     } else {
       const burgerMenu = document.getElementById('burger-menu');
@@ -389,5 +404,5 @@ export class Layout {
     });
   }
 
-  async handleLogout() {}
+  async handleLogout() { }
 }

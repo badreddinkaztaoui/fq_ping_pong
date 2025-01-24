@@ -244,6 +244,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 150px;
+  font-family: "VALORANT";
 }
 
 .vx-matches__status {
@@ -272,6 +273,7 @@
   color: #ff4655;
   font-weight: 700;
   font-size: 1.1rem;
+  font-family: "VALORANT", sans-serif;
 }
 
 .vx-matches__date {

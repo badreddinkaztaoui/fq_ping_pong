@@ -1,0 +1,361 @@
+.valorant-leaderboard {
+  color: #e8e8e8;
+  font-family: "Arial", "Helvetica", sans-serif;
+  padding: 20px;
+  border-radius: 15px;
+  background-color: rgba(15, 25, 35, 0.6);
+  backdrop-filter: blur(15px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 70, 85, 0.1);
+  position: relative;
+  overflow: visible;
+}
+
+/* Top Three Container */
+.top-three-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* Top Player Cards */
+.top-player {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.top-player.top-first {
+  width: 300px;
+  height: 450px;
+  order: 2;
+}
+
+.top-player.top-second {
+  width: 250px;
+  height: 380px;
+  order: 1;
+}
+
+.top-player.top-third {
+  width: 200px;
+  height: 320px;
+  order: 3;
+}
+
+.top-player:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Player Card Image */
+.player-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  border-radius: 12px;
+}
+
+/* Absolute Badge */
+.absolute-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #ff4655;
+  color: white;
+  padding: 5px;
+  width: 40px;
+  height: 40px;
+  display: inline-block;
+  text-align: center;
+  line-height: 40px;
+  border-radius: 50%;
+  font-weight: bold;
+  z-index: 10;
+  font-size: 1.8rem;
+  font-family: "VALORANT", sans-serif;
+}
+
+/* Player Overlay */
+.player-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, #0f1923 70%);
+  padding: 15px;
+  color: white;
+  z-index: 2;
+}
+
+.player-details h2 {
+  font-size: 1.2rem;
+  margin-bottom: 2px;
+  color: #ff4655;
+  background-color: rgba(0, 0, 0, 0.4);
+  padding: 8px;
+  width: fit-content;
+  border-radius: 10px;
+}
+
+.player-stats {
+  display: flex;
+  justify-content: space-between;
+}
+
+.player-stats .stat {
+  text-align: center;
+}
+
+.stat-value {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #e8e8e8;
+}
+
+/* Valorant Table Styles */
+.valorant-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+  background-color: rgba(15, 25, 35, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.valorant-table thead {
+  background-color: rgba(255, 70, 85, 0.1);
+  border-bottom: 2px solid rgba(255, 70, 85, 0.3);
+}
+
+.valorant-table th {
+  padding: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #ff4655;
+  font-weight: bold;
+  text-align: left;
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.valorant-table tr {
+  transition: all 0.3s ease;
+  opacity: 0.9;
+}
+
+.valorant-table tr:hover {
+  background-color: rgba(255, 70, 85, 0.1);
+  opacity: 1;
+  transform: scale(1.02);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.valorant-table td {
+  padding: 15px;
+  color: #e8e8e8;
+  border-bottom: 1px solid rgba(56, 62, 66, 0.5);
+  transition: all 0.3s ease;
+}
+
+/* Pagination Styling */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.pagination button {
+  background-color: rgba(255, 70, 85, 0.2);
+  color: #ff4655;
+  border: 2px solid #ff4655;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.pagination button:hover:not([disabled]) {
+  background-color: #ff4655;
+  color: white;
+  transform: scale(1.05);
+}
+
+.pagination button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pagination .page-info {
+  color: #a0a0a0;
+  font-weight: bold;
+}
+
+/* Table Container Transition */
+.table-container {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.table-container.fade-out {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+.table-container.fade-in {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Rank Highlight */
+.gold {
+  background-color: rgba(255, 215, 0, 0.1);
+}
+
+.silver {
+  background-color: rgba(192, 192, 192, 0.1);
+}
+
+.bronze {
+  background-color: rgba(205, 127, 50, 0.1);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .top-three-container {
+    align-items: center;
+  }
+
+  .top-player {
+    width: 100% !important;
+    height: 300px !important;
+    order: initial !important;
+  }
+
+  .valorant-table {
+    font-size: 0.9rem;
+  }
+
+  .valorant-table th,
+  .valorant-table td {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .valorant-table {
+    font-size: 0.8rem;
+  }
+
+  .valorant-table th,
+  .valorant-table td {
+    padding: 8px;
+  }
+}
+
+.pagination button {
+  background-color: rgba(56, 62, 66, 0.5);
+  color: #e8e8e8;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.pagination button:hover:not([disabled]) {
+  background-color: #ff4655;
+}
+
+.pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination .page-info {
+  color: #a0a0a0;
+  font-size: 0.9rem;
+}
+
+/* Trophy Overlay */
+.trophy-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 150;
+  width: 120px;
+  height: 120px;
+  /* opacity: 0.8; */
+  transition: all 0.3s ease;
+}
+
+.trophy-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.top-player:hover .trophy-overlay {
+  transform: translate(-50%, -50%) scale(1.1);
+}
+
+/* Badge Positioning */
+.top-player-badge {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  background-color: #ff4655;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border: 5px solid #0f1923;
+  z-index: 20;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.top-player {
+  position: relative;
+  overflow: visible;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .trophy-overlay {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .trophy-overlay {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+.player-cell {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}

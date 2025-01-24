@@ -7,47 +7,69 @@ import { LoginView } from './views/Login.js';
 import { SignupView } from './views/Register.js';
 import { HerosView } from './views/Heros.js';
 import { DashboardView } from './views/Dashboard.js';
+import { ChatView } from './views/Chat.js';
+import { ClassmentView } from './views/Classment.js';
+import { AnalyticsView } from './views/Analytics.js'
+
 import { OAuthCallbackView } from './views/OAuthCallback.js';
+
+
+
 
 
 const errorBoundary = new ErrorBoundary();
 
 const routes = [
-  { 
-    path: '/', 
+  {
+    path: '/',
     view: HomeView
   },
   {
     path: '/auth/callback',
     view: OAuthCallbackView
   },
-  { 
-    path: '/login', 
+  {
+    path: '/login',
     view: LoginView,
     handler: AuthGuard.requireGuest
   },
-  { 
-    path: '/signup', 
+  {
+    path: '/signup',
     view: SignupView,
     handler: AuthGuard.requireGuest
   },
-  { 
-    path: '/heros', 
+  {
+    path: '/heros',
     view: HerosView,
     handler: AuthGuard.requireGuest
   },
-  { 
-    path: '/dashboard', 
+  {
+    path: '/dashboard',
     view: DashboardView,
     handler: AuthGuard.requireAuth
   },
-  { 
+  {
+    path: '/dashboard/chat',
+    view: ChatView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/classment',
+    view: ClassmentView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/analytics',
+    view: AnalyticsView,
+    handler: AuthGuard.requireAuth
+  },
+  {
     path: '/dashboard/*',
     view: DashboardView,
     handler: AuthGuard.requireAuth
   },
-  { 
-    path: '*', 
+  {
+    path: '*',
     view: HomeView
   }
 ];
