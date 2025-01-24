@@ -1,47 +1,46 @@
+import "../styles/dashboard/specialsModes.css"
+
+
 export function SpecialModes() {
-    const specialModes = [
-        {
-            title: 'Tournament',
-            image: '/images/dashboard/tournm3.jpg',
-            stats: [
-                { label: 'PLAYERS', value: '128/256' },
-                { label: 'PRIZE POOL', value: '$10,000' }
-            ],
-            buttonText: 'REGISTER NOW'
-        },
-        {
-            title: 'Gambling',
-            image: '/images/dashboard/gambling.avif',
-            stats: [
-                { label: 'MATCHES', value: '5 LIVE' },
-                { label: 'PRIZE COINS', value: '5,000' }
-            ],
-            buttonText: 'GAMBLE NOW'
-        }
-    ];
 
-    const createStatItems = (stats) => stats.map(stat => `
-      <div class="stat-item">
-        <span class="stat-label">${stat.label}</span>
-        <span class="stat-value">${stat.value}</span>
-      </div>
-    `).join('');
-
-    const modeCards = specialModes.map(mode => `
-      <div class="special-mode-card" data-mode="${mode.title.toLowerCase()}">
-        <img src="${mode.image}" alt="${mode.title}">
-        <div class="special-mode-info">
-          <div class="special-mode-stats">
-            ${createStatItems(mode.stats)}
+  return `
+       <div class="tournament-grid">
+          <div class="tournament-card tournament-card-pro">
+            <div class="tournament-content">
+              <h2 class="tournament-title">Pro Circuit Tournament</h2>
+              <p class="tournament-subtitle">Global Competitive Challenge</p>
+              <div class="tournament-stats">
+                <div class="stat-item">
+                  <div class="stat-label">Players</div>
+                  <div class="stat-value">128/256</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Prize Pool</div>
+                  <div class="stat-value">$10,000</div>
+                </div>
+              </div>
+              <button class="tournament-btn pro-tournament-btn">Register Now</button>
+            </div>
           </div>
-          <button class="special-mode-button">${mode.buttonText}</button>
+  
+          <div class="tournament-card tournament-card-gambling">
+            <span class="live-badge">Win Coins</span>
+            <div class="tournament-content">
+              <h2 class="tournament-title">Coin Masters Challenge</h2>
+              <p class="tournament-subtitle">Win Big, Risk More</p>
+              <div class="tournament-stats">
+                <div class="stat-item">
+                  <div class="stat-label">Lives</div>
+                  <div class="stat-value">7</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">Prize Coins</div>
+                  <div class="stat-value">5,000</div>
+                </div>
+              </div>
+              <button class="tournament-btn gambling-tournament-btn">Compete Now</button>
+            </div>
+          </div>
         </div>
-      </div>
-    `).join('');
-
-    return `
-      <div class="special-modes">
-        ${modeCards}
-      </div>
     `;
 }
