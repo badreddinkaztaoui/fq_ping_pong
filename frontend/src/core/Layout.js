@@ -12,6 +12,7 @@ export class Layout {
     this.userState = userState;
     this.router = router;
     this.boundEventListeners = new Map();
+    console.log("user = :", userState.state.user.username)
   }
 
   async createDashboardLayout() {
@@ -129,13 +130,14 @@ export class Layout {
                   </div>
               </div>
               <div class="user-profile">
-                <img src="/images/users/player-1.jpeg" alt="Avatar" class="avatar" />
-                <span class="username">Player123</span>
+                <img src=${userState.state.user.avatar_url} alt="Avatar" class="avatar" />
+                <span class="username">${userState.state.user.username.split("_")[1]}</span>
               </div>
               <a class="logout-btn" id="logoutBtn">
                 <img src="/images/icons/logout.png" alt="Logout" class="nav-icon log-out" />
               </a>
             </div>
+
           </div>
         </nav>
     `
