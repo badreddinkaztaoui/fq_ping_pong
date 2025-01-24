@@ -10,6 +10,8 @@ import { DashboardView } from './views/Dashboard.js';
 import { ChatView } from './views/Chat.js';
 import { ClassmentView } from './views/Classment.js';
 import { AnalyticsView } from './views/Analytics.js'
+import { GamblingView } from './views/Gambling.js'
+
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
 
@@ -61,6 +63,11 @@ const routes = [
   {
     path: '/dashboard/analytics',
     view: AnalyticsView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/gambling',
+    view: GamblingView,
     handler: AuthGuard.requireAuth
   },
   {
