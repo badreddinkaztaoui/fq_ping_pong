@@ -1,4 +1,3 @@
-import os
 import requests
 import urllib.parse
 from django.conf import settings
@@ -17,7 +16,12 @@ from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
 from .serializers import UserSerializer
+import pyotp
 
 User = get_user_model()
 
@@ -75,7 +79,6 @@ def oauth_42_callback(request):
         )
         user_info = user_info_response.json()
 
-        User = get_user_model()
         try:
             user = User.objects.get(email=user_info['email'])
             user.avatar_url = user_info['image']['link']
@@ -237,6 +240,75 @@ def verify_token(request):
             {'error': 'An error occurred while verifying the token'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+    
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_user(request):
+    serializer = UserSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_request(request):
+    email = request.data.get('email')
+    user = User.objects.filter(email=email).first()
+    if user:
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        send_mail(
+            'Password Reset',
+            f'Click here to reset your password: {reset_link}',
+            settings.DEFAULT_FROM_EMAIL,
+            [email],
+            fail_silently=False,
+        )
+    return Response({"message": "If an account exists, a password reset link has been sent."})
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_confirm(request, uidb64, token):
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        user = None
+    
+    if user and default_token_generator.check_token(user, token):
+        new_password = request.data.get('new_password')
+        user.set_password(new_password)
+        user.save()
+        return Response({"message": "Password has been reset successfully."})
+    return Response({"error": "Invalid reset link"}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def enable_2fa(request):
+    secret = pyotp.random_base32()
+    request.user.otp_secret = secret
+    request.user.is_2fa_enabled = True
+    request.user.save()
+    return Response({"secret": secret})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def verify_2fa(request):
+    otp = request.data.get('otp')
+    totp = pyotp.TOTP(request.user.otp_secret)
+    if totp.verify(otp):
+        return Response({"message": "2FA verified successfully"})
+    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def disable_2fa(request):
+    request.user.is_2fa_enabled = False
+    request.user.otp_secret = None
+    request.user.save()
+    return Response({"message": "2FA disabled successfully"})
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

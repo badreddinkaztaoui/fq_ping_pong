@@ -60,13 +60,10 @@ export class UserState extends State {
 
   async loginWith42() {
     try {
-      // Get the authorization URL from our backend
       const response = await this.http.get('/auth/42/login/');
       
-      // Store the current URL to redirect back after login
       sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
       
-      // Redirect to 42's authorization page
       window.location.href = response.authorization_url;
     } catch (error) {
       this.setState({
@@ -90,11 +87,9 @@ export class UserState extends State {
         error: null
       });
       
-      // Get the stored redirect URL or default to dashboard
       const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
       sessionStorage.removeItem('redirectAfterLogin');
       
-      // Navigate to the stored URL
       window.location.href = redirectUrl;
       
       return response;
@@ -139,6 +134,61 @@ export class UserState extends State {
       });
     } catch (error) {
       console.error('Logout error:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(userData) {
+    this.setState({ loading: true, error: null });
+    try {
+      const response = await this.http.put('/auth/update/', userData);
+      this.setState({ user: response, loading: false });
+      return response;
+    } catch (error) {
+      this.setState({ error: error.message, loading: false });
+      throw error;
+    }
+  }
+
+  async resetPasswordRequest(email) {
+    try {
+      return await this.http.post('/auth/reset-password/', { email });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async resetPasswordConfirm(uidb64, token, newPassword) {
+    try {
+      return await this.http.post(`/auth/reset-password/${uidb64}/${token}/`, { new_password: newPassword });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async enable2FA() {
+    try {
+      const response = await this.http.post('/auth/enable-2fa/');
+      this.setState({ user: { ...this.state.user, is_2fa_enabled: true } });
+      return response.secret;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async verify2FA(otp) {
+    try {
+      return await this.http.post('/auth/verify-2fa/', { otp });
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async disable2FA() {
+    try {
+      await this.http.post('/auth/disable-2fa/');
+      this.setState({ user: { ...this.state.user, is_2fa_enabled: false } });
+    } catch (error) {
       throw error;
     }
   }

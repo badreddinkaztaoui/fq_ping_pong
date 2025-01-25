@@ -7,7 +7,13 @@ from .views import (
     me_view,
     oauth_42_login,
     oauth_42_callback,
-    verify_token
+    verify_token,
+    update_user,
+    reset_password_confirm,
+    enable_2fa,
+    verify_2fa,
+    reset_password_request,
+    disable_2fa
 )
 
 urlpatterns = [
@@ -20,5 +26,11 @@ urlpatterns = [
         path('verify/', verify_token, name='verify_token'),
         path('42/login/', oauth_42_login, name='oauth_42_login'),
         path('42/callback/', oauth_42_callback, name='oauth_42_callback'),
+        path('update/', update_user, name='update_user'),
+        path('reset-password/', reset_password_request, name='reset_password_request'),
+        path('reset-password/<str:uidb64>/<str:token>/', reset_password_confirm, name='reset_password_confirm'),
+        path('enable-2fa/', enable_2fa, name='enable_2fa'),
+        path('verify-2fa/', verify_2fa, name='verify_2fa'),
+        path('disable-2fa/', disable_2fa, name='disable_2fa'),
     ])),
 ]
