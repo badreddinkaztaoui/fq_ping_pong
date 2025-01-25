@@ -1,0 +1,178 @@
+.game-container {
+  display: flex;
+  height: 100%;
+  background-color: #0f1923;
+  color: #e8e8e8;
+  font-family: 'Arial', sans-serif;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Adding a subtle gradient overlay to enhance the visual appeal */
+.game-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, rgba(255, 70, 85, 0.05), rgba(17, 255, 228, 0.05));
+  pointer-events: none;
+  z-index: 1;
+}
+
+.game-main {
+  flex: 3;
+  position: relative;
+}
+
+#pongCanvas {
+  width: 100%;
+  height: 100%;
+  background-color: #1a2634;
+}
+
+.game-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 2;
+}
+
+/* Enhancing the score and timer display */
+.score, .timer {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ff4655;
+  text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
+  transition: all 0.3s ease;
+}
+
+.score:hover, .timer:hover {
+  transform: scale(1.1);
+}
+
+/* Improving the sidebar styling */
+.game-sidebar {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background-color: rgba(26, 38, 52, 0.8);
+  padding: 20px;
+  border-left: 2px solid #ff4655;
+  box-shadow: -5px 0 15px rgba(255, 70, 85, 0.1);
+}
+
+/* Enhancing chat box and game history sections */
+.chat-box, .game-history {
+  background-color: rgba(15, 25, 35, 0.9);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.chat-box {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-messages, .history-list {
+  overflow-y: auto;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: rgba(56, 65, 77, 0.5);
+}
+
+.chat-input {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background-color: rgba(56, 65, 77, 0.8);
+  color: #e8e8e8;
+  border-radius: 5px;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.chat-input:focus {
+  background-color: rgba(56, 65, 77, 1);
+  outline: none;
+  box-shadow: 0 0 0 2px #ff4655;
+}
+
+.game-history {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* Styling the game history title */
+.game-history h3 {
+  color: #ff4655;
+  margin-bottom: 10px;
+  font-size: 1.2em;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.history-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.history-list li {
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-list li:last-child {
+  border-bottom: none;
+}
+
+/* Enhancing game controls and select inputs */
+.game-controls {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+}
+
+.custom-select {
+  position: relative;
+  display: inline-block;
+}
+
+.custom-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 40px 10px 15px;
+  font-size: 16px;
+  border: 2px solid #ff4655;
+  border-radius: 5px;
+  background-color: rgba(15, 25, 35, 0.9);
+  color: #e8e8e8;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.custom-select select:hover, .custom-select select:focus {
+  background-color: rgba(26, 38, 52, 0.9);
+  box-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
+}
+
+.custom-select::after {
+  content: '\25BC';
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  transform: translateY(-50%);
+  color: #ff4655;
+  pointer-events: none;
+}

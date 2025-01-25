@@ -4,11 +4,12 @@
   display: grid;
   grid-template-columns: 80% 20%;
   gap: 2rem;
-  min-height: calc(100vh - 70px);
+  height: calc(100vh - 70px);
   background-image: url("/images/dashboard/Dashbord.png");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  overflow: hidden;
 }
 
 .main-content::before {

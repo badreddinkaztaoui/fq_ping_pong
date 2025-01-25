@@ -16,6 +16,7 @@ import { ProfileView } from './views/Profile.js'
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
 import { NotFoundView } from "./views/404.js"
+import { GameView } from './views/Game.js';
 
 
 
@@ -49,6 +50,11 @@ const routes = [
   {
     path: '/dashboard',
     view: DashboardView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/game',
+    view: GameView,
     handler: AuthGuard.requireAuth
   },
   {
