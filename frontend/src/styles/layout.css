@@ -171,9 +171,21 @@ header {
 /*************************************/
 
 .dashboard-layout {
+  position: relative;
   height: 100vh;
   background-color: #0f1923;
   color: #ffffff;
+  background-image: url("/images/dashboard/Dashbord.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+.dashboard-layout::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 1;
 }
 
 .dashboard-content {
@@ -181,7 +193,17 @@ header {
   overflow: auto;
   padding: 2rem;
 }
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 0rem;
+  }
+}
 
+@media (max-width: 480px) {
+  .dashboard-content {
+    padding: 0rem;
+  }
+}
 .dashboard-nav {
   display: flex;
   justify-content: space-between;

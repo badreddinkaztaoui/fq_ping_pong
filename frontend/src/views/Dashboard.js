@@ -24,9 +24,8 @@ export class DashboardView extends View {
 
   async render() {
     const template = document.createElement('main');
-
+    template.className = "main-content"
     template.innerHTML = `
-    <main class="main-content">
       <section class="left-section">
         ${WelcomeBanner(this.user)}
         ${GameModes()}
@@ -38,7 +37,6 @@ export class DashboardView extends View {
           ${MatchList()}
         </div>
       </section>
-    </main>
     `;
 
     return template;
