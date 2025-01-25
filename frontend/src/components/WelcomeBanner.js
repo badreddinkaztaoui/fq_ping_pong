@@ -15,7 +15,6 @@ export function WelcomeBanner(user) {
              <span class="vx-banner__tag-text">${user.display_name || 'PLAYER'}</span>
            </div>
          </div>
-         <div class="vx-banner__rank">#RADIANT</div>
        </div>
      </div>
    </div>

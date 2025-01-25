@@ -12,7 +12,6 @@ export class Layout {
     this.userState = userState;
     this.router = router;
     this.boundEventListeners = new Map();
-    console.log("user = :", userState.state.user.username)
   }
 
   async createDashboardLayout() {
@@ -58,12 +57,6 @@ export class Layout {
                   <a class="nav-link" data-link="/dashboard/analytics">
                     <img src="/images/icons/Analytics.png" alt="Analytics" class="nav-icon" />
                     <span>Analytics</span>
-                  </a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" data-link="/dashboard/settings">
-                    <img src="/images/icons/settings.png" alt="Settings" class="nav-icon" />
-                    <span>Settings</span>
                   </a>
                 </li>
                 <li class="nav-item">
@@ -129,26 +122,47 @@ export class Layout {
                     </div>
                   </div>
               </div>
-              <div class="user-profile">
-                <img src=${userState.state.user.avatar_url} alt="Avatar" class="avatar" />
-                <span class="username">${userState.state.user.username.split("_")[1]}</span>
+              
+              <div class="profile-dropdown">
+                <button class="profile-btn">
+                  <img src="${userState.state.user.avatar_url}" alt="Avatar" class="avatar" />
+                  <span class="username">${userState.state.user.username.split("_")[1]}</span>
+                  <svg class="arrow-icon" viewBox="0 0 24 24">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                <div class="dropdown-menu">
+                  <div class="menu-header">
+                    <img src="${userState.state.user.avatar_url}" alt="Avatar" class="menu-avatar" />
+                    <div class="user-info">
+                      <span class="menu-username">${userState.state.user.username.split("_")[1]}</span>
+                    </div>
+                  </div>
+                  <a data-link="/dashboard/profile" class="menu-item profile">
+                    <svg class="icon" viewBox="0 0 24 24">
+                      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Profile
+                  </a>
+                  <a class="menu-item logout" id="logoutBtn">
+                    <svg class="icon" viewBox="0 0 24 24">
+                      <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
+                  </a>
+                </div>
               </div>
-              <a class="logout-btn" id="logoutBtn">
-                <img src="/images/icons/logout.png" alt="Logout" class="nav-icon log-out" />
-              </a>
             </div>
 
           </div>
         </nav>
     `
 
-    const content = document.createElement('main');
-    content.className = "main-content"
+
 
     layout.appendChild(nav)
-    layout.appendChild(content)
 
-    this.contentContainer = content
+    this.contentContainer = layout
 
     return layout;
   }
@@ -237,8 +251,9 @@ export class Layout {
     dashBoardLinks.forEach((route) => {
       route.addEventListener("click", (e) => {
         e.preventDefault();
-        const path = route.getAttribute('data-link'); // Corrected attribute name
-        console.log(path); // Should now log the correct value
+        const path = route.getAttribute('data-link');
+        console.log("Path : ", path)
+
         if (path && this.router) {
           this.router.navigate(path);
         }
@@ -258,6 +273,28 @@ export class Layout {
       }
       this.handleDashboardRoutes()
       this.setupMenu();
+      const dropdown = document.querySelector('.profile-dropdown');
+      const button = dropdown.querySelector('.profile-btn');
+
+      button.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('active');
+      });
+
+      document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+          dropdown.classList.remove('active');
+        }
+      });
+
+      const profileBtn = document.querySelector('.profile')
+      if (profileBtn) {
+        profileBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.router.navigate("/dashboard/profile")
+        })
+      }
+
     } else {
       const burgerMenu = document.getElementById('burger-menu');
       const overlay = document.getElementById('menu');
