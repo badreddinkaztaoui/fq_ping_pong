@@ -4,11 +4,8 @@
   background-color: #0f1923;
   color: #e8e8e8;
   font-family: 'Arial', sans-serif;
-  position: relative;
-  overflow: hidden;
 }
 
-/* Adding a subtle gradient overlay to enhance the visual appeal */
 .game-container::before {
   content: '';
   position: absolute;
@@ -43,7 +40,6 @@
   z-index: 2;
 }
 
-/* Enhancing the score and timer display */
 .score, .timer {
   font-size: 28px;
   font-weight: bold;
@@ -56,7 +52,6 @@
   transform: scale(1.1);
 }
 
-/* Improving the sidebar styling */
 .game-sidebar {
   flex: 1;
   display: flex;
@@ -67,7 +62,6 @@
   box-shadow: -5px 0 15px rgba(255, 70, 85, 0.1);
 }
 
-/* Enhancing chat box and game history sections */
 .chat-box, .game-history {
   background-color: rgba(15, 25, 35, 0.9);
   border-radius: 10px;
@@ -111,7 +105,6 @@
   overflow-y: auto;
 }
 
-/* Styling the game history title */
 .game-history h3 {
   color: #ff4655;
   margin-bottom: 10px;
@@ -134,7 +127,6 @@
   border-bottom: none;
 }
 
-/* Enhancing game controls and select inputs */
 .game-controls {
   position: absolute;
   bottom: 20px;

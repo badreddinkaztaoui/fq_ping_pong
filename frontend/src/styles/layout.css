@@ -170,14 +170,19 @@ header {
 
 /*************************************/
 
-.dashboard-container {
+.dashboard-layout {
   height: 100vh;
   background-color: #0f1923;
   color: #ffffff;
 }
 
-/* Top Navigation Bar */
-.top-nav {
+.dashboard-content {
+  height: calc(100vh - 70px);
+  overflow: auto;
+  padding: 2rem;
+}
+
+.dashboard-nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -466,7 +471,7 @@ header {
 }
 
 @media (max-width: 768px) {
-  .top-nav {
+  .dashboard-nav {
     padding: 0.75rem 1rem;
   }
 
@@ -657,11 +662,11 @@ header {
   }
 
   /* Top nav adjustments for mobile */
-  .top-nav {
+  .dashboard-nav {
     background: rgba(15, 25, 35, 0.98);
   }
 
-  .top-nav.menu-open {
+  .dashboard-nav.menu-open {
     background: transparent;
   }
 

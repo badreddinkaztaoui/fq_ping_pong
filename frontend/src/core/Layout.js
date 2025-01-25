@@ -16,10 +16,11 @@ export class Layout {
 
   async createDashboardLayout() {
     const layout = document.createElement('div');
-    layout.className = "dashboard-container"
+    layout.className = "dashboard-layout"
+
     const nav = document.createElement('nav')
+    nav.className = "dashboard-nav"
     nav.innerHTML = `
-    <nav class="top-nav">
           <div class="nav-left">
             <div class="logo-section">
               <img src="/images/logo.png" alt="logo" class="logo-img" />
@@ -153,16 +154,14 @@ export class Layout {
                 </div>
               </div>
             </div>
-
           </div>
-        </nav>
     `
-
-
 
     layout.appendChild(nav)
 
-    this.contentContainer = layout
+    this.contentContainer = document.createElement("div");
+    this.contentContainer.className = 'dashboard-content'
+    layout.appendChild(this.contentContainer)
 
     return layout;
   }
