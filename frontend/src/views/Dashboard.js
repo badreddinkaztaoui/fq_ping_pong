@@ -23,22 +23,25 @@ export class DashboardView extends View {
   }
 
   async render() {
-    const template = document.createElement('template');
+    const template = document.createElement('main');
+
     template.innerHTML = `
+    <main class="main-content">
       <section class="left-section">
         ${WelcomeBanner(this.user)}
         ${GameModes()}
         ${SpecialModes()}
       </section>
-
+      
       <section class="right-section">
         <div class="last-matches">
           ${MatchList()}
         </div>
       </section>
+    </main>
     `;
 
-    return template.content;
+    return template;
   }
 
   async setupEventListeners() {
