@@ -10,6 +10,8 @@
 }
 
 .valorant-chat-container {
+  position: relative;
+  z-index: 4;
   display: flex;
   background-color: rgba(15, 25, 35, 0.98);
   backdrop-filter: blur(20px);
@@ -17,11 +19,8 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-  min-height: 87vh;
+  height: 100%;
   transition: all var(--transition-speed) ease;
-  height: 100vh;
-  max-height: 100vh;
-  min-height: unset;
 }
 
 /* Modern Users List */
@@ -144,6 +143,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   background-color: var(--valorant-dark);
 }
 
@@ -315,7 +315,7 @@
 }
 .emoji-picker {
   position: relative;
-  z-index: 1000;
+  z-index: 20;
 }
 
 .emoji-dropdown {
@@ -323,7 +323,7 @@
   bottom: 100%;
   left: 0;
   grid-template-columns: repeat(6, 1fr);
-  z-index: 1000;
+  z-index: 20;
   margin-bottom: 10px;
 }
 

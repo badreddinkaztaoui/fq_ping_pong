@@ -247,16 +247,35 @@ export class Layout {
 
   handleDashboardRoutes() {
     const dashBoardLinks = document.querySelectorAll('.nav-link');
+    const removeActiveClass = () => {
+      dashBoardLinks.forEach(link => link.classList.remove('active'));
+    };
+
+    const setActiveLink = (path) => {
+      removeActiveClass();
+      dashBoardLinks.forEach(link => {
+        if (link.getAttribute('data-link') === path) {
+          link.classList.add('active');
+        }
+      });
+    };
+
+    setActiveLink(window.location.pathname);
+
     dashBoardLinks.forEach((route) => {
       route.addEventListener("click", (e) => {
         e.preventDefault();
         const path = route.getAttribute('data-link');
-        console.log("Path : ", path)
 
         if (path && this.router) {
+          setActiveLink(path);
           this.router.navigate(path);
         }
       });
+    });
+
+    window.addEventListener('popstate', () => {
+      setActiveLink(window.location.pathname);
     });
   }
 

@@ -11,6 +11,8 @@
   padding: 2rem;
   color: var(--text-color);
   font-family: "VALORANT", sans-serif;
+  position: relative;
+  z-index: 2;
 }
 
 .profile-container {

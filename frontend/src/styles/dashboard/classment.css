@@ -8,6 +8,8 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 70, 85, 0.1);
   position: relative;
   overflow: visible;
+  z-index: 4;
+  height: 100%;
 }
 
 /* Top Three Container */
@@ -358,4 +360,11 @@
   display: flex;
   align-items: center;
   gap: 15px;
+}
+
+.player-avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
 }

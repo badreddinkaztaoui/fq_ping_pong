@@ -3,7 +3,7 @@
 header {
   position: relative;
   width: 100%;
-  z-index: 1000;
+  z-index: 20;
 }
 
 #burger-menu {
@@ -214,7 +214,7 @@ header {
   height: 70px;
   position: sticky;
   top: 0;
-  z-index: 1000;
+  z-index: 20;
 }
 
 .nav-left {
@@ -257,6 +257,7 @@ header {
   text-decoration: none;
   border-radius: 8px;
   transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .nav-link:hover {
@@ -521,10 +522,6 @@ header {
   background: rgba(255, 255, 255, 0.15);
 }
 
-.notifications:hover {
-  transform: scale(1.1);
-}
-
 /*********************************/
 /************ MOBILE *************/
 /*********************************/
@@ -611,7 +608,7 @@ header {
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-    z-index: 1000;
+    z-index: 20;
   }
 
   /* Only show when active */
@@ -725,7 +722,7 @@ header {
     transform: translateY(-2px);
   }
 
-  .nav-link::after {
+  /* .nav-link::after {
     content: "";
     position: absolute;
     bottom: 0;
@@ -742,14 +739,14 @@ header {
   .nav-link.active::after {
     transform: scaleX(1);
     transform-origin: left;
-  }
+  } */
 }
 
-@media (max-width: 992px) {
+/* @media (max-width: 992px) {
   .nav-link:active {
     transform: scale(0.98);
   }
-}
+} */
 
 /********************************************/
 /************ Notification CONTAINER *************/
@@ -777,7 +774,7 @@ header {
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
-  z-index: 1000;
+  z-index: 1001;
 }
 
 .notifications-dropdown::before {
