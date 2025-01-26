@@ -1,24 +1,24 @@
 export class State {
-    constructor(initialState = {}) {
+  constructor(initialState = {}) {
       this.state = initialState;
       this.subscribers = new Set();
-    }
-  
-    subscribe(callback) {
-      this.subscribers.add(callback);
-      return () => this.subscribers.delete(callback);
-    }
-  
-    getState() {
+  }
+
+  getState() {
       return this.state;
-    }
-  
-    setState(newState) {
+  }
+
+  setState(newState) {
       this.state = { ...this.state, ...newState };
       this.notify();
-    }
-  
-    notify() {
-      this.subscribers.forEach(callback => callback(this.state));
-    }
   }
+
+  notify() {
+      this.subscribers.forEach(callback => callback(this.state));
+  }
+
+  subscribe(callback) {
+      this.subscribers.add(callback);
+      return () => this.subscribers.delete(callback);
+  }
+}

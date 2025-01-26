@@ -168,21 +168,27 @@ export class UserState extends State {
 
   async enable2FA() {
     try {
-      const response = await this.http.post('/auth/enable-2fa/');
-      this.setState({ user: { ...this.state.user, is_2fa_enabled: true } });
-      return response.secret;
+        const response = await this.http.post('/auth/enable-2fa/', {});
+        return response;
     } catch (error) {
-      throw error;
+        throw error;
     }
-  }
+}
 
-  async verify2FA(otp) {
+async verify2FA(otp) {
     try {
-      return await this.http.post('/auth/verify-2fa/', { otp });
+        const response = await this.http.post('/auth/verify-2fa/', { otp });
+        this.setState({ 
+            user: { 
+                ...this.state.user, 
+                is_2fa_enabled: true 
+            } 
+        });
+        return response;
     } catch (error) {
-      throw error;
+        throw error;
     }
-  }
+}
 
   async disable2FA() {
     try {

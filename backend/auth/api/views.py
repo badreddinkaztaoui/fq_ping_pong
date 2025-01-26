@@ -287,20 +287,69 @@ def reset_password_confirm(request, uidb64, token):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def enable_2fa(request):
-    secret = pyotp.random_base32()
-    request.user.otp_secret = secret
-    request.user.is_2fa_enabled = True
-    request.user.save()
-    return Response({"secret": secret})
+    try:
+        secret = pyotp.random_base32()
+        
+        totp = pyotp.TOTP(secret)
+        
+        current_otp = totp.now()
+        
+        request.user.otp_secret = secret
+        request.user.save()
+        
+        send_mail(
+            subject='Your Two-Factor Authentication Code',
+            message=f'Your verification code is: {current_otp}\n\nThis code will expire in 30 seconds.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[request.user.email],
+            fail_silently=False,
+        )
+        
+        return Response({
+            "message": "Verification code sent to your email"
+        })
+        
+    except Exception as e:
+        print(f"2FA Enable Error: {str(e)}")
+        return Response(
+            {"error": "Failed to enable 2FA. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def verify_2fa(request):
-    otp = request.data.get('otp')
-    totp = pyotp.TOTP(request.user.otp_secret)
-    if totp.verify(otp):
-        return Response({"message": "2FA verified successfully"})
-    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        otp = request.data.get('otp')
+        if not otp:
+            return Response(
+                {"error": "OTP code is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        if not request.user.otp_secret:
+            return Response(
+                {"error": "2FA setup not initiated"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        totp = pyotp.TOTP(request.user.otp_secret)
+        if totp.verify(otp):
+            request.user.is_2fa_enabled = True
+            request.user.save()
+            return Response({"message": "2FA verified successfully"})
+            
+        return Response(
+            {"error": "Invalid OTP code"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    except Exception as e:
+        print(f"2FA Verify Error: {str(e)}")
+        return Response(
+            {"error": "Failed to verify 2FA. Please try again."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

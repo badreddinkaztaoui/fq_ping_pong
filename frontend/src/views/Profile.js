@@ -51,7 +51,7 @@ export class ProfileView extends View {
                     <div class="profile-banner-overlay"></div>
                     <div class="profile-image-wrapper">
                         ${this.getProfileImage()}
-                        <h1 class="profile-name">${this.user.username.split("_")[1]}</h1>
+                        <h1 class="profile-name">${this.user.username}</h1>
                     </div>
                 </div>
             </div>
@@ -61,7 +61,7 @@ export class ProfileView extends View {
     getProfileImage() {
         return `
             <div class="profile-image-container">
-                <img src="${this.user.avatar_url}" alt="Profile" class="profile-image" />
+                <img src="${this.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Profile" class="profile-image" />
                 <input type="file" id="photoInput" accept="image/*" class="photo-input" />
                 <button type="button" class="edit-avatar-btn" id="editAvatarBtn">
                     <svg viewBox="0 0 24 24" class="edit-icon">
@@ -118,7 +118,7 @@ export class ProfileView extends View {
                 <label>DISPLAY NAME</label>
                 <div class="input-wrapper">
                     <input type="text" id="username" name="username" 
-                           value="${this.user.username.split("_")[1]}" required />
+                        value="${this.user.username}" required />
                     <span class="input-focus"></span>
                 </div>
             </div>
