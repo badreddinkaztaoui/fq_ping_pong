@@ -1,3 +1,8 @@
+.env
+backend/auth/.env
+backend/game/.env
+backend/chat/.env
+
 frontend/node_modules
 frontend/dist
 frontend/.pnpm-lock.yaml
@@ -20,7 +25,3 @@ backend/chat/api/migrations/*.pyc
 backend/chat/api/__pycache__/
 backend/chat/core/__pycache__/
 
-.env*
-backend/auth/.env*
-backend/game/.env*
-backend/chat/.env*
