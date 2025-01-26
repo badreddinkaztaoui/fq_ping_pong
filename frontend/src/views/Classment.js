@@ -2,162 +2,122 @@ import { View } from "../core/View";
 import "../styles/dashboard/classment.css";
 
 export class ClassmentView extends View {
-    constructor() {
-        super();
-        this.itemsPerPage = 10;
-        this.currentPage = 1;
-        this.trophyPng = [
-            "/images/dashboard/trophies/gold-trophy.png",
-            "/images/dashboard/trophies/silver-trophy.png",
-            "/images/dashboard/trophies/bronze-trophy.png"
-        ];
-        this.players = this.sortPlayers(this.getPlayersList());
-        this.totalPages = Math.ceil(this.players.length / this.itemsPerPage);
-    }
+  constructor() {
+    super();
+    this.itemsPerPage = 10;
+    this.currentPage = 1;
+    this.trophyPng = [
+      "/images/dashboard/trophies/gold-trophy.png",
+      "/images/dashboard/trophies/silver-trophy.png",
+      "/images/dashboard/trophies/bronze-trophy.png"
+    ];
+    this.players = this.sortPlayers(this.getPlayersList());
+    this.totalPages = Math.ceil(this.players.length / this.itemsPerPage);
+  }
 
-    getPlayersList() {
-        return [
-            {
-                name: "Liam",
-                id: "#541",
-                rating: 1875,
-                matches: 32,
-                peakRating: 2000,
-                region: "NA",
-                image: "/images/accounts-image/player-0.webp",
-                winRate: 72,
+  getPlayersList() {
+    return [
+      {
+        name: "Liam",
+        id: "#541",
+        rating: 1875,
+        matches: 32,
+        peakRating: 2000,
+        region: "NA",
+        image: "/images/users/player-0.webp",
+        winRate: 72,
 
-            },
-            {
-                name: "Ethan",
-                id: "#542",
-                rating: 1780,
-                matches: 29,
-                peakRating: 1920,
-                region: "EU",
-                image: "/images/accounts-image/player-1.jpeg",
-                winRate: 64,
-            },
-            {
-                name: "Akira",
-                id: "#543",
-                rating: 1700,
-                matches: 27,
-                peakRating: 1800,
-                region: "APAC",
-                image: "/images/accounts-image/player-3.jpeg",
-                winRate: 58,
-            },
-            {
-                name: "Lucas",
-                id: "#544",
-                rating: 1650,
-                matches: 23,
-                peakRating: 1750,
-                region: "SA",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 53,
-            },
-            {
-                name: "Khalid",
-                id: "#545",
-                rating: 1600,
-                matches: 21,
-                peakRating: 1700,
-                region: "ME",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 48,
-            },
-            {
-                name: "Noah",
-                id: "#546",
-                rating: 1820,
-                matches: 30,
-                peakRating: 1950,
-                region: "NA",
-                image: "/images/accounts-image/player-3.jpeg",
-                winRate: 70,
-            },
-            {
-                name: "Sophie",
-                id: "#547",
-                rating: 1755,
-                matches: 28,
-                peakRating: 1900,
-                region: "EU",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 63,
-            },
-            {
-                name: "Raj",
-                id: "#548",
-                rating: 1690,
-                matches: 26,
-                peakRating: 1800,
-                region: "APAC",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 57,
-            },
-            {
-                name: "Mateo",
-                id: "#549",
-                rating: 1625,
-                matches: 22,
-                peakRating: 1700,
-                region: "SA",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 51,
-            },
-            {
-                name: "Fatima",
-                id: "#550",
-                rating: 1555,
-                matches: 20,
-                peakRating: 1650,
-                region: "ME",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 46,
-            },
-            {
-                name: "Emma",
-                id: "#551",
-                rating: 1520,
-                matches: 19,
-                peakRating: 1600,
-                region: "SA",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 45,
-            },
-            {
-                name: "Diego",
-                id: "#552",
-                rating: 1500,
-                matches: 18,
-                peakRating: 1580,
-                region: "ME",
-                image: "/images/accounts-image/player-2.png",
-                winRate: 43,
-            },
-        ];
-    }
+      },
+      {
+        name: "Ethan",
+        id: "#542",
+        rating: 1780,
+        matches: 29,
+        peakRating: 1920,
+        region: "EU",
+        image: "/images/users/player-0.webp",
+        winRate: 64,
+      },
+      {
+        name: "Akira",
+        id: "#543",
+        rating: 1700,
+        matches: 27,
+        peakRating: 1800,
+        region: "APAC",
+        image: "/images/users/player-0.webp",
+        winRate: 58,
+      },
+      {
+        name: "Lucas",
+        id: "#544",
+        rating: 1650,
+        matches: 23,
+        peakRating: 1750,
+        region: "SA",
+        image: "/images/users/player-0.webp",
+        winRate: 53,
+      },
+      {
+        name: "Khalid",
+        id: "#545",
+        rating: 1600,
+        matches: 21,
+        peakRating: 1700,
+        region: "ME",
+        image: "/images/users/player-0.webp",
+        winRate: 48,
+      },
+      {
+        name: "Noah",
+        id: "#546",
+        rating: 1820,
+        matches: 30,
+        peakRating: 1950,
+        region: "NA",
+        image: "/images/users/player-0.webp",
+        winRate: 70,
+      },
+      {
+        name: "Sophie",
+        id: "#547",
+        rating: 1755,
+        matches: 28,
+        peakRating: 1900,
+        region: "EU",
+        image: "/images/users/player-0.webp",
+        winRate: 63,
+      },
+      {
+        name: "Raj",
+        id: "#548",
+        rating: 1690,
+        matches: 26,
+        peakRating: 1800,
+        region: "APAC",
+        image: "/images/users/player-0.webp",
+        winRate: 57,
+      },
+    ];
+  }
 
-    sortPlayers(players) {
-        return players
-            .sort((a, b) => b.rating - a.rating)
-            .map((player, index) => ({
-                ...player,
-                rank: `#${index + 1}`,
-                trophyImage: index < 3 ? this.trophyPng[index] : null
-            }));
-    }
-    renderTable() {
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        const paginatedPlayers = this.players.slice(startIndex, endIndex);
+  sortPlayers(players) {
+    return players
+      .sort((a, b) => b.rating - a.rating)
+      .map((player, index) => ({
+        ...player,
+        rank: `#${index + 1}`,
+        trophyImage: index < 3 ? this.trophyPng[index] : null
+      }));
+  }
+  renderTable() {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = startIndex + this.itemsPerPage;
+    const paginatedPlayers = this.players.slice(startIndex, endIndex);
 
-        const rows = paginatedPlayers
-            .map(
-                (player, index) => `
+    const rows = paginatedPlayers
+      .map(
+        (player, index) => `
           <tr class="${index < 3 ? ["gold", "silver", "bronze"][index] : ""}">
             <td class="rank-cell">${player.rank}</td>
             <td class="player-cell">
@@ -170,29 +130,29 @@ export class ClassmentView extends View {
               <div class="stat-tile">
                 <span class="stat-value">${player.matches}</span>
                 <div class="stat-bar" style="width: ${(player.matches / 50) * 100
-                    }%"></div>
+          }%"></div>
               </div>
             </td>
             <td class="rating-cell">
               <div class="stat-tile">
                 <span class="stat-value">${player.rating}</span>
                 <div class="stat-bar" style="width: ${(player.rating / 2000) * 100
-                    }%"></div>
+          }%"></div>
               </div>
             </td>
             <td class="peak-cell">
               <div class="stat-tile">
                 <span class="stat-value">${player.peakRating}</span>
                 <div class="stat-bar" style="width: ${(player.peakRating / 2000) * 100
-                    }%"></div>
+          }%"></div>
               </div>
             </td>
           </tr>
         `
-            )
-            .join("");
+      )
+      .join("");
 
-        return `
+    return `
           <table class="leaderboard-table valorant-table">
             <thead>
               <tr>
@@ -215,13 +175,13 @@ export class ClassmentView extends View {
             </button>
           </div>
         `;
-    }
-    renderTopThree() {
-        const topThree = this.players.slice(0, 3);
-        const rankLabels = ["1", "2", "3"];
+  }
+  renderTopThree() {
+    const topThree = this.players.slice(0, 3);
+    const rankLabels = ["1", "2", "3"];
 
 
-        return `
+    return `
           <div class="top-three-container">
             ${topThree.map((player, index) => `
               <div class="top-player top-${["first", "second", "third"][index]} valorant-card" data-rank="${rankLabels[index]}">
@@ -251,72 +211,72 @@ export class ClassmentView extends View {
             `).join("")}
           </div>
         `;
-    }
-    async render() {
-        const container = document.createElement('section');
-        container.className = 'leaderboard-modern valorant-leaderboard';
+  }
+  async render() {
+    const container = document.createElement('section');
+    container.className = 'leaderboard-modern valorant-leaderboard';
 
-        container.innerHTML = `
+    container.innerHTML = `
           <div class="top-three">${this.renderTopThree()}</div>
           <div class="table-container">${this.renderTable()}</div>
         `;
 
-        // Bind events after content rendered
-        const prevBtn = container.querySelector('.prev-page');
-        const nextBtn = container.querySelector('.next-page');
+    // Bind events after content rendered
+    const prevBtn = container.querySelector('.prev-page');
+    const nextBtn = container.querySelector('.next-page');
 
-        if (prevBtn) {
-            prevBtn.addEventListener('click', () => {
-                console.log('prev clicked');
-                if (this.currentPage > 1) {
-                    this.currentPage--;
-                    this.updateLeaderboard();
-                }
-            });
+    if (prevBtn) {
+      prevBtn.addEventListener('click', () => {
+        console.log('prev clicked');
+        if (this.currentPage > 1) {
+          this.currentPage--;
+          this.updateLeaderboard();
         }
+      });
+    }
 
-        if (nextBtn) {
-            nextBtn.addEventListener('click', () => {
-                console.log('next clicked');
-                if (this.currentPage < this.totalPages) {
-                    this.currentPage++;
-                    this.updateLeaderboard();
-                }
-            });
+    if (nextBtn) {
+      nextBtn.addEventListener('click', () => {
+        console.log('next clicked');
+        if (this.currentPage < this.totalPages) {
+          this.currentPage++;
+          this.updateLeaderboard();
         }
-
-        return container;
+      });
     }
 
-    updateTable() {
-        const tableContainer = this.$('.table-container');
-        tableContainer.innerHTML = this.renderTable();
-        this.updateLeaderboard(); // Reattach listeners
-    }
-    updateLeaderboard() {
-        const tableContainer = this.$('.table-container');
-        if (!tableContainer) return;
+    return container;
+  }
 
-        tableContainer.innerHTML = this.renderTable();
+  updateTable() {
+    const tableContainer = this.$('.table-container');
+    tableContainer.innerHTML = this.renderTable();
+    this.updateLeaderboard(); // Reattach listeners
+  }
+  updateLeaderboard() {
+    const tableContainer = this.$('.table-container');
+    if (!tableContainer) return;
 
-        // Reattach event listeners after HTML update
-        const prevBtn = tableContainer.querySelector('.prev-page');
-        const nextBtn = tableContainer.querySelector('.next-page');
+    tableContainer.innerHTML = this.renderTable();
 
-        prevBtn.addEventListener('click', () => {
-            console.log('prev clicked');
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.updateTable();
-            }
-        });
+    // Reattach event listeners after HTML update
+    const prevBtn = tableContainer.querySelector('.prev-page');
+    const nextBtn = tableContainer.querySelector('.next-page');
 
-        nextBtn.addEventListener('click', () => {
-            console.log('next clicked');
-            if (this.currentPage < this.totalPages) {
-                this.currentPage++;
-                this.updateTable();
-            }
-        });
-    }
+    prevBtn.addEventListener('click', () => {
+      console.log('prev clicked');
+      if (this.currentPage > 1) {
+        this.currentPage--;
+        this.updateTable();
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      console.log('next clicked');
+      if (this.currentPage < this.totalPages) {
+        this.currentPage++;
+        this.updateTable();
+      }
+    });
+  }
 }

@@ -22,12 +22,12 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2rem;
-  margin: 0 auto;
+  margin-bottom: 20px;
 }
 
 .game-mode-card {
   position: relative;
-  height: 400px;
+  height: 360px;
   clip-path: polygon(15px 0, 100% 0, calc(100% - 15px) 100%, 0 100%);
   overflow: hidden;
   transition: transform 0.3s ease;

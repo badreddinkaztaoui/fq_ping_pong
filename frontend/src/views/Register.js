@@ -5,26 +5,29 @@ import { userState } from '../utils/UserState';
 import "../styles/register.css";
 
 export class SignupView extends View {
-    constructor() {
-      super();
-      this.userState = userState;
-      this.validation = new Validation();
-      this.state = new State({
-        loading: false,
-        error: null,
-        validationErrors: {}
-      });
-    }
-  
-    async render() {
-      const template = document.createElement('template');
-      template.innerHTML = `
+  constructor() {
+    super();
+    this.userState = userState;
+    this.validation = new Validation();
+    this.state = new State({
+      loading: false,
+      error: null,
+      validationErrors: {}
+    });
+  }
+
+  async render() {
+    const template = document.createElement('template');
+    template.innerHTML = `
             <div class="signup-container">
                 <div class="signup-image">
                     <div class="image-overlay"></div>
                 </div>
 
                 <div class="signup-form">
+                <div class="logo-container">
+            <img src="/images/logo.png" alt="Company Logo" class="logo" />
+          </div>
                     <div class="form-wrapper">
                         <h1 class="title">Create Account</h1>
                         
@@ -93,153 +96,153 @@ export class SignupView extends View {
                 <div id="toast" class="toast"></div>
             </div>
         `;
-  
-      return template.content.firstElementChild;
+
+    return template.content.firstElementChild;
+  }
+
+  validateForm(formData) {
+    const errors = {};
+    const username = formData.get('username');
+    const email = formData.get('email');
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+
+    if (!username || !this.validation.username(username)) {
+      errors.username = !username ? 'Username is required' :
+        'Username must be 3-20 characters long and contain only letters, numbers, and underscores';
     }
-  
-    validateForm(formData) {
-      const errors = {};
-      const username = formData.get('username');
-      const email = formData.get('email');
-      const password = formData.get('password');
-      const confirmPassword = formData.get('confirmPassword');
-    
-      if (!username || !this.validation.username(username)) {
-        errors.username = !username ? 'Username is required' :
-          'Username must be 3-20 characters long and contain only letters, numbers, and underscores';
+
+    if (!email || !this.validation.email(email)) {
+      errors.email = !email ? 'Email is required' :
+        'Please enter a valid email address';
+    }
+
+    if (!password || !this.validation.password(password)) {
+      errors.password = !password ? 'Password is required' :
+        'Password must be at least 8 characters with uppercase, lowercase, and numbers';
+    }
+
+    if (!confirmPassword || password !== confirmPassword) {
+      errors['confirm-password'] = !confirmPassword ? 'Please confirm your password' :
+        'Passwords do not match';
+    }
+
+    const hasErrors = Object.keys(errors).length > 0;
+    this.state.setState({
+      validationErrors: errors,
+      error: hasErrors ? 'Please correct the form errors before proceeding' : null
+    });
+
+    hasErrors ? this.showFieldErrors(errors) : this.clearFieldErrors();
+    return !hasErrors;
+  }
+
+  showFieldErrors(errors) {
+    Object.entries(errors).forEach(([field, message]) => {
+      const errorElement = this.$(`#${field}-error`);
+      const inputElement = this.$(`#${field}`);
+
+      if (errorElement && inputElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+        errorElement.classList.add('fade-in');
+
+        inputElement.classList.add('input-error', 'shake');
+        inputElement.setAttribute('aria-invalid', 'true');
+        inputElement.setAttribute('aria-describedby', `${field}-error`);
+
+        setTimeout(() => inputElement.classList.remove('shake'), 500);
       }
-    
-      if (!email || !this.validation.email(email)) {
-        errors.email = !email ? 'Email is required' :
-          'Please enter a valid email address';
+    });
+  }
+
+  clearFieldErrors() {
+    ['username', 'email', 'password', 'confirm-password'].forEach(field => {
+      const errorElement = this.$(`#${field}-error`);
+      const inputElement = this.$(`#${field}`);
+
+      if (errorElement && inputElement) {
+        errorElement.textContent = '';
+        errorElement.style.display = 'none';
+        errorElement.classList.remove('fade-in');
+
+        inputElement.classList.remove('input-error', 'shake');
+        inputElement.removeAttribute('aria-invalid');
+        inputElement.removeAttribute('aria-describedby');
       }
-    
-      if (!password || !this.validation.password(password)) {
-        errors.password = !password ? 'Password is required' :
-          'Password must be at least 8 characters with uppercase, lowercase, and numbers';
-      }
-    
-      if (!confirmPassword || password !== confirmPassword) {
-        errors['confirm-password'] = !confirmPassword ? 'Please confirm your password' :
-          'Passwords do not match';
-      }
-    
-      const hasErrors = Object.keys(errors).length > 0;
-      this.state.setState({ 
-        validationErrors: errors,
-        error: hasErrors ? 'Please correct the form errors before proceeding' : null
+    });
+  }
+
+  showToast(message, type = 'error', duration = 5000) {
+    const toast = this.$('#toast');
+    if (!toast) return;
+
+    toast.textContent = message;
+    toast.className = `toast ${type} visible`;
+    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+
+    setTimeout(() => {
+      toast.classList.remove('visible');
+      setTimeout(() => {
+        toast.textContent = '';
+        toast.className = 'toast';
+        toast.removeAttribute('role');
+      }, 300);
+    }, duration);
+  }
+
+  async handleSubmit(event) {
+    event.preventDefault();
+
+    const formData = new FormData(event.target);
+    if (!this.validateForm(formData)) return;
+
+    const data = {
+      email: formData.get('email').toLowerCase().trim(),
+      username: formData.get('username'),
+      password: formData.get('password'),
+      display_name: formData.get('username')
+    };
+
+    this.state.setState({ loading: true, error: null });
+    const submitBtn = this.$('button[type="submit"]');
+    submitBtn.textContent = 'Creating Account...';
+    submitBtn.disabled = true;
+
+    try {
+      await this.userState.register(data);
+      this.showToast('Account created successfully! Redirecting...', 'success', 3000);
+      setTimeout(() => this.router.navigate('/login'), 2000);
+    } catch (error) {
+      this.state.setState({
+        error: error.message || 'Registration failed. Please try again.',
+        loading: false
       });
-
-      hasErrors ? this.showFieldErrors(errors) : this.clearFieldErrors();
-      return !hasErrors;
+      this.showToast(error.message || 'Registration failed. Please try again.');
+    } finally {
+      submitBtn.textContent = 'CREATE ACCOUNT';
+      submitBtn.disabled = false;
     }
+  }
 
-    showFieldErrors(errors) {
-      Object.entries(errors).forEach(([field, message]) => {
-        const errorElement = this.$(`#${field}-error`);
-        const inputElement = this.$(`#${field}`);
-        
-        if (errorElement && inputElement) {
-          errorElement.textContent = message;
-          errorElement.style.display = 'block';
-          errorElement.classList.add('fade-in');
-          
-          inputElement.classList.add('input-error', 'shake');
-          inputElement.setAttribute('aria-invalid', 'true');
-          inputElement.setAttribute('aria-describedby', `${field}-error`);
-          
-          setTimeout(() => inputElement.classList.remove('shake'), 500);
-        }
-      });
-    }
+  async setupEventListeners() {
+    const form = this.$('#signup-form');
+    const signInLink = this.$('.signup-link a');
+    const inputs = this.$$('input');
 
-    clearFieldErrors() {
-      ['username', 'email', 'password', 'confirm-password'].forEach(field => {
-        const errorElement = this.$(`#${field}-error`);
-        const inputElement = this.$(`#${field}`);
-        
-        if (errorElement && inputElement) {
+    this.addListener(form, 'submit', this.handleSubmit.bind(this));
+    this.addListener(signInLink, 'click', () => this.router.navigate('/login'));
+
+    inputs.forEach(input => {
+      this.addListener(input, 'input', () => {
+        const errorElement = this.$(`#${input.id}-error`);
+        if (errorElement) {
           errorElement.textContent = '';
           errorElement.style.display = 'none';
-          errorElement.classList.remove('fade-in');
-          
-          inputElement.classList.remove('input-error', 'shake');
-          inputElement.removeAttribute('aria-invalid');
-          inputElement.removeAttribute('aria-describedby');
         }
+        input.classList.remove('input-error');
+        input.removeAttribute('aria-invalid');
       });
-    }
-
-    showToast(message, type = 'error', duration = 5000) {
-      const toast = this.$('#toast');
-      if (!toast) return;
-  
-      toast.textContent = message;
-      toast.className = `toast ${type} visible`;
-      toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-      
-      setTimeout(() => {
-        toast.classList.remove('visible');
-        setTimeout(() => {
-          toast.textContent = '';
-          toast.className = 'toast';
-          toast.removeAttribute('role');
-        }, 300);
-      }, duration);
-    }
-  
-    async handleSubmit(event) {
-      event.preventDefault();
-      
-      const formData = new FormData(event.target);
-      if (!this.validateForm(formData)) return;
-      
-      const data = {
-        email: formData.get('email').toLowerCase().trim(),
-        username: formData.get('username'),
-        password: formData.get('password'),
-        display_name: formData.get('username')
-      };
-      
-      this.state.setState({ loading: true, error: null });
-      const submitBtn = this.$('button[type="submit"]');
-      submitBtn.textContent = 'Creating Account...';
-      submitBtn.disabled = true;
-      
-      try {
-        await this.userState.register(data);
-        this.showToast('Account created successfully! Redirecting...', 'success', 3000);
-        setTimeout(() => this.router.navigate('/login'), 2000);
-      } catch (error) {
-        this.state.setState({
-          error: error.message || 'Registration failed. Please try again.',
-          loading: false
-        });
-        this.showToast(error.message || 'Registration failed. Please try again.');
-      } finally {
-        submitBtn.textContent = 'CREATE ACCOUNT';
-        submitBtn.disabled = false;
-      }
-    }
-  
-    async setupEventListeners() {
-      const form = this.$('#signup-form');
-      const signInLink = this.$('.signup-link a');
-      const inputs = this.$$('input');
-
-      this.addListener(form, 'submit', this.handleSubmit.bind(this));
-      this.addListener(signInLink, 'click', () => this.router.navigate('/login'));
-
-      inputs.forEach(input => {
-        this.addListener(input, 'input', () => {
-          const errorElement = this.$(`#${input.id}-error`);
-          if (errorElement) {
-            errorElement.textContent = '';
-            errorElement.style.display = 'none';
-          }
-          input.classList.remove('input-error');
-          input.removeAttribute('aria-invalid');
-        });
-      });
-    }
+    });
+  }
 }

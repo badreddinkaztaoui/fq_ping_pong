@@ -30,6 +30,10 @@ export class LoginView extends View {
         </div>
         
         <div class="signin-form">
+          <div class="logo-container">
+            <img src="/images/logo.png" alt="Company Logo" class="logo" />
+          </div>
+
           <div class="form-wrapper">
             <h1 class="title">Sign in</h1>
             
@@ -97,21 +101,21 @@ export class LoginView extends View {
 
   validateForm(email, password) {
     const errors = {};
-    
+
     if (!email || !this.validation.email(email) || email.length > 100) {
-      errors.email = !email ? 'Email is required' : 
-                    !this.validation.email(email) ? 'Please enter a valid email address' :
-                    'Email address is too long (maximum 100 characters)';
+      errors.email = !email ? 'Email is required' :
+        !this.validation.email(email) ? 'Please enter a valid email address' :
+          'Email address is too long (maximum 100 characters)';
     }
 
     if (!password || password.length < 8 || password.length > 50) {
       errors.password = !password ? 'Password is required' :
-                       password.length < 8 ? 'Password must be at least 8 characters long' :
-                       'Password is too long (maximum 50 characters)';
+        password.length < 8 ? 'Password must be at least 8 characters long' :
+          'Password is too long (maximum 50 characters)';
     }
 
     const hasErrors = Object.keys(errors).length > 0;
-    this.state.setState({ 
+    this.state.setState({
       validationErrors: errors,
       error: hasErrors ? 'Please correct the form errors before proceeding' : null
     });
@@ -124,16 +128,16 @@ export class LoginView extends View {
     Object.entries(errors).forEach(([field, message]) => {
       const errorElement = this.$(`#${field}-error`);
       const inputElement = this.$(`#${field}`);
-      
+
       if (errorElement && inputElement) {
         errorElement.textContent = message;
         errorElement.style.display = 'block';
         errorElement.classList.add('fade-in');
-        
+
         inputElement.classList.add('input-error', 'shake');
         inputElement.setAttribute('aria-invalid', 'true');
         inputElement.setAttribute('aria-describedby', `${field}-error`);
-        
+
         setTimeout(() => inputElement.classList.remove('shake'), 500);
       }
     });
@@ -143,12 +147,12 @@ export class LoginView extends View {
     ['email', 'password'].forEach(field => {
       const errorElement = this.$(`#${field}-error`);
       const inputElement = this.$(`#${field}`);
-      
+
       if (errorElement && inputElement) {
         errorElement.textContent = '';
         errorElement.style.display = 'none';
         errorElement.classList.remove('fade-in');
-        
+
         inputElement.classList.remove('input-error', 'shake');
         inputElement.removeAttribute('aria-invalid');
         inputElement.removeAttribute('aria-describedby');
@@ -163,7 +167,7 @@ export class LoginView extends View {
     toast.textContent = message;
     toast.className = `toast ${type} visible`;
     toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-    
+
     setTimeout(() => {
       toast.classList.remove('visible');
       setTimeout(() => {

@@ -1,22 +1,8 @@
 .main-content {
-  position: relative;
-  padding: 2rem;
-  display: grid;
-  grid-template-columns: 80% 20%;
+  display: flex;
   gap: 2rem;
-  background-image: url("/images/dashboard/Dashbord.png");
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   height: 100%;
-}
-
-.main-content::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1;
+  position: relative;
 }
 
 .main-content > * {
@@ -27,17 +13,18 @@
 .left-section {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  flex: 1;
 }
 
 .right-section {
+  flex: 0 0 20%;
+  min-width: 280px;
   background: linear-gradient(
     165deg,
     rgba(23, 32, 43, 0.95) 0%,
     rgba(15, 20, 27, 0.98) 50%,
     rgba(13, 17, 23, 1) 100%
   );
-  /* box-shadow: inset 0 0 100px rgba(255, 70, 85, 0.1); */
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -83,26 +70,13 @@
   }
 }
 
-@media (max-width: 1400px) {
-  .main-content {
-    grid-template-columns: 75% 25%;
-  }
-}
-
-@media (max-width: 1200px) {
-  .main-content {
-    grid-template-columns: 70% 30%;
-    padding: 1.5rem;
-    gap: 1.5rem;
-  }
-}
-
 @media (max-width: 992px) {
   .main-content {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .right-section {
+    flex: 0 0 auto;
     max-width: 600px;
     margin: 0 auto;
     width: 100%;
@@ -111,7 +85,7 @@
 
 @media (max-width: 768px) {
   .main-content {
-    padding: 1rem;
+    padding: 0.5rem;
     gap: 1rem;
   }
 
@@ -122,6 +96,6 @@
 
 @media (max-width: 480px) {
   .main-content {
-    padding: 0.75rem;
+    padding: 0.4rem;
   }
 }
