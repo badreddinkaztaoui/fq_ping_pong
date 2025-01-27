@@ -168,7 +168,25 @@ export class UserState extends State {
         this.setState({ error: error.message, loading: false });
         throw error;
     }
-}
+  }
+
+  async updateProfileAvatar(file) {
+    this.setState({ loading: true, error: null });
+    try {
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await this.http.post('/auth/update-avatar/', formData);
+        this.setState({ 
+            user: { ...this.state.user, avatar_url: response.avatar_url },
+            loading: false 
+        });
+        return response;
+    } catch (error) {
+        this.setState({ error: error.message, loading: false });
+        throw error;
+    }
+  }
 
   async resetPasswordRequest(email) {
     try {

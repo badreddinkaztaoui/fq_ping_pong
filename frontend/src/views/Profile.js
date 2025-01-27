@@ -92,36 +92,46 @@ export class ProfileView extends View {
                                 <span class="input-focus"></span>
                             </div>
                         </div>
-                        <div class="input-group">
-                            <label>CURRENT PASSWORD</label>
-                            <div class="input-wrapper">
-                                <input type="password" 
-                                    id="currentPassword" 
-                                    name="currentPassword" />
-                                <span class="input-focus"></span>
+                        
+                        <!-- Password Fields Section -->
+                        ${!is42User ? `
+                            <div class="input-group">
+                                <label>CURRENT PASSWORD</label>
+                                <div class="input-wrapper">
+                                    <input type="password" 
+                                        id="currentPassword" 
+                                        name="currentPassword" />
+                                    <span class="input-focus"></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="input-group">
-                            <label>NEW PASSWORD</label>
-                            <div class="input-wrapper">
-                                <input type="password" 
-                                    id="newPassword" 
-                                    name="newPassword" />
-                                <span class="input-focus"></span>
+                            <div class="input-group">
+                                <label>NEW PASSWORD</label>
+                                <div class="input-wrapper">
+                                    <input type="password" 
+                                        id="newPassword"
+                                        name="newPassword" />
+                                    <span class="input-focus"></span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="input-group">
-                            <label>CONFIRM NEW PASSWORD</label>
-                            <div class="input-wrapper">
-                                <input type="password" 
-                                    id="confirmPassword" 
-                                    name="confirmPassword" />
-                                <span class="input-focus"></span>
-                                <span class="password-error" id="passwordError">
-                                    Passwords do not match
-                                </span>
+                            <div class="input-group">
+                                <label>CONFIRM NEW PASSWORD</label>
+                                <div class="input-wrapper">
+                                    <input type="password" 
+                                        id="confirmPassword"
+                                        name="confirmPassword" />
+                                    <span class="input-focus"></span>
+                                    <span class="password-error" id="passwordError">
+                                        Passwords do not match
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        ` : `
+                            <div class="input-group disabled">
+                                <div class="password-management-notice">
+                                    <p>Password management is handled through your 42 account settings.</p>
+                                </div>
+                            </div>
+                        `}
     
                         <!-- Security Box -->
                         <div class="security-box">
@@ -258,7 +268,6 @@ export class ProfileView extends View {
             if (!file) return;
     
             try {
-                // Validate file
                 if (!this.imageConfig.allowedTypes.includes(file.type)) {
                     throw new Error('Invalid file type. Please upload a JPEG, PNG, or WebP image.');
                 }
@@ -268,15 +277,11 @@ export class ProfileView extends View {
     
                 this.state.state.imageProcessing = true;
     
-                // Create a preview
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    profileImage.src = e.target.result;
-                    this.state.state.newAvatarUrl = e.target.result;
-                    this.state.state.formChanges.avatar = true;
-                    this.updateSaveButtonState();
-                };
-                reader.readAsDataURL(file);
+                const response = await userState.updateProfileAvatar(file);
+    
+                profileImage.src = response.avatar_url;
+                this.state.state.formChanges.avatar = true;
+                this.updateSaveButtonState();
     
             } catch (error) {
                 this.showError(error.message);

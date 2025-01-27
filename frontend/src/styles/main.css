@@ -106,3 +106,25 @@ body {
       transform: rotate(360deg);
   }
 }
+
+.reset-view {
+  --accent-color: #ff4655;
+  --bg-color: #0f1923;
+  --text-color: #ffffff;
+  --secondary-text: #768079;
+  --error-color: #ff4655;
+  --success-color: #00dc8a;
+
+  width: 100%;
+  padding: 2rem;
+  color: var(--text-color);
+  font-family: "VALORANT", sans-serif;
+  background-color: var(--bg-color);
+  height: 100vh;
+}
+
+.reset-content {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: auto;
+}

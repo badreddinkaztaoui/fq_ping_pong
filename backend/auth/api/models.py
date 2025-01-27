@@ -22,7 +22,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=150, unique=True)
     display_name = models.CharField(max_length=150)
-    avatar_url = models.URLField(null=True, blank=True)
+    avatar_url = models.TextField(blank=True, null=True)
     is_2fa_enabled = models.BooleanField(default=False)
     otp_secret = models.CharField(max_length=32, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

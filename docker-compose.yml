@@ -28,6 +28,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./backend/auth:/app
+      - /app/media/avatars
     env_file:
       - .env
       - ./backend/auth/.env

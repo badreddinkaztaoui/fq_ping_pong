@@ -85,6 +85,7 @@
   align-items: center;
   justify-content: center;
   transition: opacity 0.3s ease;
+  z-index: 10;
 }
 
 .profile-image-container:hover .edit-avatar-btn {

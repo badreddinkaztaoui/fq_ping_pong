@@ -7,7 +7,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY requirements.txt .
-
 RUN apk add --no-cache \
     postgresql-dev \
     curl \
@@ -19,8 +18,9 @@ RUN apk add --no-cache \
 
 COPY . /app
 
-RUN mkdir -p /app/static /app/media \
-    && chmod -R 755 /app/static /app/media
+RUN mkdir -p /app/static /app/media/avatars && \
+    chmod -R 777 /app/static && \
+    chmod -R 777 /app/media
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8001/api/auth/health/ || exit 1

@@ -16,12 +16,12 @@ export class Http {
   }
 
   async post(url, data, options = {}) {
-      return await this.request(url, {
-          ...options,
-          method: 'POST',
-          body: JSON.stringify(data)
-      });
-  }
+    return await this.request(url, {
+        ...options,
+        method: 'POST',
+        body: data instanceof FormData ? data : JSON.stringify(data)
+    });
+}
 
   async put(url, data, options = {}) {
       return await this.request(url, {
@@ -39,21 +39,36 @@ export class Http {
     const defaultOptions = {
       credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
         'Accept': 'application/json',
         'X-CSRFToken': this.getCsrfToken(),
       }
     };
 
+    const isFormData = options.body instanceof FormData;
+
+    if (!isFormData) {
+      defaultOptions.headers['Content-Type'] = 'application/json';
+    }
+
     try {
-      const response = await fetch(url, {
+      const requestOptions = {
         ...defaultOptions,
         ...options,
         headers: {
           ...defaultOptions.headers,
           ...options.headers
         }
-      });
+      };
+
+      if (isFormData) {
+        delete requestOptions.headers['Content-Type'];
+      }
+
+      if (requestOptions.body && typeof requestOptions.body === 'object' && !isFormData) {
+        requestOptions.body = JSON.stringify(requestOptions.body);
+      }
+
+      const response = await fetch(url, requestOptions);
 
       const data = await response.json().catch(() => ({
         message: 'No response body'

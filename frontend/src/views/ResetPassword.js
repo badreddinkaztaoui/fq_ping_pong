@@ -16,11 +16,11 @@ export class ResetPasswordView extends View {
 
     async render() {
         const template = document.createElement('section');
-        template.className = 'profile-view';
+        template.className = 'reset-view';
         
         template.innerHTML = `
             <form class="profile-container" id="resetPasswordForm">
-                <div class="profile-content">
+                <div class="reset-content">
                     <div class="profile-section">
                         <div class="section-header">
                             <h2>RESET PASSWORD</h2>

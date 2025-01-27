@@ -1,3 +1,4 @@
+import os
 import requests
 import urllib.parse
 from django.conf import settings
@@ -21,6 +22,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
 from .serializers import UserSerializer
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 import pyotp
 
 User = get_user_model()
@@ -337,6 +340,36 @@ def update_user(request):
         })
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def update_avatar(request):
+    if 'avatar' not in request.FILES:
+        return Response({'error': 'No avatar file provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+    avatar_file = request.FILES['avatar']
+    
+    try:
+        media_dir = os.path.join(settings.MEDIA_ROOT, 'avatars')
+        os.makedirs(media_dir, exist_ok=True)
+        os.chmod(media_dir, 0o777)
+        
+        file_ext = os.path.splitext(avatar_file.name)[1].lower()
+        filename = f"avatars/{request.user.id}_avatar{file_ext}"
+        
+        path = default_storage.save(filename, avatar_file)
+        full_url = request.build_absolute_uri(settings.MEDIA_URL + path)
+        
+        request.user.avatar_url = full_url
+        request.user.save()
+
+        return Response({'avatar_url': full_url})
+
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to save avatar'}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
