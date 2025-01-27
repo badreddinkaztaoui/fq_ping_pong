@@ -17,6 +17,8 @@ import { ProfileView } from './views/Profile.js'
 import { OAuthCallbackView } from './views/OAuthCallback.js';
 import { NotFoundView } from "./views/404.js"
 import { GameView } from './views/Game.js';
+import { ResetPasswordView } from './views/ResetPassword.js';
+import { ResetPasswordConfirmView } from './views/ResetPasswordConfirm.js';
 
 
 
@@ -33,6 +35,16 @@ const routes = [
   {
     path: '/signup',
     view: SignupView,
+    handler: AuthGuard.requireGuest
+  },
+  { 
+    path: '/reset-password', 
+    view: ResetPasswordView,
+    handler: AuthGuard.requireGuest
+  },
+  {
+    path: '/reset-password/:uidb64/:token/',
+    view: ResetPasswordConfirmView,
     handler: AuthGuard.requireGuest
   },
   { 

@@ -12,7 +12,7 @@
   color: var(--text-color);
   font-family: "VALORANT", sans-serif;
   position: relative;
-  z-index: 2;
+  z-index: 10;
 }
 
 .profile-container {
@@ -389,4 +389,51 @@
     gap: 1rem;
     text-align: center;
   }
+}
+
+.otp-input-container {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+#otpInput {
+  padding: 0.5rem;
+  border: 1px solid var(--accent-color);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-color);
+}
+
+#verifyOTP {
+  padding: 0.5rem 1rem;
+  background: var(--accent-color);
+  border: none;
+  border-radius: 2px;
+  color: var(--text-color);
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+#verifyOTP:hover {
+  background-color: #ff293a;
+}
+
+.success-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: var(--success-color);
+  color: var(--bg-color);
+  padding: 1rem;
+  border-radius: 2px;
+  z-index: 1000;
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
 }

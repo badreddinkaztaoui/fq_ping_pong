@@ -2,8 +2,6 @@ import os
 from pathlib import Path
 from datetime import timedelta
 
-
-# Base Settings
 BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'your-development-key-here')
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
@@ -14,7 +12,6 @@ ALLOWED_HOSTS = [
     'auth',
 ]
 
-# Application definition
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -37,16 +34,13 @@ LOCAL_APPS = [
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
-# URLs and Applications
 ROOT_URLCONF = 'core.urls'
 WSGI_APPLICATION = 'core.wsgi.application'
 
-# CORS Settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ORIGIN_ALLOW_ALL = DEBUG
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8000',
-    'http://localhost:3000',
 ]
 
 CORS_ALLOW_METHODS = [
@@ -58,7 +52,6 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
-# Email Configuration
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
@@ -76,14 +69,12 @@ OAUTH2_TOKEN_URL = 'https://api.intra.42.fr/oauth/token'
 OAUTH2_REDIRECT_URL = 'http://localhost:8000/api/auth/42/callback'
 OAUTH2_SCOPE = 'public'
 
-# Authentication Settings
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
 AUTH_USER_MODEL = 'api.User'
 
-# API Documentation
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Authentication API',
     'DESCRIPTION': 'API for user authentication with email and 42 Network',
@@ -92,7 +83,6 @@ SPECTACULAR_SETTINGS = {
     'COMPONENT_SPLIT_REQUEST': True,
 }
 
-# Password Validation
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -111,7 +101,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# JWT Settings
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -123,7 +112,6 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
 }
 
-# Session Settings
 SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
 SESSION_CACHE_ALIAS = 'default'
 SESSION_COOKIE_AGE = 86400
@@ -131,7 +119,6 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_NAME = 'sessionid'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
-# Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -143,7 +130,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Database
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
@@ -159,7 +145,6 @@ DATABASES = {
     }
 }
 
-# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -176,7 +161,6 @@ TEMPLATES = [
     },
 ]
 
-# Redis Settings
 REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
 REDIS_PORT = int(os.getenv('REDIS_PORT', '6379'))
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD', '')
@@ -194,7 +178,6 @@ CACHES = {
     }
 }
 
-# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -220,7 +203,6 @@ REST_FRAMEWORK = {
     }
 }
 
-# Static files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MEDIA_URL = '/media/'

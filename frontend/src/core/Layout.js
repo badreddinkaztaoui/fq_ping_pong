@@ -126,17 +126,17 @@ export class Layout {
               
               <div class="profile-dropdown">
                 <button class="profile-btn">
-                  <img src="${userState.state.user.avatar_url}" alt="Avatar" class="avatar" />
-                  <span class="username">${userState.state.user.username.split("_")[1]}</span>
+                  <img src="${userState.state.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Avatar" class="avatar" />
+                  <span class="username">${userState.state.user.username}</span>
                   <svg class="arrow-icon" viewBox="0 0 24 24">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </button>
                 <div class="dropdown-menu">
                   <div class="menu-header">
-                    <img src="${userState.state.user.avatar_url}" alt="Avatar" class="menu-avatar" />
+                    <img src="${userState.state.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Avatar" class="menu-avatar" />
                     <div class="user-info">
-                      <span class="menu-username">${userState.state.user.username.split("_")[1]}</span>
+                      <span class="menu-username">${userState.state.user.username}</span>
                     </div>
                   </div>
                   <a data-link="/dashboard/profile" class="menu-item profile">

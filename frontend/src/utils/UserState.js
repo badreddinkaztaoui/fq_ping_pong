@@ -58,6 +58,23 @@ export class UserState extends State {
     }
   }
 
+  async verify2FALogin(userId, code) {
+    try {
+      const response = await this.http.post('/auth/verify-2fa-login/', { user_id: userId, otp: code });
+      
+      this.setState({
+        user: response.user,
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      });
+      
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async loginWith42() {
     try {
       const response = await this.http.get('/auth/42/login/');
@@ -141,14 +158,17 @@ export class UserState extends State {
   async updateProfile(userData) {
     this.setState({ loading: true, error: null });
     try {
-      const response = await this.http.put('/auth/update/', userData);
-      this.setState({ user: response, loading: false });
-      return response;
+        const response = await this.http.put('/auth/update/', userData);
+        this.setState({ 
+            user: { ...this.state.user, ...response },
+            loading: false 
+        });
+        return response;
     } catch (error) {
-      this.setState({ error: error.message, loading: false });
-      throw error;
+        this.setState({ error: error.message, loading: false });
+        throw error;
     }
-  }
+}
 
   async resetPasswordRequest(email) {
     try {
@@ -173,9 +193,9 @@ export class UserState extends State {
     } catch (error) {
         throw error;
     }
-}
+  }
 
-async verify2FA(otp) {
+  async verify2FA(otp) {
     try {
         const response = await this.http.post('/auth/verify-2fa/', { otp });
         this.setState({ 
@@ -188,14 +208,19 @@ async verify2FA(otp) {
     } catch (error) {
         throw error;
     }
-}
+  }
 
   async disable2FA() {
     try {
-      await this.http.post('/auth/disable-2fa/');
-      this.setState({ user: { ...this.state.user, is_2fa_enabled: false } });
+        await this.http.post('/auth/disable-2fa/');
+        this.setState({ 
+            user: { 
+                ...this.state.user, 
+                is_2fa_enabled: false 
+            } 
+        });
     } catch (error) {
-      throw error;
+        throw error;
     }
   }
 }

@@ -5,10 +5,26 @@ from .models import Friendship
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    auth_provider = serializers.CharField(read_only=True)
+
     class Meta:
         model = User
-        fields = ('id', 'email', 'username', 'display_name', 'avatar_url', 'is_2fa_enabled', 'created_at')
-        read_only_fields = ('id', 'is_2fa_enabled', 'created_at')
+        fields = (
+            'id', 
+            'email', 
+            'username', 
+            'display_name', 
+            'avatar_url', 
+            'is_2fa_enabled', 
+            'created_at',
+            'auth_provider'
+        )
+        read_only_fields = (
+            'id', 
+            'is_2fa_enabled', 
+            'created_at',
+            'auth_provider'
+        )
 
 class FriendshipSerializer(serializers.ModelSerializer):
     friend = UserSerializer(read_only=True)

@@ -26,12 +26,18 @@ class User(AbstractUser):
     is_2fa_enabled = models.BooleanField(default=False)
     otp_secret = models.CharField(max_length=32, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_42_user = models.BooleanField(default=False)
 
     REQUIRED_FIELDS = ['email']
     objects = CustomUserManager()
 
     def __str__(self):
         return self.email
+
+    @property
+    def auth_provider(self):
+        """Returns the authentication provider for the user"""
+        return '42' if self.is_42_user else 'local'
 
     class Meta:
         ordering = ['-created_at']

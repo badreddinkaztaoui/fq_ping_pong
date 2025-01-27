@@ -2,24 +2,33 @@ export class Http {
 
   constructor() {
     this.expectedUnauthorizedPaths = [
-      '/api/auth/me',
-    ]
+        '/api/auth/me',
+    ];
     this.request = this.request.bind(this);
     this.get = this.get.bind(this);
     this.post = this.post.bind(this);
+    this.put = this.put.bind(this);
     this.getCsrfToken = this.getCsrfToken.bind(this);
   }
 
   async get(url, options = {}) {
-    return await this.request(url, { ...options, method: 'GET' });
+      return await this.request(url, { ...options, method: 'GET' });
   }
 
   async post(url, data, options = {}) {
-    return await this.request(url, {
-      ...options,
-      method: 'POST',
-      body: JSON.stringify(data)
-    });
+      return await this.request(url, {
+          ...options,
+          method: 'POST',
+          body: JSON.stringify(data)
+      });
+  }
+
+  async put(url, data, options = {}) {
+      return await this.request(url, {
+          ...options,
+          method: 'PUT',
+          body: JSON.stringify(data)
+      });
   }
 
   async request(url, options = {}) {

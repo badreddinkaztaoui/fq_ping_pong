@@ -13,7 +13,8 @@ from .views import (
     enable_2fa,
     verify_2fa,
     reset_password_request,
-    disable_2fa
+    disable_2fa,
+    verify_2fa_login
 )
 
 urlpatterns = [
@@ -32,5 +33,6 @@ urlpatterns = [
         path('enable-2fa/', enable_2fa, name='enable_2fa'),
         path('verify-2fa/', verify_2fa, name='verify_2fa'),
         path('disable-2fa/', disable_2fa, name='disable_2fa'),
+        path('verify-2fa-login/', verify_2fa_login, name='verify_2fa_login'),
     ])),
 ]

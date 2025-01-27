@@ -22,26 +22,18 @@ export class Router {
     const currentParts = currentPath.split('/');
     const params = {};
 
-    if (routePath.endsWith('*')) {
-      const baseRouteParts = routePath.slice(0, -2).split('/');
-      if (currentPath.startsWith(baseRouteParts.join('/'))) {
-        return params;
-      }
-      return null;
-    }
-
     if (routeParts.length !== currentParts.length) return null;
 
     for (let i = 0; i < routeParts.length; i++) {
-      if (routeParts[i].startsWith(':')) {
-        params[routeParts[i].slice(1)] = currentParts[i];
-      } else if (routeParts[i] !== currentParts[i]) {
-        return null;
-      }
+        if (routeParts[i].startsWith(':')) {
+            params[routeParts[i].slice(1)] = currentParts[i];
+        } else if (routeParts[i] !== currentParts[i]) {
+            return null;
+        }
     }
 
     return params;
-  }
+}
 
   findRoute(path) {
     for (const route of this.routes) {
@@ -85,7 +77,7 @@ export class Router {
       this.currentView = new route.view(params);
       this.currentView.router = this;
 
-      const authPages = ['/login', '/signup'];
+      const authPages = ['/login', '/signup', '/reset-password'];
       const isAuthPage = authPages.some(authPath => path === authPath);
       const layoutType = path.startsWith('/dashboard') ? 'dashboard' : 'landing';
       

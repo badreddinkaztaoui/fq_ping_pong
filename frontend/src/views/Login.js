@@ -12,7 +12,10 @@ export class LoginView extends View {
     this.state = new State({
       loading: false,
       error: null,
-      validationErrors: {}
+      validationErrors: {},
+      requires2FA: false,
+      twoFactorCode: '',
+      tempUserId: null
     });
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get('code');
@@ -58,6 +61,17 @@ export class LoginView extends View {
                   required 
                 />
                 <span class="error-message" id="password-error"></span>
+              </div>
+              
+              <div class="input-container" id="twoFactorContainer" style="display: none;">
+                <input 
+                  type="text" 
+                  id="twoFactorCode" 
+                  name="twoFactorCode" 
+                  placeholder="Enter 2FA Code" 
+                  required 
+                />
+                <span class="error-message" id="twoFactorCode-error"></span>
               </div>
               
               <div class="forgot-password">
@@ -124,6 +138,23 @@ export class LoginView extends View {
     return !hasErrors;
   }
 
+  validateTwoFactorCode(code) {
+    const errors = {};
+
+    if (!code || code.length !== 6 || !/^\d+$/.test(code)) {
+      errors.twoFactorCode = 'Please enter a valid 6-digit code';
+    }
+
+    const hasErrors = Object.keys(errors).length > 0;
+    this.state.setState({
+      validationErrors: errors,
+      error: hasErrors ? 'Please enter a valid 2FA code' : null
+    });
+
+    hasErrors ? this.showFieldErrors(errors) : this.clearFieldErrors();
+    return !hasErrors;
+  }
+
   showFieldErrors(errors) {
     Object.entries(errors).forEach(([field, message]) => {
       const errorElement = this.$(`#${field}-error`);
@@ -144,7 +175,7 @@ export class LoginView extends View {
   }
 
   clearFieldErrors() {
-    ['email', 'password'].forEach(field => {
+    ['email', 'password', 'twoFactorCode'].forEach(field => {
       const errorElement = this.$(`#${field}-error`);
       const inputElement = this.$(`#${field}`);
 
@@ -178,33 +209,81 @@ export class LoginView extends View {
     }, duration);
   }
 
+  showTwoFactorInput() {
+    const twoFactorContainer = this.$('#twoFactorContainer');
+    const emailInput = this.$('#email');
+    const passwordInput = this.$('#password');
+    const submitBtn = this.$('button[type="submit"]');
+
+    twoFactorContainer.style.display = 'block';
+    twoFactorContainer.classList.add('visible');
+    
+    emailInput.disabled = true;
+    passwordInput.disabled = true;
+
+    submitBtn.textContent = 'Verify Code';
+
+    this.showToast('Please enter the 2FA code sent to your email', 'info', 5000);
+  }
+
   async handleSubmit(event) {
     event.preventDefault();
 
     const formData = new FormData(event.target);
     const email = formData.get('email');
     const password = formData.get('password');
+    const twoFactorCode = formData.get('twoFactorCode');
 
-    if (!this.validateForm(email, password)) return;
+    if (this.state.state.requires2FA) {
+      if (!this.validateTwoFactorCode(twoFactorCode)) return;
 
-    this.state.setState({ loading: true, error: null });
-    const submitBtn = this.$('button[type="submit"]');
-    submitBtn.textContent = 'Signing in...';
-    submitBtn.disabled = true;
+      this.state.setState({ loading: true, error: null });
+      const submitBtn = this.$('button[type="submit"]');
+      submitBtn.textContent = 'Verifying code...';
+      submitBtn.disabled = true;
 
-    try {
-      await this.userState.login({
-        email: email.toLowerCase().trim(),
-        password
-      });
+      try {
+        console.log(this.state.state.tempUserId, " <--------> ", twoFactorCode)
+        await this.userState.verify2FALogin(this.state.state.tempUserId, twoFactorCode);
+        
+        this.showToast('Login successful! Redirecting...', 'success', 3000);
+        setTimeout(() => this.router.navigate('/dashboard'), 1000);
+      } catch (error) {
+        this.state.setState({ error, loading: false });
+        this.showToast(error.message);
+        submitBtn.textContent = 'Verify Code';
+        submitBtn.disabled = false;
+      }
+    } else {
+      if (!this.validateForm(email, password)) return;
 
-      this.showToast('Login successful! Redirecting...', 'success', 3000);
-      setTimeout(() => this.router.navigate('/dashboard'), 1000);
-    } catch (error) {
-      this.state.setState({ error, loading: false });
-      this.showToast(error);
-    } finally {
-      submitBtn.textContent = 'Sign In';
+      this.state.setState({ loading: true, error: null });
+      const submitBtn = this.$('button[type="submit"]');
+      submitBtn.textContent = 'Signing in...';
+      submitBtn.disabled = true;
+
+      try {
+        const response = await this.userState.login({
+          email: email.toLowerCase().trim(),
+          password
+        });
+
+        if (response.requires_2fa) {
+          this.state.setState({ 
+            requires2FA: true, 
+            tempUserId: response.user_id
+          });
+          this.showTwoFactorInput();
+          submitBtn.textContent = 'Verify Code';
+        } else {
+          this.showToast('Login successful! Redirecting...', 'success', 3000);
+          setTimeout(() => this.router.navigate('/dashboard'), 1000);
+        }
+      } catch (error) {
+        this.state.setState({ error, loading: false });
+        this.showToast(error.message);
+        submitBtn.textContent = 'Sign In';
+      }
       submitBtn.disabled = false;
     }
   }
@@ -214,6 +293,7 @@ export class LoginView extends View {
     const signupLink = this.$('.signup-link a');
     const inputs = this.$$('input');
     const login42Btn = this.$('#login-42');
+    const resetPassword = this.$(".forgot-password")
 
     this.addListener(form, 'submit', this.handleSubmit.bind(this));
     this.addListener(signupLink, 'click', () => this.router.navigate('/signup'));
@@ -236,5 +316,7 @@ export class LoginView extends View {
         input.removeAttribute('aria-invalid');
       });
     });
+
+    this.addListener(resetPassword, 'click', () => this.router.navigate('/reset-password'))
   }
 }

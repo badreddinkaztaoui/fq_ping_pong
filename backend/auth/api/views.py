@@ -89,6 +89,7 @@ def oauth_42_callback(request):
                 username=f"42_{user_info['login']}",
                 display_name=user_info['displayname'],
                 avatar_url=user_info['image']['link'],
+                is_42_user=True,
                 password=None 
             )
 
@@ -125,7 +126,7 @@ def register_view(request):
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def login_view(request):
-    """Handle user login and session creation"""
+    """Handle user login and session creation with 2FA support"""
     email = request.data.get('email')
     password = request.data.get('password')
     
@@ -144,6 +145,30 @@ def login_view(request):
         )
         
         if authenticated_user is not None:
+            if authenticated_user.is_2fa_enabled:
+                secret = authenticated_user.otp_secret
+                if not secret:
+                    secret = pyotp.random_base32()
+                    authenticated_user.otp_secret = secret
+                    authenticated_user.save()
+                
+                totp = pyotp.TOTP(secret, interval=300)
+                current_otp = totp.now()
+                
+                send_mail(
+                    subject='Your Login Verification Code',
+                    message=f'Your verification code is: {current_otp}\n\nThis code will expire in 5 minutes.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[authenticated_user.email],
+                    fail_silently=False,
+                )
+                
+                return Response({
+                    'requires_2fa': True,
+                    'user_id': authenticated_user.id,
+                    'message': 'Please check your email for the verification code'
+                }, status=status.HTTP_200_OK)
+            
             login(request, authenticated_user)
             
             response = Response({
@@ -170,6 +195,42 @@ def login_view(request):
     except User.DoesNotExist:
         return Response({
             'error': 'No user found with this email'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_2fa_login(request):
+    user_id = request.data.get('user_id')
+    otp = request.data.get('otp')
+    
+    if not user_id or not otp:
+        return Response({
+            'error': 'Please provide both user_id and OTP'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({
+            'error': 'User not found'
+        }, status=status.HTTP_404_NOT_FOUND)
+    
+    if not user.otp_secret:
+        return Response({
+            'error': 'No OTP secret found for user'
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    totp = pyotp.TOTP(user.otp_secret, interval=300)
+    
+    if totp.verify(otp, valid_window=1):
+        login(request, user)
+        return Response({
+            'message': 'Login successful',
+            'user': UserSerializer(user).data
+        })
+    else:
+        return Response({
+            'error': 'Invalid OTP'
         }, status=status.HTTP_401_UNAUTHORIZED)
 
 @api_view(['POST'])
@@ -244,10 +305,37 @@ def verify_token(request):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_user(request):
-    serializer = UserSerializer(request.user, data=request.data, partial=True)
+    if 'new_password' in request.data:
+        current_password = request.data.get('current_password')
+        if not current_password:
+            return Response(
+                {'error': 'Current password is required to change password'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if not request.user.check_password(current_password):
+            return Response(
+                {'error': 'Current password is incorrect'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        request.user.set_password(request.data['new_password'])
+        request.user.save()
+        
+        update_data = request.data.copy()
+        update_data.pop('new_password', None)
+        update_data.pop('current_password', None)
+    else:
+        update_data = request.data
+
+    serializer = UserSerializer(request.user, data=update_data, partial=True)
     if serializer.is_valid():
         serializer.save()
-        return Response(serializer.data)
+        return Response({
+            **serializer.data,
+            'message': 'Profile updated successfully'
+        })
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['POST'])
@@ -258,7 +346,7 @@ def reset_password_request(request):
     if user:
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
-        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
+        reset_link = f"{settings.SITE_URL}/reset-password/{uid}/{token}/"
         send_mail(
             'Password Reset',
             f'Click here to reset your password: {reset_link}',
@@ -290,7 +378,7 @@ def enable_2fa(request):
     try:
         secret = pyotp.random_base32()
         
-        totp = pyotp.TOTP(secret)
+        totp = pyotp.TOTP(secret, interval=300)
         
         current_otp = totp.now()
         
@@ -299,14 +387,14 @@ def enable_2fa(request):
         
         send_mail(
             subject='Your Two-Factor Authentication Code',
-            message=f'Your verification code is: {current_otp}\n\nThis code will expire in 30 seconds.',
+            message=f'Your verification code is: {current_otp}\n\nThis code will expire in 5 minutes.',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[request.user.email],
             fail_silently=False,
         )
         
         return Response({
-            "message": "Verification code sent to your email"
+            "message": "Verification code sent to your email. You have 5 minutes to enter the code."
         })
         
     except Exception as e:
@@ -333,7 +421,7 @@ def verify_2fa(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
             
-        totp = pyotp.TOTP(request.user.otp_secret)
+        totp = pyotp.TOTP(request.user.otp_secret, interval=300)
         if totp.verify(otp):
             request.user.is_2fa_enabled = True
             request.user.save()
