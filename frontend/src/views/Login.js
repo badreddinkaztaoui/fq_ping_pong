@@ -47,6 +47,7 @@ export class LoginView extends View {
                   id="email" 
                   name="email" 
                   placeholder="EMAIL" 
+                  autocomplete="off"
                   required 
                 />
                 <span class="error-message" id="email-error"></span>
@@ -57,6 +58,7 @@ export class LoginView extends View {
                   type="password" 
                   id="password" 
                   name="password" 
+                  autocomplete="off"
                   placeholder="PASSWORD" 
                   required 
                 />
@@ -217,7 +219,7 @@ export class LoginView extends View {
 
     twoFactorContainer.style.display = 'block';
     twoFactorContainer.classList.add('visible');
-    
+
     emailInput.disabled = true;
     passwordInput.disabled = true;
 
@@ -245,7 +247,7 @@ export class LoginView extends View {
       try {
         console.log(this.state.state.tempUserId, " <--------> ", twoFactorCode)
         await this.userState.verify2FALogin(this.state.state.tempUserId, twoFactorCode);
-        
+
         this.showToast('Login successful! Redirecting...', 'success', 3000);
         setTimeout(() => this.router.navigate('/dashboard'), 1000);
       } catch (error) {
@@ -269,8 +271,8 @@ export class LoginView extends View {
         });
 
         if (response.requires_2fa) {
-          this.state.setState({ 
-            requires2FA: true, 
+          this.state.setState({
+            requires2FA: true,
             tempUserId: response.user_id
           });
           this.showTwoFactorInput();

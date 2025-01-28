@@ -423,7 +423,7 @@
 
 .success-message {
   position: fixed;
-  top: 20px;
+  top: 90px;
   left: 50%;
   transform: translateX(-50%);
   background-color: var(--success-color);
@@ -435,6 +435,12 @@
 }
 
 @keyframes fadeInOut {
-  0%, 100% { opacity: 0; }
-  10%, 90% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
 }

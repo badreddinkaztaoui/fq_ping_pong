@@ -247,6 +247,23 @@ export class AnalyticsView extends View {
       });
     };
 
+
     animateNumbers();
+  }
+  setupEventListeners() {
+    const matchItems = document.querySelectorAll('.match-item');
+    matchItems.forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        console.log('mouseenter');
+        item.style.transform = 'scale(1.02)';
+      });
+
+      item.addEventListener('mouseleave', () => {
+        console.log('mouseleave');
+        item.style.transform = '';
+      });
+    });
+
+    this.initAnimations();
   }
 }

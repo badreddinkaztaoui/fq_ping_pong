@@ -71,6 +71,7 @@
   background: linear-gradient(180deg, #ff4655 0%, #8b1c24 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
   line-height: 1;
   text-transform: uppercase;
@@ -96,7 +97,7 @@
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: vxTitleShine 3s linear infinite;
+  background-clip: text;
 }
 
 .vx-banner__user {
@@ -121,13 +122,14 @@
     15px 100%,
     0% 50%
   );
+  transition: transform 0.3s ease;
 }
 
 .vx-banner__tag {
   background: #0f141b;
   padding: 0.8rem 3rem;
   clip-path: inherit;
-  transition: all 0.3s ease;
+  transition: background 0.3s ease;
 }
 
 .vx-banner__tag-text {
@@ -144,14 +146,6 @@
 
 .vx-banner__tag-container:hover .vx-banner__tag {
   background: rgba(255, 70, 85, 0.1);
-}
-
-.vx-banner__rank {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 0.9rem;
-  letter-spacing: 0.4em;
-  font-weight: 500;
-  text-transform: uppercase;
 }
 
 @keyframes vxGradientPulse {
@@ -204,26 +198,38 @@
   }
 }
 
-@keyframes vxTitleShine {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
 @media (max-width: 768px) {
-  .vx-banner__title {
-    font-size: 3.5rem;
+  .vx-banner {
+    height: 300px;
   }
+
   .vx-banner__welcome {
     font-size: 1.2rem;
   }
+
+  .vx-banner__title {
+    font-size: 3.5rem;
+  }
+
   .vx-banner__tag {
     padding: 0.6rem 2rem;
   }
+
   .vx-banner__tag-text {
     font-size: 1rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .vx-banner {
+    height: 400px;
+  }
+
+  .vx-banner__welcome {
+    font-size: 1.8rem;
+  }
+
+  .vx-banner__title {
+    font-size: 6rem;
   }
 }

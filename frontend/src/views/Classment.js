@@ -4,7 +4,7 @@ import "../styles/dashboard/classment.css";
 export class ClassmentView extends View {
   constructor() {
     super();
-    this.itemsPerPage = 10;
+    this.itemsPerPage = 6;
     this.currentPage = 1;
     this.trophyPng = [
       "/images/dashboard/trophies/gold-trophy.png",

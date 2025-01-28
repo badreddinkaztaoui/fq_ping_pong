@@ -33,12 +33,12 @@ export class SignupView extends View {
                         
                         <form id="signup-form" novalidate>
                             <div class="input-container">
-                                <div class="input-icon">👤</div>
                                 <input 
                                     type="text" 
                                     id="username" 
                                     name="username" 
                                     placeholder="USERNAME" 
+                                    autocomplete="off"
                                     required 
                                     pattern="[a-zA-Z0-9_]{3,20}"
                                 />
@@ -46,24 +46,24 @@ export class SignupView extends View {
                             </div>
 
                             <div class="input-container">
-                                <div class="input-icon">✉️</div>
                                 <input 
                                     type="email" 
                                     id="email" 
                                     name="email" 
                                     placeholder="EMAIL" 
+                                    autocomplete="off"
                                     required 
                                 />
                                 <span class="error-message" id="email-error"></span>
                             </div>
 
                             <div class="input-container">
-                                <div class="input-icon">🔒</div>
                                 <input 
                                     type="password" 
                                     id="password" 
                                     name="password" 
                                     placeholder="PASSWORD" 
+                                    autocomplete="off"
                                     required 
                                     minlength="8"
                                 />
@@ -71,12 +71,12 @@ export class SignupView extends View {
                             </div>
 
                             <div class="input-container">
-                                <div class="input-icon">🔒</div>
                                 <input 
                                     type="password" 
                                     id="confirm-password" 
                                     name="confirmPassword" 
                                     placeholder="CONFIRM PASSWORD" 
+                                    autocomplete="off"
                                     required 
                                 />
                                 <span class="error-message" id="confirm-password-error"></span>

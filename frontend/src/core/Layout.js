@@ -23,7 +23,7 @@ export class Layout {
     nav.innerHTML = `
           <div class="nav-left">
             <div class="logo-section">
-              <img src="/images/logo.png" alt="logo" class="logo-img" />
+              <img src="/images/logo.png" alt="logo" class="logo-img" data-link="/dashboard" />
             </div>
             
             <!-- Mobile Menu Toggle -->
@@ -127,7 +127,6 @@ export class Layout {
               <div class="profile-dropdown">
                 <button class="profile-btn">
                   <img src="${userState.state.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Avatar" class="avatar" />
-                  <span class="username">${userState.state.user.username}</span>
                   <svg class="arrow-icon" viewBox="0 0 24 24">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
@@ -262,6 +261,11 @@ export class Layout {
 
     setActiveLink(window.location.pathname);
 
+    const logo = document.querySelector('.logo-img')
+    logo.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.router.navigate("/dashboard")
+    })
     dashBoardLinks.forEach((route) => {
       route.addEventListener("click", (e) => {
         e.preventDefault();
@@ -278,7 +282,9 @@ export class Layout {
       setActiveLink(window.location.pathname);
     });
   }
+  profileDropDown() {
 
+  }
   setupEventListeners() {
     if (this.layoutType === 'dashboard') {
       const logoutBtn = this.element.querySelector('#logoutBtn');
@@ -380,8 +386,8 @@ export class Layout {
           }
         }, 300);
       }
-
-      topNav.classList.toggle("menu-open");
+      if (topNav)
+        topNav.classList.toggle("menu-open");
       body.style.overflow = body.style.overflow === "hidden" ? "" : "hidden";
     });
 
