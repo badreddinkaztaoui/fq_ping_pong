@@ -65,22 +65,31 @@ ASGI_APPLICATION = 'core.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'chat_db'),
-        'USER': os.getenv('DB_USER', 'chat_admin'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'postgres'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('CHAT_DB_USER'),
+        'PASSWORD': os.getenv('CHAT_DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'options': '-c search_path=chat,public'
+        }
     }
 }
+
+REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
+
 
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            'hosts': [(
-                os.getenv('REDIS_HOST', 'redis'),
-                int(os.getenv('REDIS_PORT', 6379))
-            )],
+            'hosts': [{
+                'host': REDIS_HOST,
+                'port': REDIS_PORT,
+                'password': REDIS_PASSWORD,
+            }],
             'prefix': os.getenv('CHANNEL_REDIS_PREFIX', 'chat'),
         },
     },
@@ -113,8 +122,31 @@ REST_FRAMEWORK = {
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
-AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth:8001')
-JWT_VERIFICATION_URL = os.getenv('JWT_VERIFICATION_URL', 'http://auth:8001/api/auth/verify/')
+AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://localhost:8000')
+JWT_VERIFICATION_URL = os.getenv('JWT_VERIFICATION_URL', f"{AUTH_SERVICE_URL}/api/auth/verify/")
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'api': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
 
 MAX_MESSAGE_LENGTH = int(os.getenv('MAX_MESSAGE_LENGTH', 1000))
 MESSAGE_HISTORY_LIMIT = int(os.getenv('MESSAGE_HISTORY_LIMIT', 100))

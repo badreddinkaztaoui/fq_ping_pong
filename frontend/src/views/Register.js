@@ -212,7 +212,7 @@ export class SignupView extends View {
     try {
       await this.userState.register(data);
       this.showToast('Account created successfully! Redirecting...', 'success', 3000);
-      setTimeout(() => this.router.navigate('/login'), 2000);
+      setTimeout(() => this.router.navigate('/dashboard'), 1000);
     } catch (error) {
       this.state.setState({
         error: error.message || 'Registration failed. Please try again.',

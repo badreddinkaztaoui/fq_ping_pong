@@ -1,380 +1,408 @@
 import { View } from "../core/View";
-import { State } from "../core/State";
-import "../styles/dashboard/chat.css"
+import { userState } from "../utils/UserState";
+import { wsManager } from "../utils/WebSocketManager";
+import { Http } from "../utils/Http";
+import "../styles/dashboard/chat.css";
 
 export class ChatView extends View {
-  constructor() {
-    super();
-    this.currentUser = null;
-    this.messages = new Map();
-    this.blockedUsers = new Set();
-    this.onlineUsers = new Set();
-    this.isEmojiPickerOpen = false;
-  }
+    constructor() {
+        super();
+        this.currentChatId = null;
+        this.currentUser = null;
+        this.messages = new Map();
+        this.onlineUsers = new Set();
+        this.http = new Http();
+        this.lastSeenMessageId = null;
+        this.messageStatus = new Map(); // Track message delivery status
 
-  async render() {
-    const container = document.createElement('div');
-    container.className = 'valorant-chat-container';
-
-    const usersList = document.createElement('div');
-    usersList.className = 'chat-users-list';
-    usersList.innerHTML = `
-      <div class="chat-search">
-        <input type="text" class="chat-search-input" placeholder="Search agents...">
-      </div>
-    `;
-
-    const sampleUsers = [
-      { id: 1, name: 'Phoenix', status: 'online', avatar: '', lastMessage: 'Ready for the next match?' },
-      { id: 2, name: 'Jett', status: 'away', avatar: '', lastMessage: 'Watch this!' },
-      { id: 3, name: 'Viper', status: 'offline', avatar: '', lastMessage: 'Welcome to my world!' }
-    ];
-
-    sampleUsers.forEach(user => {
-      if (!this.blockedUsers.has(user.id)) {
-        usersList.appendChild(this.createUserElement(user));
-      }
-    });
-
-    const chatContainer = document.createElement('div');
-    chatContainer.className = 'chat-window-container';
-    chatContainer.innerHTML = `
-      <div class="chat-window">
-        <div class="chat-window-empty">
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" width="48" height="48">
-              <path fill="#ff4655" d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-            </svg>
-            <h2>Select an agent to start chatting</h2>
-          </div>
-        </div>
-      </div>
-    `;
-
-    container.appendChild(usersList);
-    container.appendChild(chatContainer);
-    return container;
-  }
-
-  formatMessageText(text) {
-    return text.split(/(.{50})/).filter(Boolean).join('\n');
-  }
-
-
-  createUserElement(user) {
-    const userElement = document.createElement('div');
-    userElement.className = 'chat-user';
-    userElement.dataset.userId = user.id;
-    userElement.innerHTML = `
-      <div class="chat-user-avatar-wrapper">
-        <img src="${user.avatar}" alt="" class="chat-user-avatar">
-        <div class="chat-user-status ${user.status}"></div>
-      </div>
-      <div class="chat-user-info">
-        <h3 class="chat-user-name">${user.name}</h3>
-        <p class="chat-user-last-message">${this.formatMessageText(user.lastMessage)}</p>
-      </div>
-      <div class="chat-user-actions">
-        <button class="user-action-btn block-btn" data-user-id="${user.id}">
-          <svg viewBox="0 0 24 24" width="20" height="20">
-            <path fill="#a0a0a0" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/>
-          </svg>
-        </button>
-      </div>
-    `;
-
-    const blockBtn = userElement.querySelector('.block-btn');
-    this.addListener(blockBtn, 'click', (e) => {
-      e.stopPropagation();
-      this.blockUser(user.id);
-    });
-
-    this.addListener(userElement, 'click', () => this.loadChatWindow(user));
-    return userElement;
-  }
-
-  async loadChatWindow(user) {
-    if (this.blockedUsers.has(user.id)) return;
-
-    this.currentUser = user;
-    const chatWindow = this.$('.chat-window');
-    // Add active class for mobile
-    chatWindow.classList.add('active');
-
-    const backButton = `
-    <button class="chat-back-btn">
-      <svg viewBox="0 0 24 24" width="24" height="24">
-        <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-      </svg>
-    </button>
-  `;
-
-    chatWindow.innerHTML = `
-  <div class="chat-header">
-    ${window.innerWidth <= 768 ? backButton : ''}
-    <img src="${user.avatar}" alt="" class="chat-header-avatar">
-        <div class="chat-header-info">
-          <h2>${user.name}</h2>
-          <div class="chat-header-status">${user.status}</div>
-        </div>
-        <div class="chat-header-actions">
-          <button class="more-actions-btn">
-            <svg viewBox="0 0 24 24" width="24" height="24">
-              <path fill="#a0a0a0" d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-            </svg>
-          </button>
-          <div class="actions-dropdown">
-            <button class="dropdown-action block-user">Block User</button>
-            <button class="dropdown-action clear-chat">Clear Chat</button>
-          </div>
-        </div>
-      </div>
-      
-      <div class="chat-messages"></div>
-      
-       <div class="chat-input-area">
-      <div class="chat-input-actions">
-        <div class="emoji-picker">
-          <button class="chat-emoji-btn">
-            <svg viewBox="0 0 24 24" width="24" height="24">
-              <path fill="#a0a0a0" d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-2a8 8 0 1 0 0-16 8 8 0 0 0 0 16zm-5-7h10v2H7v-2zm2-4a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm6 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z"/>
-            </svg>
-          </button>
-          <div class="emoji-dropdown"></div>
-        </div>
-      </div>
-      <input type="text" class="chat-input" placeholder="Type a message...">
-      <button class="chat-send-btn">
-        <svg viewBox="0 0 24 24" width="24" height="24">
-          <path fill="white" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-        </svg>
-      </button>
-    </div>
-    `;
-
-    if (window.innerWidth <= 768) {
-      const backBtn = chatWindow.querySelector('.chat-back-btn');
-      this.addListener(backBtn, 'click', () => {
-        chatWindow.classList.remove('active');
-      });
-    }
-    const emojiBtn = chatWindow.querySelector('.chat-emoji-btn');
-    this.addListener(emojiBtn, 'click', (e) => {
-      e.stopPropagation();
-      this.toggleEmojiPicker();
-    });
-
-    this.setupChatEventListeners();
-    await this.loadMessages(user.id);
-  }
-
-  setupChatEventListeners() {
-    const input = this.$('.chat-input');
-    const sendBtn = this.$('.chat-send-btn');
-    const emojiBtn = this.$('.chat-emoji-btn');
-    const moreActionsBtn = this.$('.more-actions-btn');
-    const actionsDropdown = this.$('.actions-dropdown');
-
-    this.addListener(input, 'keypress', (e) => {
-      if (e.key === 'Enter') this.handleSendMessage();
-    });
-
-    this.addListener(sendBtn, 'click', this.handleSendMessage.bind(this));
-    this.addListener(emojiBtn, 'click', this.toggleEmojiPicker.bind(this));
-
-    this.addListener(moreActionsBtn, 'click', () => {
-      actionsDropdown.classList.toggle('show');
-    });
-
-    this.addListener(this.$('.block-user'), 'click', () => {
-      this.blockUser(this.currentUser.id);
-      actionsDropdown.classList.remove('show');
-    });
-
-    this.addListener(this.$('.clear-chat'), 'click', () => {
-      this.clearChat(this.currentUser.id);
-      actionsDropdown.classList.remove('show');
-    });
-
-
-    if (emojiBtn) {
-      this.addListener(emojiBtn, 'click', (e) => {
-        e.stopPropagation();
-        this.toggleEmojiPicker();
-      });
-    }
-  }
-
-  blockUser(userId) {
-    this.blockedUsers.add(userId);
-    if (this.currentUser?.id === userId) {
-      this.$('.chat-window').innerHTML = `
-        <div class="chat-window-empty">
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" width="48" height="48">
-              <path fill="#ff4655" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8 0-1.85.63-3.55 1.69-4.9L16.9 18.31C15.55 19.37 13.85 20 12 20zm6.31-3.1L7.1 5.69C8.45 4.63 10.15 4 12 4c4.42 0 8 3.58 8 8 0 1.85-.63 3.55-1.69 4.9z"/>
-            </svg>
-            <h2>User Blocked</h2>
-          </div>
-        </div>
-      `;
+        this.handleWebSocketMessage = this.handleWebSocketMessage.bind(this);
+        // this.handleWebSocketStatus = this.handleWebSocketStatus.bind(this);
+        this.handleSendMessage = this.handleSendMessage.bind(this);
+        // this.handleChatClick = this.handleChatClick.bind(this);
+        this.handleUserPresence = this.handleUserPresence.bind(this);
     }
 
-    const userElement = this.$(`.chat-user[data-user-id="${userId}"]`);
-    if (userElement) {
-      userElement.remove();
-    }
-  }
+    async init() {
+        const state = userState.getState();
+        this.currentUser = state.user;
 
-  clearChat(userId) {
-    this.messages.delete(userId);
-    const messagesContainer = this.$('.chat-messages');
-    if (messagesContainer) {
-      messagesContainer.innerHTML = '';
-    }
-  }
+        // Set up WebSocket message handlers
+        wsManager.onMessage(this.handleWebSocketMessage);
+        // wsManager.onStatusChange(this.handleWebSocketStatus);
+        wsManager.onUserPresence(this.handleUserPresence);
 
-  async handleSendMessage() {
-    const input = this.$('.chat-input');
-    const message = input.value.trim();
-
-    if (message && this.currentUser) {
-      const messageObj = {
-        id: Date.now(),
-        text: message,
-        timestamp: new Date(),
-        type: 'sent'
-      };
-
-      if (!this.messages.has(this.currentUser.id)) {
-        this.messages.set(this.currentUser.id, []);
-      }
-      this.messages.get(this.currentUser.id).push(messageObj);
-      this.renderMessage(messageObj);
-      input.value = '';
-    }
-  }
-
-  renderMessage(message) {
-    const messagesContainer = this.$('.chat-messages');
-    if (!messagesContainer) return;
-
-    const messageElement = document.createElement('div');
-    messageElement.className = `chat-message ${message.type}`;
-    messageElement.dataset.messageId = message.id;
-
-    messageElement.innerHTML = `
-      <div class="message-content">${message.status === 'deleted' ? 'Message deleted' : this.formatMessageText(message.text)}</div>
-      <div class="chat-message-time">${message.timestamp.toLocaleTimeString()}</div>
-      ${message.type === 'sent' && !message.status ? `
-        <button class="delete-message-btn" data-message-id="${message.id}">
-          <svg viewBox="0 0 24 24" width="16" height="16">
-            <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-          </svg>
-        </button>
-      ` : ''}
-    `;
-
-    if (message.type === 'sent') {
-      const deleteBtn = messageElement.querySelector('.delete-message-btn');
-      this.addListener(deleteBtn, 'click', () => this.deleteMessage(message.id));
+        await this.loadChats();
     }
 
-    messagesContainer.appendChild(messageElement);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
+    async loadChats() {
+        try {
+            const response = await this.http.get('/chat/list/', {
+                headers: this.getAuthHeaders()
+            });
+            
+            const chats = response.chats;
+            chats.forEach(chat => {
+                this.messages.set(chat.id, []);
+                if (chat.last_message) {
+                    this.messageStatus.set(chat.last_message.id, chat.last_message.status);
+                }
+            });
 
-  deleteMessage(messageId) {
-    if (!this.currentUser) return;
-
-    const messages = this.messages.get(this.currentUser.id) || [];
-    const messageIndex = messages.findIndex(m => m.id === messageId);
-
-    if (messageIndex !== -1) {
-      messages[messageIndex].status = 'deleted';
-      const messageElement = this.$(`.chat-message[data-message-id="${messageId}"]`);
-      if (messageElement) {
-        messageElement.querySelector('.message-content').textContent = 'Message deleted';
-        messageElement.querySelector('.delete-message-btn')?.remove();
-        messageElement.classList.add('deleted');
-      }
+            return chats;
+        } catch (error) {
+            console.error('Failed to load chats:', error);
+            if (error.status === 401) {
+                window.router.navigate('/login');
+            }
+            return [];
+        }
     }
-  }
 
-  toggleEmojiPicker() {
-    const picker = this.$('.emoji-dropdown');
-    if (!picker) return;
-
-    this.isEmojiPickerOpen = !this.isEmojiPickerOpen;
-    picker.classList.toggle('show');
-
-    if (this.isEmojiPickerOpen) {
-      this.renderEmojis();
+    getAuthHeaders() {
+        const token = userState.getWebSocketToken();
+        return {
+            'Authorization': `Bearer ${token}`
+        };
     }
-  }
 
-  closeEmojiPicker() {
-    this.isEmojiPickerOpen = false;
-    const picker = this.$('.emoji-dropdown');
-    if (picker) picker.classList.remove('show');
-  }
+    async connectWebSocket(chatId) {
+        const token = userState.getWebSocketToken();
+        const wsUrl = `ws://${window.location.host}/ws/chat/${chatId}/?token=${token}`;
+        
+        try {
+            await wsManager.connect(chatId, wsUrl);
+        } catch (error) {
+            console.error('WebSocket connection failed:', error);
+            // Show connection error in UI
+            this.showConnectionError();
+        }
+    }
 
-  renderEmojis() {
-    const emojis = ['🎯', '🎮', '⚔️', '🏆', '💣', '🔥', '😈', '👻', '💀', '🤖', '👾', '🦹', '♥️'];
-    const picker = this.$('.emoji-dropdown');
-    picker.innerHTML = '';
+    async loadChatHistory(chatId) {
+        try {
+            const response = await this.http.get(`/chat/${chatId}/messages/`, {
+                headers: this.getAuthHeaders()
+            });
+            
+            this.messages.set(chatId, response.messages);
+            this.renderMessages(chatId);
+            
+            // Update last seen message
+            if (response.messages.length > 0) {
+                this.lastSeenMessageId = response.messages[response.messages.length - 1].id;
+            }
+        } catch (error) {
+            console.error('Failed to load messages:', error);
+        }
+    }
 
-    emojis.forEach(emoji => {
-      const btn = document.createElement('button');
-      btn.className = 'emoji-option';
-      btn.textContent = emoji;
-      btn.dataset.emoji = emoji;
-      this.addListener(btn, 'click', () => {
+    handleWebSocketMessage(event) {
+        const data = JSON.parse(event.data);
+        
+        switch (data.type) {
+            case 'chat_message':
+                this.handleNewMessage(data.message);
+                break;
+            case 'message_ack':
+                this.handleMessageAck(data);
+                break;
+            case 'user_joined':
+            case 'user_left':
+                this.handleUserPresence(data);
+                break;
+            case 'error':
+                this.handleError(data);
+                break;
+        }
+    }
+
+    handleNewMessage(message) {
+        const messages = this.messages.get(message.chat_id) || [];
+        messages.push(message);
+        this.messages.set(message.chat_id, messages);
+        
+        // Update message status
+        this.messageStatus.set(message.id, message.status);
+        
+        if (this.currentChatId === message.chat_id) {
+            this.renderMessages(message.chat_id);
+            // Update last seen for current user's messages
+            if (message.sender_id === this.currentUser.id) {
+                this.lastSeenMessageId = message.id;
+            }
+        }
+    }
+
+    handleMessageAck(data) {
+        const { message_id, status } = data;
+        this.messageStatus.set(message_id, status);
+        this.updateMessageStatus(message_id, status);
+    }
+
+    handleUserPresence(data) {
+        const { user_id, type } = data;
+        if (type === 'user_joined') {
+            this.onlineUsers.add(user_id);
+        } else if (type === 'user_left') {
+            this.onlineUsers.delete(user_id);
+        }
+        this.updatePresenceIndicators();
+    }
+
+    updatePresenceIndicators() {
+        this.$$('.status-indicator').forEach(indicator => {
+            const userId = indicator.closest('.chat-item').dataset.userId;
+            indicator.classList.toggle('online', this.onlineUsers.has(userId));
+        });
+    }
+
+    createMessageElement(message) {
+        const isSender = message.sender_id === this.currentUser.id;
+        const status = this.messageStatus.get(message.id) || message.status;
+        
+        return `
+            <div class="message ${isSender ? 'message-sent' : 'message-received'}" 
+                 data-message-id="${message.id}">
+                <div class="message-content">${message.content}</div>
+                <div class="message-footer">
+                    <span class="message-time">
+                        ${new Date(message.timestamp).toLocaleTimeString()}
+                    </span>
+                    ${isSender ? `
+                        <span class="message-status ${status}">
+                            ${this.getStatusIcon(status)}
+                        </span>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    getStatusIcon(status) {
+        switch (status) {
+            case 'sent': return '✓';
+            case 'delivered': return '✓✓';
+            case 'read': return '✓✓';
+            default: return '';
+        }
+    }
+
+    updateMessageStatus(messageId, status) {
+        const messageEl = this.$(`[data-message-id="${messageId}"]`);
+        if (messageEl) {
+            const statusEl = messageEl.querySelector('.message-status');
+            if (statusEl) {
+                statusEl.className = `message-status ${status}`;
+                statusEl.innerHTML = this.getStatusIcon(status);
+            }
+        }
+    }
+
+    async handleSendMessage() {
         const input = this.$('.chat-input');
-        input.value += emoji;
-        this.closeEmojiPicker();
-        input.focus();
-      });
-      picker.appendChild(btn);
-    });
-  }
+        const content = input.value.trim();
 
-  async loadMessages(userId) {
-    if (!this.messages.has(userId)) {
-      this.messages.set(userId, [
-        { id: 1, text: 'Hey there!', timestamp: new Date(Date.now() - 300000), type: 'received' },
-        { id: 2, text: 'Hi! How are you?', timestamp: new Date(Date.now() - 240000), type: 'sent' }
-      ]);
+        if (!content || !this.currentChatId) return;
+
+        try {
+            // Send message through WebSocket
+            wsManager.send(this.currentChatId, {
+                type: 'chat_message',
+                message: content
+            });
+
+            input.value = '';
+            
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            this.showSendError();
+        }
     }
 
-    const messages = this.messages.get(userId);
-    messages.forEach(msg => this.renderMessage(msg));
-  }
+    showConnectionError() {
+        const errorBar = document.createElement('div');
+        errorBar.className = 'error-bar';
+        errorBar.textContent = 'Connection lost. Attempting to reconnect...';
+        this.$('.chat-main').prepend(errorBar);
+    }
 
-  async handleSearch(e) {
-    const query = e.target.value.toLowerCase();
-    const users = this.$('.chat-user');
+    showSendError() {
+        const input = this.$('.chat-input');
+        input.classList.add('error');
+        setTimeout(() => input.classList.remove('error'), 2000);
+    }
 
-    users.forEach(user => {
-      const name = user.querySelector('.chat-user-name').textContent.toLowerCase();
-      const shouldShow = name.includes(query) && !this.blockedUsers.has(parseInt(user.dataset.userId));
-      user.style.display = shouldShow ? 'flex' : 'none';
-    });
-  }
+    async render() {
+        // Check authentication first
+        if (!userState.getState().isAuthenticated) {
+            window.router.navigate('/login');
+            return document.createElement('div');
+        }
 
-  async setupEventListeners() {
-    const searchInput = this.$('.chat-search-input');
-    this.addListener(searchInput, 'input', this.handleSearch.bind(this));
+        const container = document.createElement('div');
+        container.className = 'chat-container';
 
-    // Simulate online/offline updates
-    setInterval(() => {
-      const userStatuses = this.$('.chat-user-status');
-      userStatuses.forEach(status => {
-        const random = Math.random();
-        if (random < 0.3) status.className = 'chat-user-status offline';
-        else if (random < 0.6) status.className = 'chat-user-status away';
-        else status.className = 'chat-user-status online';
-      });
-    }, 5000);
-  }
+        // Load chats before rendering
+        const chats = await this.loadChats();
+
+        container.innerHTML = `
+            <div class="chat-sidebar">
+                <div class="chat-sidebar-header">
+                    <h2>Chats</h2>
+                    <button class="new-chat-btn">New Chat</button>
+                </div>
+                <div class="chat-list">
+                    ${chats.map(chat => this.createChatListItem(chat)).join('')}
+                </div>
+            </div>
+            <div class="chat-main">
+                ${this.currentChatId ? this.createChatMainContent() : this.createEmptyChatState()}
+            </div>
+        `;
+
+        // After initial render, set up event listeners
+        this.setupEventListeners();
+
+        return container;
+    }
+
+    createChatListItem(chat) {
+        // Determine the other user in the chat
+        const otherUserId = chat.user1_id === this.currentUser.id ? chat.user2_id : chat.user1_id;
+        const isActive = chat.id === this.currentChatId;
+        const lastMessage = chat.last_message;
+
+        return `
+            <div class="chat-item ${isActive ? 'active' : ''}" 
+                 data-chat-id="${chat.id}"
+                 data-user-id="${otherUserId}">
+                <div class="chat-item-avatar">
+                    <img src="/api/auth/users/${otherUserId}/avatar/" alt="User avatar">
+                    <span class="status-indicator ${this.onlineUsers.has(otherUserId) ? 'online' : 'offline'}"></span>
+                </div>
+                <div class="chat-item-info">
+                    <div class="chat-item-name">
+                        ${chat.user1_id === this.currentUser.id ? chat.user2_name : chat.user1_name}
+                    </div>
+                    <div class="chat-item-last-message">
+                        ${lastMessage ? this.formatLastMessage(lastMessage) : 'No messages yet'}
+                    </div>
+                </div>
+                ${chat.unread_count ? `
+                    <div class="unread-count">${chat.unread_count}</div>
+                ` : ''}
+            </div>
+        `;
+    }
+
+    createChatMainContent() {
+        return `
+            <div class="chat-header">
+                ${this.createChatHeader()}
+            </div>
+            <div class="chat-messages">
+                <div class="chat-messages-container"></div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" 
+                       class="chat-input" 
+                       placeholder="Type a message..." 
+                       ${!this.currentChatId ? 'disabled' : ''}>
+                <button class="chat-send-btn" 
+                        ${!this.currentChatId ? 'disabled' : ''}>
+                    Send
+                </button>
+            </div>
+        `;
+    }
+
+    createChatHeader() {
+        const currentChat = this.getCurrentChat();
+        if (!currentChat) return '';
+
+        const otherUserId = currentChat.user1_id === this.currentUser.id 
+            ? currentChat.user2_id 
+            : currentChat.user1_id;
+        const otherUserName = currentChat.user1_id === this.currentUser.id 
+            ? currentChat.user2_name 
+            : currentChat.user1_name;
+
+        return `
+            <div class="chat-header-info">
+                <h3>${otherUserName}</h3>
+                <span class="status-text">
+                    ${this.onlineUsers.has(otherUserId) ? 'Online' : 'Offline'}
+                </span>
+            </div>
+            <div class="chat-header-actions">
+                <button class="clear-chat-btn">Clear Chat</button>
+            </div>
+        `;
+    }
+
+    createEmptyChatState() {
+        return `
+            <div class="empty-chat-state">
+                <div class="empty-chat-icon">💬</div>
+                <h3>Select a chat to start messaging</h3>
+                <p>Or start a new conversation using the New Chat button</p>
+            </div>
+        `;
+    }
+
+    formatLastMessage(message) {
+        const maxLength = 30;
+        const content = message.content;
+        return content.length > maxLength 
+            ? content.substring(0, maxLength) + '...' 
+            : content;
+    }
+
+    getCurrentChat() {
+        const chats = Array.from(this.messages.keys());
+        return chats.find(chat => chat.id === this.currentChatId);
+    }
+
+    setupEventListeners() {
+        // Chat list click handlers
+        this.$('.chat-item').forEach(item => {
+            this.addListener(item, 'click', () => 
+                this.handleChatClick(item.dataset.chatId)
+            );
+        });
+
+        // New chat button handler
+        const newChatBtn = this.$('.new-chat-btn');
+        if (newChatBtn) {
+            this.addListener(newChatBtn, 'click', this.handleNewChat.bind(this));
+        }
+
+        // Message input handlers
+        const input = this.$('.chat-input');
+        const sendBtn = this.$('.chat-send-btn');
+        
+        if (input && sendBtn) {
+            this.addListener(input, 'keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.handleSendMessage();
+                }
+            });
+
+            this.addListener(sendBtn, 'click', this.handleSendMessage);
+        }
+
+        // Clear chat handler
+        const clearChatBtn = this.$('.clear-chat-btn');
+        if (clearChatBtn) {
+            this.addListener(clearChatBtn, 'click', this.handleClearChat.bind(this));
+        }
+    }
+
+    cleanup() {
+        wsManager.removeMessageCallback(this.handleWebSocketMessage);
+        // wsManager.removeStatusCallback(this.handleWebSocketStatus);
+        wsManager.removeUserPresenceCallback(this.handleUserPresence);
+        wsManager.disconnectAll();
+    }
 }

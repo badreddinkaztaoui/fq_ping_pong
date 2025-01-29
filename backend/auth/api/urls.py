@@ -15,7 +15,8 @@ from .views import (
     verify_2fa,
     reset_password_request,
     disable_2fa,
-    verify_2fa_login
+    verify_2fa_login,
+    get_ws_token
 )
 
 urlpatterns = [
@@ -26,6 +27,7 @@ urlpatterns = [
         path('logout/', logout_view, name='logout'),
         path('me/', me_view, name='me'),
         path('verify/', verify_token, name='verify_token'),
+        path('ws-token/', get_ws_token, name='get_ws_token'),
         path('42/login/', oauth_42_login, name='oauth_42_login'),
         path('42/callback/', oauth_42_callback, name='oauth_42_callback'),
         path('update/', update_user, name='update_user'),

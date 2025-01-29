@@ -33,7 +33,6 @@ services:
       - .env
       - ./backend/auth/.env
     environment:
-      - DB_NAME=${AUTH_DB_NAME}
       - DB_USER=${AUTH_DB_USER}
       - DB_PASSWORD=${AUTH_DB_PASSWORD}
       - REDIS_HOST=redis
@@ -71,7 +70,6 @@ services:
       - .env
       - ./backend/chat/.env
     environment:
-      - DB_NAME=${CHAT_DB_NAME}
       - DB_USER=${CHAT_DB_USER}
       - DB_PASSWORD=${CHAT_DB_PASSWORD}
       - REDIS_HOST=redis
@@ -99,45 +97,45 @@ services:
       timeout: 10s
       retries: 3
 
-  game:
-    container_name: game
-    hostname: game
-    build:
-      context: ./backend/game
-      dockerfile: Dockerfile
-    volumes:
-      - ./backend/game:/app
-    env_file:
-      - .env
-      - ./backend/game/.env
-    environment:
-      - DB_NAME=${GAME_DB_NAME}
-      - DB_USER=${GAME_DB_USER}
-      - DB_PASSWORD=${GAME_DB_PASSWORD}
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      auth:
-        condition: service_healthy
-    command: >
-      sh -c "
-        python manage.py collectstatic --noinput &&
-        python manage.py makemigrations api &&
-        python manage.py migrate &&
-        daphne -b 0.0.0.0 -p 8003 core.asgi:application"
-    networks:
-      - app-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/api/game/health/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+  # game:
+  #   container_name: game
+  #   hostname: game
+  #   build:
+  #     context: ./backend/game
+  #     dockerfile: Dockerfile
+  #   volumes:
+  #     - ./backend/game:/app
+  #   env_file:
+  #     - .env
+  #     - ./backend/game/.env
+  #   environment:
+  #     - DB_USER=${GAME_DB_USER}
+  #     - DB_PASSWORD=${GAME_DB_PASSWORD}
+  #     - REDIS_HOST=redis
+  #     - REDIS_PORT=6379
+  #     - REDIS_PASSWORD=${REDIS_PASSWORD}
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     auth:
+  #       condition: service_healthy
+  #   command: >
+  #     sh -c "
+  #       sleep 10 &&
+  #       python manage.py collectstatic --noinput &&
+  #       python manage.py makemigrations api &&
+  #       python manage.py migrate &&
+  #       daphne -b 0.0.0.0 -p 8003 core.asgi:application"
+  #   networks:
+  #     - app-network
+  #   restart: unless-stopped
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:8003/api/game/health/"]
+  #     interval: 30s
+  #     timeout: 10s
+  #     retries: 3
 
   postgres:
     container_name: postgres
@@ -187,6 +185,8 @@ services:
       frontend:
         condition: service_healthy
       auth:
+        condition: service_healthy
+      chat:
         condition: service_healthy
     networks:
       - app-network

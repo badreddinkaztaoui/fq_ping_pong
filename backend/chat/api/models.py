@@ -1,30 +1,71 @@
-import uuid
 from django.db import models
-from django.conf import settings
+import uuid
 
-class ChatRoom(models.Model):
+class PersonalChat(models.Model):
+    """
+    Represents a one-on-one conversation between two users.
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    name = models.CharField(max_length=255)
+    
+    user1_id = models.UUIDField()
+    user2_id = models.UUIDField()
+    
     created_at = models.DateTimeField(auto_now_add=True)
-    participants = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='chat_rooms')
+    last_message_at = models.DateTimeField(null=True, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('user1_id', 'user2_id')
+        verbose_name = 'Personal Chat'
+        verbose_name_plural = 'Personal Chats'
+        indexes = [
+            models.Index(fields=['user1_id', 'user2_id']),
+        ]
 
     def __str__(self):
-        return self.name
+        return f"Chat between {self.user1_id} and {self.user2_id}"
 
-class Message(models.Model):
+
+class PersonalMessage(models.Model):
+    """
+    Represents a message in a personal chat.
+    """
+    MESSAGE_STATUS = [
+        ('sent', 'Sent'),
+        ('delivered', 'Delivered'),
+        ('read', 'Read'),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    room = models.ForeignKey(ChatRoom, related_name='messages', on_delete=models.CASCADE)
-    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='sent_messages', on_delete=models.CASCADE)
+    
+    chat = models.ForeignKey(
+        PersonalChat, 
+        related_name='messages', 
+        on_delete=models.CASCADE
+    )
+    
+    sender_id = models.UUIDField()
+    
     content = models.TextField()
-    timestamp = models.DateTimeField(auto_now_add=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    status = models.CharField(
+        max_length=20, 
+        choices=MESSAGE_STATUS, 
+        default='sent'
+    )
+    
+    metadata = models.JSONField(null=True, blank=True)
+    
+    is_edited = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['created_at']
+        verbose_name = 'Personal Message'
+        verbose_name_plural = 'Personal Messages'
 
     def __str__(self):
-        return f"{self.sender.username}: {self.content[:50]}"
-
-class ChatUserPreference(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    notification_enabled = models.BooleanField(default=True)
-    theme = models.CharField(max_length=20, default='light')
-
-    def __str__(self):
-        return f"{self.user.username}'s chat preferences"
+        return f"Message in chat {self.chat_id} from {self.sender_id}"

@@ -7,10 +7,36 @@ export class UserState extends State {
       user: null,
       isAuthenticated: false,
       loading: false,
-      error: null
+      error: null,
+      wsToken: null
     });
     this.http = new Http();
     this.checkAuth();
+  }
+
+  async getWebSocketToken() {
+    try {
+      if (this.state.wsToken && !this.isTokenExpired()) {
+        return this.state.wsToken;
+      }
+      
+      const response = await this.http.get('/auth/ws-token/');
+      
+      this.setState({
+        wsToken: response.token,
+        wsTokenExpiry: Date.now() + (response.expires_in * 1000)
+      });
+      
+      return response.token;
+    } catch (error) {
+      console.error('WebSocket token retrieval failed', error);
+      throw error;
+    }
+  }
+  
+  isTokenExpired() {
+    return !this.state.wsTokenExpiry || 
+           Date.now() >= this.state.wsTokenExpiry - (5 * 60 * 1000);
   }
 
   async checkAuth() {
@@ -129,9 +155,7 @@ export class UserState extends State {
         error: null
       });
   
-      window.location.href = '/login';
-  
-      return response;
+      return await this.login({email: userData.email, password: userData.password})
     } catch (error) {
       this.setState({
         error: error.message,
@@ -143,11 +167,12 @@ export class UserState extends State {
 
   async logout() {
     try {
-      await this.http.post('/auth/logout/');
+      await this.http.post('/api/auth/logout/');
       this.setState({
         user: null,
         isAuthenticated: false,
-        error: null
+        error: null,
+        wsToken: null
       });
     } catch (error) {
       console.error('Logout error:', error);

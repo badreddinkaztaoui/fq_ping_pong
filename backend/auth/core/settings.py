@@ -133,15 +133,14 @@ MIDDLEWARE = [
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'auth_service'),
-        'USER': os.getenv('DB_USER', 'postgres'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'postgres'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 60,
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('AUTH_DB_USER'),
+        'PASSWORD': os.getenv('AUTH_DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
         'OPTIONS': {
-            'connect_timeout': 5,
-        },
+            'options': '-c search_path=auth,public'
+        }
     }
 }
 

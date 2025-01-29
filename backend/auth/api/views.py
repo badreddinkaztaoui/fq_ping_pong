@@ -1,3 +1,4 @@
+from datetime import timedelta
 import os
 import requests
 import urllib.parse
@@ -302,6 +303,36 @@ def verify_token(request):
     except Exception as e:
         return Response(
             {'error': 'An error occurred while verifying the token'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+@api_view(['GET'])
+@authentication_classes([SessionAuthentication])
+@permission_classes([IsAuthenticated])
+def get_ws_token(request):
+    """
+    Generate a short-lived JWT token for WebSocket authentication.
+    This endpoint is called by authenticated users (with valid session)
+    to get a JWT token for WebSocket connections.
+    """
+    try:
+        # Create a token with shorter lifetime for WebSocket
+        token = AccessToken.for_user(request.user)
+        
+        # Set a shorter lifetime (e.g., 1 hour) for WebSocket tokens
+        token.set_exp(lifetime=timedelta(hours=1))
+        
+        # Include basic user info in token payload
+        token['username'] = request.user.username
+        token['display_name'] = request.user.display_name
+        
+        return Response({
+            'token': str(token),
+            'expires_in': 3600
+        })
+    except Exception as e:
+        return Response(
+            {'error': 'Failed to generate WebSocket token'},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
     

@@ -65,11 +65,14 @@ ASGI_APPLICATION = 'core.asgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('DB_NAME', 'game_db'),
-        'USER': os.getenv('DB_USER', 'game_admin'),
-        'PASSWORD': os.getenv('DB_PASSWORD', ''),
-        'HOST': os.getenv('DB_HOST', 'postgres'),
-        'PORT': os.getenv('DB_PORT', '5432'),
+        'NAME': os.getenv('POSTGRES_DB'),
+        'USER': os.getenv('GAME_DB_USER'),
+        'PASSWORD': os.getenv('GAME_DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
+        'OPTIONS': {
+            'options': '-c search_path=game,auth,public'
+        }
     }
 }
 
@@ -103,19 +106,41 @@ WEBSOCKET_TIMEOUT = int(os.getenv('WS_TIMEOUT', 60))
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
 }
+
+GAME_SETTINGS = {
+    'MATCHMAKING_TIMEOUT': 60,
+    'GAME_TICK_RATE': 60,
+    'PADDLE_SPEED': 10,
+    'BALL_SPEED': 15,
+    'COURT_WIDTH': 800,
+    'COURT_HEIGHT': 600,
+    'POINTS_TO_WIN': 11,
+}
+
 
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000').split(',')
 CORS_ALLOW_CREDENTIALS = True
 
+AUTH_USER_MODEL = 'api.User'
+
+SIMPLE_JWT = {
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+}
+
 AUTH_SERVICE_URL = os.getenv('AUTH_SERVICE_URL', 'http://auth:8001')
-JWT_VERIFICATION_URL = os.getenv('JWT_VERIFICATION_URL', 'http://auth:8001/api/auth/verify/')
+JWT_VERIFICATION_URL = f"{AUTH_SERVICE_URL}/api/auth/verify/"
 
 GAME_SETTINGS = {
     'MATCHMAKING_TIMEOUT': int(os.getenv('MATCHMAKING_TIMEOUT', 60)),
