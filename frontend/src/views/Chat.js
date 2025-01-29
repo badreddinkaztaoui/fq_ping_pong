@@ -1,408 +1,264 @@
-import { View } from "../core/View";
-import { userState } from "../utils/UserState";
-import { wsManager } from "../utils/WebSocketManager";
-import { Http } from "../utils/Http";
-import "../styles/dashboard/chat.css";
+import { View } from '../core/View';
+import { wsManager } from '../utils/WebSocketManager';
+import { userState } from '../utils/UserState';
 
 export class ChatView extends View {
-    constructor() {
+    constructor(chatId) {
         super();
-        this.currentChatId = null;
-        this.currentUser = null;
-        this.messages = new Map();
-        this.onlineUsers = new Set();
-        this.http = new Http();
-        this.lastSeenMessageId = null;
-        this.messageStatus = new Map(); // Track message delivery status
+        this.chatId = chatId;
+        this.messages = [];
+        this.hasMoreMessages = true;
+        this.isLoadingMore = false;
+        this.page = 0;
+        this.messagesPerPage = 50;
+        this.connectionStatus = 'disconnected';
+        this.error = null;
 
-        this.handleWebSocketMessage = this.handleWebSocketMessage.bind(this);
-        // this.handleWebSocketStatus = this.handleWebSocketStatus.bind(this);
-        this.handleSendMessage = this.handleSendMessage.bind(this);
-        // this.handleChatClick = this.handleChatClick.bind(this);
-        this.handleUserPresence = this.handleUserPresence.bind(this);
-    }
-
-    async init() {
-        const state = userState.getState();
-        this.currentUser = state.user;
-
-        // Set up WebSocket message handlers
-        wsManager.onMessage(this.handleWebSocketMessage);
-        // wsManager.onStatusChange(this.handleWebSocketStatus);
-        wsManager.onUserPresence(this.handleUserPresence);
-
-        await this.loadChats();
-    }
-
-    async loadChats() {
-        try {
-            const response = await this.http.get('/chat/list/', {
-                headers: this.getAuthHeaders()
-            });
-            
-            const chats = response.chats;
-            chats.forEach(chat => {
-                this.messages.set(chat.id, []);
-                if (chat.last_message) {
-                    this.messageStatus.set(chat.last_message.id, chat.last_message.status);
-                }
-            });
-
-            return chats;
-        } catch (error) {
-            console.error('Failed to load chats:', error);
-            if (error.status === 401) {
-                window.router.navigate('/login');
-            }
-            return [];
-        }
-    }
-
-    getAuthHeaders() {
-        const token = userState.getWebSocketToken();
-        return {
-            'Authorization': `Bearer ${token}`
-        };
-    }
-
-    async connectWebSocket(chatId) {
-        const token = userState.getWebSocketToken();
-        const wsUrl = `ws://${window.location.host}/ws/chat/${chatId}/?token=${token}`;
-        
-        try {
-            await wsManager.connect(chatId, wsUrl);
-        } catch (error) {
-            console.error('WebSocket connection failed:', error);
-            // Show connection error in UI
-            this.showConnectionError();
-        }
-    }
-
-    async loadChatHistory(chatId) {
-        try {
-            const response = await this.http.get(`/chat/${chatId}/messages/`, {
-                headers: this.getAuthHeaders()
-            });
-            
-            this.messages.set(chatId, response.messages);
-            this.renderMessages(chatId);
-            
-            // Update last seen message
-            if (response.messages.length > 0) {
-                this.lastSeenMessageId = response.messages[response.messages.length - 1].id;
-            }
-        } catch (error) {
-            console.error('Failed to load messages:', error);
-        }
-    }
-
-    handleWebSocketMessage(event) {
-        const data = JSON.parse(event.data);
-        
-        switch (data.type) {
-            case 'chat_message':
-                this.handleNewMessage(data.message);
-                break;
-            case 'message_ack':
-                this.handleMessageAck(data);
-                break;
-            case 'user_joined':
-            case 'user_left':
-                this.handleUserPresence(data);
-                break;
-            case 'error':
-                this.handleError(data);
-                break;
-        }
-    }
-
-    handleNewMessage(message) {
-        const messages = this.messages.get(message.chat_id) || [];
-        messages.push(message);
-        this.messages.set(message.chat_id, messages);
-        
-        // Update message status
-        this.messageStatus.set(message.id, message.status);
-        
-        if (this.currentChatId === message.chat_id) {
-            this.renderMessages(message.chat_id);
-            // Update last seen for current user's messages
-            if (message.sender_id === this.currentUser.id) {
-                this.lastSeenMessageId = message.id;
-            }
-        }
-    }
-
-    handleMessageAck(data) {
-        const { message_id, status } = data;
-        this.messageStatus.set(message_id, status);
-        this.updateMessageStatus(message_id, status);
-    }
-
-    handleUserPresence(data) {
-        const { user_id, type } = data;
-        if (type === 'user_joined') {
-            this.onlineUsers.add(user_id);
-        } else if (type === 'user_left') {
-            this.onlineUsers.delete(user_id);
-        }
-        this.updatePresenceIndicators();
-    }
-
-    updatePresenceIndicators() {
-        this.$$('.status-indicator').forEach(indicator => {
-            const userId = indicator.closest('.chat-item').dataset.userId;
-            indicator.classList.toggle('online', this.onlineUsers.has(userId));
-        });
-    }
-
-    createMessageElement(message) {
-        const isSender = message.sender_id === this.currentUser.id;
-        const status = this.messageStatus.get(message.id) || message.status;
-        
-        return `
-            <div class="message ${isSender ? 'message-sent' : 'message-received'}" 
-                 data-message-id="${message.id}">
-                <div class="message-content">${message.content}</div>
-                <div class="message-footer">
-                    <span class="message-time">
-                        ${new Date(message.timestamp).toLocaleTimeString()}
-                    </span>
-                    ${isSender ? `
-                        <span class="message-status ${status}">
-                            ${this.getStatusIcon(status)}
-                        </span>
-                    ` : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    getStatusIcon(status) {
-        switch (status) {
-            case 'sent': return '✓';
-            case 'delivered': return '✓✓';
-            case 'read': return '✓✓';
-            default: return '';
-        }
-    }
-
-    updateMessageStatus(messageId, status) {
-        const messageEl = this.$(`[data-message-id="${messageId}"]`);
-        if (messageEl) {
-            const statusEl = messageEl.querySelector('.message-status');
-            if (statusEl) {
-                statusEl.className = `message-status ${status}`;
-                statusEl.innerHTML = this.getStatusIcon(status);
-            }
-        }
-    }
-
-    async handleSendMessage() {
-        const input = this.$('.chat-input');
-        const content = input.value.trim();
-
-        if (!content || !this.currentChatId) return;
-
-        try {
-            // Send message through WebSocket
-            wsManager.send(this.currentChatId, {
-                type: 'chat_message',
-                message: content
-            });
-
-            input.value = '';
-            
-        } catch (error) {
-            console.error('Failed to send message:', error);
-            this.showSendError();
-        }
-    }
-
-    showConnectionError() {
-        const errorBar = document.createElement('div');
-        errorBar.className = 'error-bar';
-        errorBar.textContent = 'Connection lost. Attempting to reconnect...';
-        this.$('.chat-main').prepend(errorBar);
-    }
-
-    showSendError() {
-        const input = this.$('.chat-input');
-        input.classList.add('error');
-        setTimeout(() => input.classList.remove('error'), 2000);
+        this.handleMessage = this.handleMessage.bind(this);
+        this.handleStatus = this.handleStatus.bind(this);
+        this.handleScroll = this.handleScroll.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
     async render() {
-        // Check authentication first
-        if (!userState.getState().isAuthenticated) {
-            window.router.navigate('/login');
-            return document.createElement('div');
-        }
-
         const container = document.createElement('div');
         container.className = 'chat-container';
-
-        // Load chats before rendering
-        const chats = await this.loadChats();
-
         container.innerHTML = `
-            <div class="chat-sidebar">
-                <div class="chat-sidebar-header">
-                    <h2>Chats</h2>
-                    <button class="new-chat-btn">New Chat</button>
+            <div class="chat-status-bar"></div>
+            <div class="chat-error"></div>
+            <div class="chat-messages">
+                <div class="load-more-container">
+                    <button class="load-more-btn">Load more messages</button>
                 </div>
-                <div class="chat-list">
-                    ${chats.map(chat => this.createChatListItem(chat)).join('')}
+                <div class="messages-list"></div>
+            </div>
+            <form class="chat-form">
+                <div class="chat-input-container">
+                    <input type="text" class="chat-input" placeholder="Type your message...">
+                    <button type="submit" class="chat-send-btn" disabled>
+                        <svg class="send-icon" viewBox="0 0 24 24" width="24" height="24">
+                            <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
-            </div>
-            <div class="chat-main">
-                ${this.currentChatId ? this.createChatMainContent() : this.createEmptyChatState()}
-            </div>
+            </form>
         `;
-
-        // After initial render, set up event listeners
-        this.setupEventListeners();
 
         return container;
     }
 
-    createChatListItem(chat) {
-        // Determine the other user in the chat
-        const otherUserId = chat.user1_id === this.currentUser.id ? chat.user2_id : chat.user1_id;
-        const isActive = chat.id === this.currentChatId;
-        const lastMessage = chat.last_message;
+    async afterMount() {
+        // Cache DOM elements
+        this.statusBar = this.$('.chat-status-bar');
+        this.errorElement = this.$('.chat-error');
+        this.messagesContainer = this.$('.chat-messages');
+        this.messagesList = this.$('.messages-list');
+        this.loadMoreBtn = this.$('.load-more-btn');
+        this.form = this.$('.chat-form');
+        this.input = this.$('.chat-input');
+        this.sendButton = this.$('.chat-send-btn');
 
-        return `
-            <div class="chat-item ${isActive ? 'active' : ''}" 
-                 data-chat-id="${chat.id}"
-                 data-user-id="${otherUserId}">
-                <div class="chat-item-avatar">
-                    <img src="/api/auth/users/${otherUserId}/avatar/" alt="User avatar">
-                    <span class="status-indicator ${this.onlineUsers.has(otherUserId) ? 'online' : 'offline'}"></span>
-                </div>
-                <div class="chat-item-info">
-                    <div class="chat-item-name">
-                        ${chat.user1_id === this.currentUser.id ? chat.user2_name : chat.user1_name}
-                    </div>
-                    <div class="chat-item-last-message">
-                        ${lastMessage ? this.formatLastMessage(lastMessage) : 'No messages yet'}
-                    </div>
-                </div>
-                ${chat.unread_count ? `
-                    <div class="unread-count">${chat.unread_count}</div>
-                ` : ''}
-            </div>
-        `;
+        // Set up event listeners
+        this.setupEventListeners();
+
+        // Load initial messages and connect to WebSocket
+        await this.loadInitialMessages();
+        this.connectWebSocket();
     }
 
-    createChatMainContent() {
-        return `
-            <div class="chat-header">
-                ${this.createChatHeader()}
-            </div>
-            <div class="chat-messages">
-                <div class="chat-messages-container"></div>
-            </div>
-            <div class="chat-input-area">
-                <input type="text" 
-                       class="chat-input" 
-                       placeholder="Type a message..." 
-                       ${!this.currentChatId ? 'disabled' : ''}>
-                <button class="chat-send-btn" 
-                        ${!this.currentChatId ? 'disabled' : ''}>
-                    Send
-                </button>
-            </div>
-        `;
-    }
+    async setupEventListeners() {
+        // Form submission
+        this.addListener(this.form, 'submit', this.handleSubmit);
 
-    createChatHeader() {
-        const currentChat = this.getCurrentChat();
-        if (!currentChat) return '';
-
-        const otherUserId = currentChat.user1_id === this.currentUser.id 
-            ? currentChat.user2_id 
-            : currentChat.user1_id;
-        const otherUserName = currentChat.user1_id === this.currentUser.id 
-            ? currentChat.user2_name 
-            : currentChat.user1_name;
-
-        return `
-            <div class="chat-header-info">
-                <h3>${otherUserName}</h3>
-                <span class="status-text">
-                    ${this.onlineUsers.has(otherUserId) ? 'Online' : 'Offline'}
-                </span>
-            </div>
-            <div class="chat-header-actions">
-                <button class="clear-chat-btn">Clear Chat</button>
-            </div>
-        `;
-    }
-
-    createEmptyChatState() {
-        return `
-            <div class="empty-chat-state">
-                <div class="empty-chat-icon">💬</div>
-                <h3>Select a chat to start messaging</h3>
-                <p>Or start a new conversation using the New Chat button</p>
-            </div>
-        `;
-    }
-
-    formatLastMessage(message) {
-        const maxLength = 30;
-        const content = message.content;
-        return content.length > maxLength 
-            ? content.substring(0, maxLength) + '...' 
-            : content;
-    }
-
-    getCurrentChat() {
-        const chats = Array.from(this.messages.keys());
-        return chats.find(chat => chat.id === this.currentChatId);
-    }
-
-    setupEventListeners() {
-        // Chat list click handlers
-        this.$('.chat-item').forEach(item => {
-            this.addListener(item, 'click', () => 
-                this.handleChatClick(item.dataset.chatId)
-            );
+        // Input validation
+        this.addListener(this.input, 'input', () => {
+            this.sendButton.disabled = !this.input.value.trim() || 
+                this.connectionStatus !== 'connected';
         });
 
-        // New chat button handler
-        const newChatBtn = this.$('.new-chat-btn');
-        if (newChatBtn) {
-            this.addListener(newChatBtn, 'click', this.handleNewChat.bind(this));
-        }
+        // Scroll handling for infinite scroll
+        this.addListener(this.messagesContainer, 'scroll', this.handleScroll);
 
-        // Message input handlers
-        const input = this.$('.chat-input');
-        const sendBtn = this.$('.chat-send-btn');
-        
-        if (input && sendBtn) {
-            this.addListener(input, 'keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.handleSendMessage();
-                }
-            });
+        // Load more button
+        this.addListener(this.loadMoreBtn, 'click', () => this.loadMoreMessages());
+    }
 
-            this.addListener(sendBtn, 'click', this.handleSendMessage);
-        }
+    async loadInitialMessages() {
+        // try {
+        //     const response = await userState.http.get(`/chat/${this.chatId}/messages/`);
+        //     this.messages = response.messages.reverse();
+        //     this.hasMoreMessages = response.messages.length < response.total_count;
+        //     this.renderMessages();
+        //     this.scrollToBottom();
+        // } catch (err) {
+        //     this.showError('Failed to load messages');
+        // }
+    }
 
-        // Clear chat handler
-        const clearChatBtn = this.$('.clear-chat-btn');
-        if (clearChatBtn) {
-            this.addListener(clearChatBtn, 'click', this.handleClearChat.bind(this));
+    connectWebSocket() {
+        wsManager.connectToChat(this.chatId);
+        wsManager.onMessage(this.handleMessage);
+        wsManager.onStatusChange(this.handleStatus);
+    }
+
+    handleMessage(msgChatId, message) {
+        if (msgChatId === this.chatId) {
+            this.messages.push(message);
+            this.renderMessage(message);
+            this.scrollToBottom();
         }
     }
 
-    cleanup() {
-        wsManager.removeMessageCallback(this.handleWebSocketMessage);
-        // wsManager.removeStatusCallback(this.handleWebSocketStatus);
-        wsManager.removeUserPresenceCallback(this.handleUserPresence);
-        wsManager.disconnectAll();
+    handleStatus(statusChatId, status) {
+        if (statusChatId === this.chatId) {
+            this.connectionStatus = status;
+            this.updateStatusBar();
+            this.sendButton.disabled = !this.input.value.trim() || status !== 'connected';
+            
+            if (status === 'error') {
+                this.showError('Connection error occurred');
+            } else {
+                this.hideError();
+            }
+        }
+    }
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const message = this.input.value.trim();
+        if (!message) return;
+
+        try {
+            const success = wsManager.send(this.chatId, {
+                type: 'chat_message',
+                message: message
+            });
+
+            if (!success) {
+                this.showError('Failed to send message - not connected');
+                return;
+            }
+
+            this.input.value = '';
+            this.sendButton.disabled = true;
+        } catch (err) {
+            this.showError('Failed to send message');
+        }
+    }
+
+    async handleScroll() {
+        const { scrollTop } = this.messagesContainer;
+        if (scrollTop === 0) {
+            await this.loadMoreMessages();
+        }
+    }
+
+    async loadMoreMessages() {
+        // if (this.isLoadingMore || !this.hasMoreMessages) return;
+
+        // this.isLoadingMore = true;
+        // this.loadMoreBtn.textContent = 'Loading...';
+        // this.loadMoreBtn.disabled = true;
+
+        // try {
+        //     const nextPage = this.page + 1;
+        //     const response = await userState.http.get(
+        //         `/chat/${this.chatId}/messages/?offset=${nextPage * this.messagesPerPage}&limit=${this.messagesPerPage}`
+        //     );
+            
+        //     this.messages = [...response.messages.reverse(), ...this.messages];
+        //     this.hasMoreMessages = response.total_count > (nextPage + 1) * this.messagesPerPage;
+        //     this.page = nextPage;
+            
+        //     this.renderMessages();
+        //     this.loadMoreBtn.style.display = this.hasMoreMessages ? 'block' : 'none';
+        // } catch (err) {
+        //     this.showError('Failed to load more messages');
+        // } finally {
+        //     this.isLoadingMore = false;
+        //     this.loadMoreBtn.textContent = 'Load more messages';
+        //     this.loadMoreBtn.disabled = false;
+        // }
+    }
+
+    renderMessages() {
+        this.messagesList.innerHTML = '';
+        this.messages.forEach(message => this.renderMessage(message));
+    }
+
+    renderMessage(message) {
+        const messageElement = document.createElement('div');
+        const isOwnMessage = message.sender_id === userState.getState().user?.id;
+        
+        messageElement.className = `chat-message ${isOwnMessage ? 'own-message' : 'other-message'}`;
+        messageElement.innerHTML = `
+            <div class="message-content">
+                <div class="message-text">${this.escapeHtml(message.content)}</div>
+                <div class="message-time">${this.formatTimestamp(message.created_at)}</div>
+            </div>
+        `;
+
+        this.messagesList.appendChild(messageElement);
+    }
+
+    updateStatusBar() {
+        let statusText = '';
+        let statusClass = '';
+
+        switch (this.connectionStatus) {
+            case 'connecting':
+                statusText = 'Connecting...';
+                statusClass = 'status-connecting';
+                break;
+            case 'error':
+                statusText = 'Connection error';
+                statusClass = 'status-error';
+                break;
+            case 'disconnected':
+                statusText = 'Disconnected';
+                statusClass = 'status-disconnected';
+                break;
+            default:
+                this.statusBar.style.display = 'none';
+                return;
+        }
+
+        this.statusBar.textContent = statusText;
+        this.statusBar.className = `chat-status-bar ${statusClass}`;
+        this.statusBar.style.display = 'block';
+    }
+
+    showError(message) {
+        this.error = message;
+        this.errorElement.textContent = message;
+        this.errorElement.style.display = 'block';
+    }
+
+    hideError() {
+        this.error = null;
+        this.errorElement.style.display = 'none';
+    }
+
+    scrollToBottom() {
+        this.messagesContainer.scrollTop = this.messagesContainer.scrollHeight;
+    }
+
+    formatTimestamp(timestamp) {
+        return new Date(timestamp).toLocaleTimeString();
+    }
+
+    escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    async beforeUnmount() {
+        wsManager.disconnect(this.chatId);
+        wsManager.removeMessageCallback(this.handleMessage);
+        wsManager.removeStatusCallback(this.handleStatus);
     }
 }
