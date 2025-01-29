@@ -85,10 +85,12 @@
   color: white;
   text-shadow: 0 0 10px rgba(17, 255, 228, 0.3);
   transition: transform 0.3s ease;
+  margin-left: 15px;
 }
 
 .metric-item:hover .metric-value {
   transform: scale(1.09);
+  margin-left: 15px;
 }
 
 .metric-bar {

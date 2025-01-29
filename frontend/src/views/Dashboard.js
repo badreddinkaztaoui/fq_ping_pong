@@ -37,6 +37,9 @@ export class DashboardView extends View {
           ${MatchList()}
         </div>
       </section>
+      <button class="matches-toggle" aria-label="Toggle Matches">
+        MATCHES
+      </button>
     `;
 
     return template;
@@ -47,6 +50,7 @@ export class DashboardView extends View {
     this.setupGameModeListeners();
     this.setupSpecialModeListeners();
     await this.loadDashboardData();
+    this.setupMatchesToggle();
   }
 
   setupGameModeListeners() {
@@ -116,7 +120,41 @@ export class DashboardView extends View {
   async loadDashboardData() {
 
   }
+  setupMatchesToggle() {
+    const toggleBtn = this.$('.matches-toggle');
+    const rightSection = this.$('.right-section');
+
+    if (toggleBtn && rightSection) {
+      toggleBtn.addEventListener('click', () => {
+        rightSection.classList.toggle('active');
+        // Update aria-expanded for accessibility
+        const isExpanded = rightSection.classList.contains('active');
+        toggleBtn.setAttribute('aria-expanded', isExpanded);
+        if (isExpanded)
+          toggleBtn.textContent = "X"
+        else
+          toggleBtn.textContent = "MATCHES"
+
+      });
 
 
+      // Close panel when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!rightSection.contains(e.target) &&
+          !toggleBtn.contains(e.target) &&
+          rightSection.classList.contains('active')) {
+          rightSection.classList.remove('active');
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      // Close panel on ESC key
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && rightSection.classList.contains('active')) {
+          rightSection.classList.remove('active');
+          toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+  }
 }
-

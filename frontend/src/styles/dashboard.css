@@ -77,8 +77,6 @@
 
   .right-section {
     flex: 0 0 auto;
-    max-width: 600px;
-    margin: 0 auto;
     width: 100%;
   }
 }
@@ -97,5 +95,77 @@
 @media (max-width: 480px) {
   .main-content {
     padding: 0.4rem;
+  }
+}
+
+.matches-toggle {
+  display: none;
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #ff4655;
+  color: white;
+  border: none;
+  padding: 1rem 0.5rem;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  cursor: pointer;
+  z-index: 100;
+  font-family: "VALORANT";
+  letter-spacing: 0.1em;
+  border-radius: 4px 0 0 4px;
+  transition: all 0.3s ease;
+}
+
+.matches-toggle:hover {
+  background: #ff5c69;
+}
+
+@media (max-width: 1920px) {
+  .matches-toggle {
+    display: block;
+  }
+
+  .right-section {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 400px;
+    height: 100vh;
+    transform: translateX(100%);
+    z-index: 99;
+  }
+
+  .right-section.active {
+    transform: translateX(0);
+  }
+
+  .right-section.active + .matches-toggle {
+    writing-mode: horizontal-tb;
+    position: fixed;
+    bottom: 2rem;
+    right: 200px;
+    top: auto;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    transform: translateX(50%);
+    padding: 0; /* Remove padding */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+  }
+
+  .right-section.active + .matches-toggle:hover {
+    transform: translateX(50%) scale(1.1);
+    box-shadow: 0 6px 16px rgba(255, 70, 85, 0.3);
+  }
+
+  .right-section.active .last-matches {
+    padding-bottom: 6rem;
   }
 }

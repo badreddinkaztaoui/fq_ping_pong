@@ -28,32 +28,28 @@ export function MatchList() {
    <div class="vx-matches">
      <h2 class="vx-matches__header">MATCH HISTORY</h2>
      <div class="vx-matches__list">
-       ${matches.map(match => `
-         <div class="vx-matches__item">
-           <div class="vx-matches__player">
-             <img src="${match.player1.avatar}" alt="${match.player1.name}" class="vx-matches__avatar">
-             <div class="vx-matches__info">
-               <span class="vx-matches__name">${match.player1.name}</span>
-               <span class="vx-matches__status ${match.score.split('-')[0] > match.score.split('-')[1] ? 'winner' : ''}">
-                 ${match.score.split('-')[0] > match.score.split('-')[1] ? 'VICTORY' : 'DEFEAT'}
-               </span>
+       ${matches.map(match => {
+    const isXerxesPlayer1 = match.player1.name === 'XERXES';
+    const xerxesScore = isXerxesPlayer1 ? match.score.split(':')[0] : match.score.split(':')[1];
+    const opponentScore = isXerxesPlayer1 ? match.score.split(':')[1] : match.score.split(':')[0];
+    const opponent = isXerxesPlayer1 ? match.player2 : match.player1;
+    const isWinner = parseInt(xerxesScore) > parseInt(opponentScore);
+
+    return `
+           <div class="vx-matches__item ${isWinner ? 'winner' : 'looser'}">
+             <div class="vx-matches__vs-info">
+               <img src="${opponent.avatar}" alt="${opponent.name}" class="vx-matches__avatar">
+               <div class="vx-matches__details">
+                 <span class="vx-matches__vs-text">VS</span>
+                 <span class="vx-matches__opponent">${opponent.name}</span>
+               </div>
+             </div>
+             <div class="vx-matches__score">
+               <span class="vx-matches__number">${xerxesScore} : ${opponentScore}</span>
              </div>
            </div>
-           <div class="vx-matches__score">
-             <span class="vx-matches__number">${match.score}</span>
-             <span class="vx-matches__date">${match.date}</span>
-           </div>
-           <div class="vx-matches__player">
-             <div class="vx-matches__info vx-matches__info--right">
-               <span class="vx-matches__name">${match.player2.name}</span>
-               <span class="vx-matches__status ${match.score.split('-')[0] < match.score.split('-')[1] ? 'winner' : ''}">
-                 ${match.score.split('-')[0] < match.score.split('-')[1] ? 'VICTORY' : 'DEFEAT'}
-               </span>
-             </div>
-             <img src="${match.player2.avatar}" alt="${match.player2.name}" class="vx-matches__avatar">
-           </div>
-         </div>
-       `).join('')}
+         `;
+  }).join('')}
      </div>
    </div>
  `;
