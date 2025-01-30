@@ -123,6 +123,9 @@
 }
 
 @media (max-width: 1920px) {
+  .main-content {
+    height: auto;
+  }
   .matches-toggle {
     display: block;
   }

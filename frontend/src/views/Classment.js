@@ -165,7 +165,7 @@ export class ClassmentView extends View {
             </thead>
             <tbody>${rows}</tbody>
           </table>
-          <div class="pagination">
+          <div class="pagination-class">
             <button class="prev-page" ${this.currentPage === 1 ? "disabled" : ""}>
                 Previous
             </button>
