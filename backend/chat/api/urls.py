@@ -11,7 +11,6 @@ urlpatterns = [
     path('chat/', include([
         path('health/', ChatHealthCheck.as_view(), name='chat_health_check'),
         
-        # Chat management endpoints
         path('start/', start_chat, name='start_chat'),
         path('list/', get_user_chats, name='get_user_chats'),
         path('<str:chat_id>/', include([

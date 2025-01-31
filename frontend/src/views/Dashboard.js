@@ -18,8 +18,6 @@ export class DashboardView extends View {
       loading: true,
       error: null
     });
-
-    console.log(this.user);
   }
 
   async render() {

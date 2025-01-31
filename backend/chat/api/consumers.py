@@ -17,21 +17,17 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Redis connection for pub/sub and message storage
         self.redis_connection = None
         
-        # Chat-specific attributes
         self.chat_id: Optional[str] = None
         self.user_id: Optional[str] = None
         self.last_seen_message_id: Optional[str] = None
         
-        # Redis key prefixes
         self.CHAT_MESSAGES_PREFIX = 'personal_chat:messages:'
         self.ONLINE_USERS_PREFIX = 'personal_chat:online_users:'
         self.LAST_SEEN_PREFIX = 'personal_chat:last_seen:'
         self.RATE_LIMIT_PREFIX = 'personal_chat:rate_limit:'
         
-        # Connection state
         self.is_connected = False
 
     async def connect(self):
@@ -40,52 +36,45 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         Validates user authentication and chat membership before establishing connection.
         """
         try:
-            # Establish Redis connection with error handling
             try:
                 self.redis_connection = await self.get_redis_connection()
             except redis.RedisError as e:
                 await self.close(code=4002)
                 return
             
-            # Extract and validate connection parameters
+            user_data = self.scope['user']
+            self.user_id = str(user_data['id'])
+            
             self.chat_id = self.scope['url_route']['kwargs'].get('chat_id')
-            self.user_id = str(self.scope['user'].get('id'))
             
             if not all([self.chat_id, self.user_id]):
                 await self.close(code=4001)
                 return
             
-            # Validate chat membership
             is_valid_member = await self.check_chat_membership(self.chat_id, self.user_id)
             if not is_valid_member:
                 await self.close(code=4003)
                 return
             
-            # Set up channel group
             self.chat_group_name = f'chat_{self.chat_id}'
             await self.channel_layer.group_add(
                 self.chat_group_name,
                 self.channel_name
             )
             
-            # Handle reconnection
             last_seen = await self.get_last_seen()
             self.last_seen_message_id = last_seen
             
-            # Accept connection and mark user as online
             await self.accept()
             await self.mark_user_online()
             
-            # Send connection status to user
             await self.send_json({
                 'type': 'connection_established',
                 'chat_id': self.chat_id
             })
             
-            # Notify others about user joining
             await self.notify_user_presence('user_joined')
             
-            # Send missed messages if reconnecting
             if last_seen:
                 await self.send_messages_since(last_seen)
             else:
@@ -102,23 +91,18 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         """
         try:
             if self.is_connected:
-                # Update last seen timestamp
                 await self.update_last_seen()
                 
-                # Remove from chat group
                 if hasattr(self, 'chat_group_name'):
                     await self.channel_layer.group_discard(
                         self.chat_group_name,
                         self.channel_name
                     )
                 
-                # Mark user as offline
                 await self.mark_user_offline()
                 
-                # Notify others about user leaving
                 await self.notify_user_presence('user_left')
             
-            # Clean up Redis connection
             if self.redis_connection:
                 await self.redis_connection.close()
             
@@ -131,7 +115,6 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         Processes incoming messages and broadcasts them to the chat group.
         """
         try:
-            # Parse and validate message data
             data = json.loads(text_data)
             message_content = data.get('message')
             
@@ -139,12 +122,10 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 await self.send_error("Invalid message format")
                 return
             
-            # Check rate limiting
             if not await self.check_rate_limit():
                 await self.send_error("Rate limit exceeded")
                 return
             
-            # Generate message ID and prepare payload
             message_id = str(uuid.uuid4())
             timestamp = datetime.now().isoformat()
             
@@ -157,10 +138,8 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 'status': 'sent'
             }
             
-            # Store message in Redis
             await self.store_message(message_payload)
             
-            # Broadcast message to group
             await self.channel_layer.group_send(
                 self.chat_group_name,
                 {
@@ -169,7 +148,6 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 }
             )
             
-            # Send delivery confirmation
             await self.send_json({
                 'type': 'message_ack',
                 'message_id': message_id,
@@ -187,7 +165,6 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         """
         message = event['message']
         
-        # Update message status if recipient
         if message['sender_id'] != self.user_id:
             message['status'] = 'delivered'
             await self.update_message_status(message['id'], 'delivered')
@@ -254,7 +231,6 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 {json.dumps(message): float(message['timestamp'])}
             )
             
-            # Set message expiration (7 days)
             await self.redis_connection.expire(redis_key, 7 * 24 * 60 * 60)
             
         except Exception as e:
@@ -303,7 +279,7 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             
         except Exception as e:
             print(f"Error checking rate limit: {e}")
-            return True  # Allow message if rate limiting fails
+            return True
 
     async def get_last_seen(self) -> Optional[str]:
         """
@@ -326,7 +302,7 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 await self.redis_connection.set(
                     key,
                     self.last_seen_message_id,
-                    ex=7 * 24 * 60 * 60  # 7 days expiry
+                    ex=7 * 24 * 60 * 60
                 )
         except Exception as e:
             print(f"Error updating last seen: {e}")
@@ -423,8 +399,6 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         from .models import PersonalChat
         
         try:
-            # Check if user is either user1 or user2 in the chat
-            # and the chat is active
             chat_exists = PersonalChat.objects.filter(
                 id=chat_id,
                 is_active=True

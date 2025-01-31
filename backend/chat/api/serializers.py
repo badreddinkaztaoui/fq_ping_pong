@@ -1,11 +1,11 @@
 from rest_framework import serializers
 from .models import PersonalChat, PersonalMessage
+import uuid
 
 class PersonalChatSerializer(serializers.ModelSerializer):
-    """
-    Serializer for PersonalChat model.
-    Provides comprehensive details about a personal chat.
-    """
+    id = serializers.UUIDField(format='hex')
+    user1_id = serializers.UUIDField(format='hex')
+    user2_id = serializers.UUIDField(format='hex')
     last_message = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
 
@@ -24,30 +24,24 @@ class PersonalChatSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
     def get_last_message(self, obj):
-        """
-        Retrieves the most recent message in the chat.
-        """
         last_message = obj.messages.order_by('-created_at').first()
         return PersonalMessageSerializer(last_message).data if last_message else None
 
     def get_unread_count(self, obj):
-        """
-        Counts unread messages for the current user.
-        Requires context to be set with the current user.
-        """
         user = self.context.get('request').user
-        if not user:
+        try:
+            user_id = uuid.UUID(str(user['id']))
+            return obj.messages.filter(
+                status__in=['sent', 'delivered']
+            ).exclude(sender_id=user_id).count()
+        except (ValueError, TypeError, KeyError):
             return 0
-        return obj.messages.filter(
-            status__in=['sent', 'delivered']
-        ).exclude(sender_id=user.id).count()
-
 
 class PersonalMessageSerializer(serializers.ModelSerializer):
-    """
-    Serializer for PersonalMessage model.
-    Provides detailed message information.
-    """
+    id = serializers.UUIDField(format='hex')
+    chat = serializers.UUIDField(source='chat_id')
+    sender_id = serializers.UUIDField(format='hex')
+
     class Meta:
         model = PersonalMessage
         fields = [
@@ -62,12 +56,3 @@ class PersonalMessageSerializer(serializers.ModelSerializer):
             'is_deleted'
         ]
         read_only_fields = ['id', 'created_at']
-
-    def validate_content(self, value):
-        """
-        Validate message content length.
-        """
-        max_length = 1000
-        if len(value) > 1000:
-            raise serializers.ValidationError(f"Message cannot exceed {max_length} characters.")
-        return value

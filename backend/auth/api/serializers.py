@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import Friendship
+from .models import Friendship, UserBlock
 
 User = get_user_model()
 
@@ -26,17 +26,25 @@ class UserSerializer(serializers.ModelSerializer):
             'auth_provider'
         )
 
+class UserFriendSerializer(serializers.ModelSerializer):
+    """Simplified user serializer for friend lists"""
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'display_name', 'avatar_url')
+
 class FriendshipSerializer(serializers.ModelSerializer):
-    friend = UserSerializer(read_only=True)
+    user = UserFriendSerializer(read_only=True)
+    friend = UserFriendSerializer(read_only=True)
 
     class Meta:
         model = Friendship
-        fields = ('id', 'friend', 'created_at', 'is_accepted')
+        fields = ('id', 'user', 'friend', 'created_at', 'is_accepted')
         read_only_fields = ('id', 'created_at')
 
-class FriendRequestSerializer(serializers.Serializer):
-    friend_id = serializers.UUIDField()
+class UserBlockSerializer(serializers.ModelSerializer):
+    blocked_user = UserFriendSerializer(read_only=True)
 
-class FriendResponseSerializer(serializers.Serializer):
-    friendship_id = serializers.UUIDField()
-    accept = serializers.BooleanField()
+    class Meta:
+        model = UserBlock
+        fields = ('id', 'blocked_user', 'created_at')
+        read_only_fields = ('id', 'created_at')

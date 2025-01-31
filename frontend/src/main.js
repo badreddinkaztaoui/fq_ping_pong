@@ -12,6 +12,8 @@ import { ClassmentView } from './views/Classment.js';
 import { AnalyticsView } from './views/Analytics.js'
 import { GamblingView } from './views/Gambling.js'
 import { ProfileView } from './views/Profile.js'
+import { FriendsView } from "./views/Friends.js"
+import { BlockedFriendsView } from "./views/BlockedFriends.js"
 
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
@@ -72,6 +74,22 @@ const routes = [
   {
     path: '/dashboard/chat',
     view: ChatView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/chat/:id',
+    view: ChatView,
+    paramKey: 'id',
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/friends',
+    view: FriendsView,
+    handler: AuthGuard.requireAuth
+  },
+  {
+    path: '/dashboard/blocked-friends',
+    view: BlockedFriendsView,
     handler: AuthGuard.requireAuth
   },
   {

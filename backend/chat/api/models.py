@@ -6,7 +6,6 @@ class PersonalChat(models.Model):
     Represents a one-on-one conversation between two users.
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
     user1_id = models.UUIDField()
     user2_id = models.UUIDField()
     
@@ -21,6 +20,7 @@ class PersonalChat(models.Model):
         verbose_name_plural = 'Personal Chats'
         indexes = [
             models.Index(fields=['user1_id', 'user2_id']),
+            models.Index(fields=['-last_message_at'])
         ]
 
     def __str__(self):

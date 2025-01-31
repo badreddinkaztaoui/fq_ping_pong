@@ -10,13 +10,20 @@ export class WebSocketManager {
   }
 
   async connectToChat(chatId) {
+    if (!chatId || typeof chatId !== 'string') {
+      console.error('Invalid chat ID:', chatId);
+      this.notifyStatusChange(chatId, 'error');
+      return;
+    }
+
     if (this.connections.has(chatId)) {
       return;
     }
 
     try {
       const token = await userState.getWebSocketToken();
-      const ws = new WebSocket(`${this.getWebSocketURL()}/ws/chat/${chatId}/?token=${token}`);
+      const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
+      const ws = new WebSocket(wsUrl);
       
       ws.onopen = () => this.handleOpen(chatId);
       ws.onclose = (event) => this.handleClose(chatId, event);

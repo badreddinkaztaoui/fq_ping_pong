@@ -1,9 +1,14 @@
 export class Http {
-
-  constructor() {
-    this.expectedUnauthorizedPaths = [
-        '/api/auth/me',
+  constructor(userState = null) {
+    this.userState = userState;
+    this.jwtAuthPaths = [
+      '/api/chat/',
     ];
+    
+    this.expectedUnauthorizedPaths = [
+      '/api/auth/me',
+    ];
+    
     this.request = this.request.bind(this);
     this.get = this.get.bind(this);
     this.post = this.post.bind(this);
@@ -11,24 +16,16 @@ export class Http {
     this.getCsrfToken = this.getCsrfToken.bind(this);
   }
 
-  async get(url, options = {}) {
-      return await this.request(url, { ...options, method: 'GET' });
+
+  requiresJwtAuth(url) {
+    return this.jwtAuthPaths.some(path => url.includes(path));
   }
 
-  async post(url, data, options = {}) {
-    return await this.request(url, {
-        ...options,
-        method: 'POST',
-        body: data instanceof FormData ? data : JSON.stringify(data)
-    });
-}
-
-  async put(url, data, options = {}) {
-      return await this.request(url, {
-          ...options,
-          method: 'PUT',
-          body: JSON.stringify(data)
-      });
+  async getAuthToken() {
+    if (!this.userState) {
+      throw new Error('UserState not initialized');
+    }
+    return await this.userState.getWebSocketToken();
   }
 
   async request(url, options = {}) {
@@ -40,17 +37,21 @@ export class Http {
       credentials: 'include',
       headers: {
         'Accept': 'application/json',
-        'X-CSRFToken': this.getCsrfToken(),
+        'Content-Type': 'application/json'
       }
     };
 
-    const isFormData = options.body instanceof FormData;
-
-    if (!isFormData) {
-      defaultOptions.headers['Content-Type'] = 'application/json';
+    if (!this.requiresJwtAuth(url)) {
+      defaultOptions.headers['X-CSRFToken'] = this.getCsrfToken();
     }
 
     try {
+      if (this.requiresJwtAuth(url)) {
+        const token = await this.getAuthToken();
+        console.log({token})
+        defaultOptions.headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const requestOptions = {
         ...defaultOptions,
         ...options,
@@ -60,6 +61,7 @@ export class Http {
         }
       };
 
+      const isFormData = options.body instanceof FormData;
       if (isFormData) {
         delete requestOptions.headers['Content-Type'];
       }
@@ -68,7 +70,22 @@ export class Http {
         requestOptions.body = JSON.stringify(requestOptions.body);
       }
 
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Request:', {
+          url,
+          options: requestOptions,
+          cookies: document.cookie
+        });
+      }
+
       const response = await fetch(url, requestOptions);
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.debug('Response:', {
+          status: response.status,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+      }
 
       const data = await response.json().catch(() => ({
         message: 'No response body'
@@ -78,8 +95,21 @@ export class Http {
         return data;
       }
 
-      const isExpectedUnauthorized = response.status === 401 && 
+      const isExpectedUnauthorized = 
+        (response.status === 401 || response.status === 403) && 
         this.expectedUnauthorizedPaths.some(path => url.includes(path));
+
+      if ((response.status === 401 || response.status === 403) && !isExpectedUnauthorized) {
+        if (!document.cookie.includes('sessionid')) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const error = new Error(data.error || 'Authentication required');
+        error.status = response.status;
+        error.isAuthenticationError = true;
+        throw error;
+      }
 
       if (isExpectedUnauthorized) {
         const error = new Error(data.error || 'Authentication required');
@@ -105,6 +135,55 @@ export class Http {
       
       throw error;
     }
+  }
+
+   /**
+   * Performs a GET request to the specified URL.
+   * GET requests are used to retrieve data without modifying server state.
+   * 
+   * @param {string} url - The endpoint URL to send the request to
+   * @param {object} options - Optional configuration for the request
+   * @returns {Promise} - Resolves with the response data
+   */
+   async get(url, options = {}) {
+    return this.request(url, {
+      ...options,
+      method: 'GET'
+    });
+  }
+
+  /**
+   * Performs a POST request to the specified URL.
+   * POST requests are used to create new resources or submit data for processing.
+   * 
+   * @param {string} url - The endpoint URL to send the request to
+   * @param {object|FormData} body - The data to send in the request body
+   * @param {object} options - Optional additional configuration for the request
+   * @returns {Promise} - Resolves with the response data
+   */
+  async post(url, body = null, options = {}) {
+    return this.request(url, {
+      ...options,
+      method: 'POST',
+      body: body
+    });
+  }
+
+  /**
+   * Performs a PUT request to the specified URL.
+   * PUT requests are used to update existing resources with new data.
+   * 
+   * @param {string} url - The endpoint URL to send the request to
+   * @param {object|FormData} body - The data to send in the request body
+   * @param {object} options - Optional additional configuration for the request
+   * @returns {Promise} - Resolves with the response data
+   */
+  async put(url, body = null, options = {}) {
+    return this.request(url, {
+      ...options,
+      method: 'PUT',
+      body: body
+    });
   }
 
   getCsrfToken() {

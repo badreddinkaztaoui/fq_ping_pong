@@ -52,12 +52,21 @@ export class UserState extends State {
         error: null
       });
     } catch (error) {
-      this.setState({
-        user: null,
-        isAuthenticated: false,
-        loading: false,
-        error: error.isExpectedError ? null : error.message
-      });
+      if (error.isAuthenticationError) {
+        this.setState({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          error: null
+        });
+      } else {
+        this.setState({
+          user: null,
+          isAuthenticated: false,
+          loading: false,
+          error: error.isExpectedError ? null : error.message
+        });
+      }
     }
   }
 
@@ -167,7 +176,7 @@ export class UserState extends State {
 
   async logout() {
     try {
-      await this.http.post('/api/auth/logout/');
+      await this.http.post('/auth/logout/');
       this.setState({
         user: null,
         isAuthenticated: false,
@@ -210,6 +219,117 @@ export class UserState extends State {
     } catch (error) {
         this.setState({ error: error.message, loading: false });
         throw error;
+    }
+  }
+
+  async searchUsers(query, options = {}) {
+    try {
+      const {
+        exclude_friends = false,
+        exclude_blocked = true,
+        limit = 10
+      } = options;
+
+      const params = new URLSearchParams({
+        query,
+        exclude_friends: exclude_friends.toString(),
+        exclude_blocked: exclude_blocked.toString(),
+        limit: limit.toString()
+      });
+
+      const response = await this.http.get(`/auth/search/?${params.toString()}`);
+      return response;
+    } catch (error) {
+      console.error('Failed to search users:', error);
+      throw error;
+    }
+  }
+
+  async getFriends() {
+    try {
+      const response = await this.http.get('/auth/friends/');
+      return response;
+    } catch (error) {
+      console.error('Failed to get friends:', error);
+      throw error;
+    }
+  }
+  
+  async getFriendRequests() {
+    try {
+      const response = await this.http.get('/auth/friends/requests/');
+      return response;
+    } catch (error) {
+      console.error('Failed to get friend requests:', error);
+      throw error;
+    }
+  }
+  
+  async sendFriendRequest(friendId) {
+    try {
+      const response = await this.http.post('/auth/friends/request/', {
+        friend_id: friendId
+      });
+      return response;
+    } catch (error) {
+      console.error('Failed to send friend request:', error);
+      throw error;
+    }
+  }
+  
+  async acceptFriendRequest(friendshipId) {
+    try {
+      const response = await this.http.post(`/auth/friends/accept/${friendshipId}/`);
+      return response;
+    } catch (error) {
+      console.error('Failed to accept friend request:', error);
+      throw error;
+    }
+  }
+  
+  async rejectFriendRequest(friendshipId) {
+    try {
+      await this.http.post(`/auth/friends/reject/${friendshipId}/`);
+    } catch (error) {
+      console.error('Failed to reject friend request:', error);
+      throw error;
+    }
+  }
+  
+  async removeFriend(friendshipId) {
+    try {
+      await this.http.post(`/auth/friends/remove/${friendshipId}/`);
+    } catch (error) {
+      console.error('Failed to remove friend:', error);
+      throw error;
+    }
+  }
+  
+  async blockUser(userId) {
+    try {
+      await this.http.post('/auth/blocks/block/', { user_id: userId });
+    } catch (error) {
+      console.error('Failed to block user:', error);
+      throw error;
+    }
+  }
+  
+  async unblockUser(userId) {
+    try {
+      await this.http.post(`/auth/blocks/unblock/${userId}/`);
+    } catch (error) {
+      console.error('Failed to unblock user:', error);
+      throw error;
+    }
+  }
+  
+  async getBlockedUsers() {
+    try {
+      const response = await this.http.get('/auth/blocks/');
+      return response;
+    } catch (error) {
+      console.error('Failed to get blocked users:', error);
+      throw error;
     }
   }
 

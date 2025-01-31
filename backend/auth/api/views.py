@@ -2,6 +2,7 @@ from datetime import timedelta
 import os
 import requests
 import urllib.parse
+from django.db.models import Q
 from django.conf import settings
 from django.shortcuts import redirect
 from django.db import connections
@@ -22,7 +23,8 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
-from .serializers import UserSerializer
+from .serializers import UserSerializer, FriendshipSerializer, UserFriendSerializer
+from .models import Friendship, UserBlock
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import pyotp
@@ -401,6 +403,327 @@ def update_avatar(request):
             {'error': 'Failed to save avatar'}, 
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def search_users(request):
+    """
+    Search for users based on username, display name, or email
+    
+    Query Parameters:
+    - query: Search term (required)
+    - exclude_friends: Whether to exclude current friends (optional, default: false)
+    - exclude_blocked: Whether to exclude blocked users (optional, default: true)
+    - limit: Maximum number of results (optional, default: 10, max: 50)
+    """
+    query = request.GET.get('query', '').strip()
+    
+    if not query:
+        return Response(
+            {'error': 'Search query is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    exclude_friends = request.GET.get('exclude_friends', 'false').lower() == 'true'
+    exclude_blocked = request.GET.get('exclude_blocked', 'true').lower() == 'true'
+    
+    try:
+        limit = min(int(request.GET.get('limit', 10)), 50)
+    except ValueError:
+        limit = 10
+    
+    users = User.objects.all()
+    
+    users = users.filter(
+        Q(username__icontains=query) | 
+        Q(display_name__icontains=query) |
+        Q(email__icontains=query)
+    )
+    
+    users = users.exclude(id=request.user.id)
+    
+    if exclude_friends:
+        friend_ids = Friendship.objects.filter(
+            (Q(user=request.user) | Q(friend=request.user)),
+            is_accepted=True
+        ).values_list('user_id', 'friend_id')
+        
+        friend_ids = set(uid for uid_tuple in friend_ids for uid in uid_tuple)
+        users = users.exclude(id__in=friend_ids)
+    
+    if exclude_blocked:
+        blocked_ids = UserBlock.objects.filter(
+            Q(user=request.user) | Q(blocked_user=request.user)
+        ).values_list('user_id', 'blocked_user_id')
+        
+        blocked_ids = set(uid for uid_tuple in blocked_ids for uid in uid_tuple)
+        users = users.exclude(id__in=blocked_ids)
+    
+    users = users[:limit]
+    serializer = UserFriendSerializer(users, many=True)
+    
+    enriched_results = []
+    for user_data in serializer.data:
+        user_id = user_data['id']
+        
+        friendship = Friendship.objects.filter(
+            (Q(user=request.user, friend_id=user_id) |
+             Q(user_id=user_id, friend=request.user)),
+            is_accepted=True
+        ).first()
+        
+        is_blocked = UserBlock.objects.filter(
+            Q(user=request.user, blocked_user_id=user_id) |
+            Q(user_id=user_id, blocked_user=request.user)
+        ).exists()
+        
+        enriched_user = user_data.copy()
+        enriched_user['is_friend'] = friendship is not None
+        enriched_user['friendship_id'] = friendship.id if friendship else None
+        enriched_user['is_blocked'] = is_blocked
+        
+        enriched_results.append(enriched_user)
+    
+    return Response({
+        'results': enriched_results,
+        'total': users.count(),
+        'query': query
+    })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_friends(request):
+    """Get all accepted friends"""
+    friendships = Friendship.objects.filter(
+        (Q(user=request.user) | Q(friend=request.user)),
+        is_accepted=True
+    )
+    
+    friends_list = []
+    for friendship in friendships:
+        friend = friendship.friend if friendship.user == request.user else friendship.user
+        friends_list.append({
+            'friendship_id': friendship.id,
+            'friend': UserFriendSerializer(friend).data
+        })
+    
+    return Response(friends_list)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_friend_requests(request):
+    """Get pending friend requests"""
+    pending_requests = Friendship.objects.filter(
+        friend=request.user,
+        is_accepted=False
+    )
+    serializer = FriendshipSerializer(pending_requests, many=True, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_friend_request(request):
+    """Send a friend request to another user"""
+    friend_id = request.data.get('friend_id')
+    
+    if not friend_id:
+        return Response(
+            {'error': 'friend_id is required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        friend = User.objects.get(id=friend_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'}, 
+            status=status.HTTP_404_NOT_FOUND
+        )
+        
+    if friend == request.user:
+        return Response(
+            {'error': 'Cannot send friend request to yourself'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    if UserBlock.objects.filter(
+        (Q(user=request.user, blocked_user=friend) |
+         Q(user=friend, blocked_user=request.user))
+    ).exists():
+        return Response(
+            {'error': 'Cannot send friend request'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+        
+    if Friendship.objects.filter(
+        (Q(user=request.user, friend=friend) |
+         Q(user=friend, friend=request.user))
+    ).exists():
+        return Response(
+            {'error': 'Friendship already exists'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    friendship = Friendship.objects.create(
+        user=request.user,
+        friend=friend
+    )
+    
+    serializer = FriendshipSerializer(friendship, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def accept_friend_request(request, friendship_id):
+    """Accept a friend request"""
+    try:
+        friendship = Friendship.objects.get(
+            id=friendship_id,
+            friend=request.user,
+            is_accepted=False
+        )
+    except Friendship.DoesNotExist:
+        return Response(
+            {'error': 'Friend request not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    friendship.is_accepted = True
+    friendship.save()
+    
+    serializer = FriendshipSerializer(friendship, context={'request': request})
+    return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def reject_friend_request(request, friendship_id):
+    """Reject/cancel a friend request"""
+    try:
+        friendship = Friendship.objects.get(
+            Q(friend=request.user) | Q(user=request.user),
+            id=friendship_id,
+            is_accepted=False
+        )
+    except Friendship.DoesNotExist:
+        return Response(
+            {'error': 'Friend request not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    friendship.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def remove_friend(request, friendship_id):
+    """Remove an existing friend"""
+    try:
+        friendship = Friendship.objects.get(
+            Q(friend=request.user) | Q(user=request.user),
+            id=friendship_id,
+            is_accepted=True
+        )
+    except Friendship.DoesNotExist:
+        return Response(
+            {'error': 'Friendship not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    friendship.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_friendship_status(request, user_id):
+    """Get friendship and block status between two users"""
+    try:
+        other_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    friendship = Friendship.objects.filter(
+        (Q(user=request.user, friend=other_user) |
+         Q(user=other_user, friend=request.user)),
+        is_accepted=True
+    ).first()
+    
+    is_blocked = UserBlock.objects.filter(
+        Q(user=request.user, blocked_user=other_user) |
+        Q(user=other_user, blocked_user=request.user)
+    ).exists()
+    
+    return Response({
+        'is_friend': friendship is not None,
+        'friendship_id': friendship.id if friendship else None,
+        'is_blocked': is_blocked
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def block_user(request):
+    """Block a user"""
+    user_id = request.data.get('user_id')
+    
+    if not user_id:
+        return Response(
+            {'error': 'user_id is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        blocked_user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+        
+    if blocked_user == request.user:
+        return Response(
+            {'error': 'Cannot block yourself'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    Friendship.objects.filter(
+        (Q(user=request.user, friend=blocked_user) |
+         Q(user=blocked_user, friend=request.user))
+    ).delete()
+    
+    block, created = UserBlock.objects.get_or_create(
+        user=request.user,
+        blocked_user=blocked_user
+    )
+    
+    return Response(status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def unblock_user(request, user_id):
+    """Unblock a user"""
+    try:
+        block = UserBlock.objects.get(
+            user=request.user,
+            blocked_user_id=user_id
+        )
+        block.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except UserBlock.DoesNotExist:
+        return Response(
+            {'error': 'Block not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_blocked_users(request):
+    """Get list of blocked users"""
+    blocks = UserBlock.objects.filter(user=request.user)
+    blocked_users = [block.blocked_user for block in blocks]
+    serializer = UserFriendSerializer(blocked_users, many=True)
+    return Response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
