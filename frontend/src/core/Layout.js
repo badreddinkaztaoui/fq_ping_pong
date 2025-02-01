@@ -139,10 +139,28 @@ export class Layout {
                     </div>
                   </div>
                   <a data-link="/dashboard/profile" class="menu-item profile">
-                    <svg class="icon" viewBox="0 0 24 24">
-                      <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 13C9.23858 13 7 10.7614 7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8C17 10.7614 14.7614 13 12 13Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C17.1429 16 20.1429 17.6667 21 21H3C3.85714 17.6667 6.85714 16 12 16Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
+
+
                     Profile
+                  </a>
+                  <a data-link="/dashboard/friends" class="menu-item friends">
+                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <!-- Person 1 (Head) -->
+                      <circle cx="8" cy="8" r="3" stroke="white" stroke-width="2" fill="none"/>
+                      <!-- Person 2 (Head) -->
+                      <circle cx="16" cy="8" r="3" stroke="white" stroke-width="2" fill="none"/>
+                      <!-- Body 1 -->
+                      <path d="M8 11C8 11 7 13 6 14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Body 2 -->
+                      <path d="M16 11C16 11 17 13 18 14" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      <!-- Connecting Line (Representing friendship) -->
+                      <path d="M8 11L16 11" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Friends
                   </a>
                   <a class="menu-item logout" id="logoutBtn">
                     <svg class="icon" viewBox="0 0 24 24">
@@ -261,6 +279,12 @@ export class Layout {
 
     setActiveLink(window.location.pathname);
 
+    const notif = document.querySelector('.view-all')
+    notif.addEventListener("click", (e) => {
+      e.preventDefault();
+      this.router.navigate("/dashboard/notifications")
+    })
+
     const logo = document.querySelector('.logo-img')
     logo.addEventListener("click", (e) => {
       e.preventDefault();
@@ -288,6 +312,7 @@ export class Layout {
   setupEventListeners() {
     if (this.layoutType === 'dashboard') {
       const logoutBtn = this.element.querySelector('#logoutBtn');
+      console.log(logoutBtn)
       if (logoutBtn) {
         logoutBtn.addEventListener('click', async (e) => {
           e.preventDefault()
@@ -318,6 +343,14 @@ export class Layout {
           this.router.navigate("/dashboard/profile")
         })
       }
+      const friendsBtn = document.querySelector(".friends")
+      if (friendsBtn) {
+        friendsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.router.navigate("/dashboard/friends")
+        })
+      }
+
 
     } else {
       const burgerMenu = document.getElementById('burger-menu');

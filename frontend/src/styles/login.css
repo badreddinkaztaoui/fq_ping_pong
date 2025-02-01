@@ -20,14 +20,12 @@
 }
 
 .logo-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 2rem;
+  align-self: center;
 }
-
 .logo {
-  width: 500px;
+  width: 200px !important;
   height: auto;
+  background: transparent;
 }
 
 @media (min-width: 768px) {
@@ -57,7 +55,7 @@
 }
 
 .title {
-  font-family: "VALORANT", sans-serif;
+  font-family: "VALORANT";
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 2rem;
@@ -139,7 +137,7 @@ input:disabled {
   color: #ff4655;
   font-size: 0.875rem;
   margin-top: 0.5rem;
-  font-family: "Arial", sans-serif;
+  font-family: "Arial";
   text-align: left;
   opacity: 0;
   transition: opacity 0.3s ease;

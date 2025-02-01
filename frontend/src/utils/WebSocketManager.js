@@ -24,27 +24,51 @@ export class WebSocketManager {
       const token = await userState.getWebSocketToken();
       const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
       const ws = new WebSocket(wsUrl);
-      
+
       ws.onopen = () => this.handleOpen(chatId);
       ws.onclose = (event) => this.handleClose(chatId, event);
       ws.onerror = (error) => this.handleError(chatId, error);
       ws.onmessage = (event) => this.handleMessage(chatId, event);
-      
+
       this.connections.set(chatId, {
         socket: ws,
         reconnectAttempts: 0,
         status: 'connecting'
       });
-      
+
     } catch (error) {
       console.error(`Failed to connect to chat ${chatId}:`, error);
       this.notifyStatusChange(chatId, 'error');
     }
   }
+  setupWebSocket() {
+    wsManager.connectToGlobal();
+
+    wsManager.onFriendStatus((userId, status) => {
+      this.updateFriendStatus(userId, status === 'online');
+    });
+
+    wsManager.onFriendRequest((data) => {
+      switch (data.type) {
+        case 'new':
+          this.addFriendRequest(data.request);
+          break;
+        case 'accepted':
+          this.handleFriendRequestAccepted(data.friendship);
+          break;
+        case 'removed':
+          this.handleFriendRemoved(data.friendshipId);
+          break;
+        case 'blocked':
+          this.handleFriendBlocked(data.userId);
+          break;
+      }
+    });
+  }
 
   getWebSocketURL() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = process.env.NODE_ENV === 'production' 
+    const host = process.env.NODE_ENV === 'production'
       ? window.location.host
       : 'localhost:8000';
     return `${protocol}//${host}`;
@@ -64,7 +88,7 @@ export class WebSocketManager {
     if (connection) {
       connection.status = 'disconnected';
       this.notifyStatusChange(chatId, 'disconnected');
-      
+
       // Clear any existing reconnection timeout
       if (this.reconnectTimeouts.has(chatId)) {
         clearTimeout(this.reconnectTimeouts.get(chatId));
@@ -74,7 +98,7 @@ export class WebSocketManager {
         const timeout = setTimeout(() => {
           this.reconnect(chatId);
         }, this.getBackoffTime(connection.reconnectAttempts));
-        
+
         this.reconnectTimeouts.set(chatId, timeout);
       }
     }
@@ -100,7 +124,7 @@ export class WebSocketManager {
       connection.reconnectAttempts++;
       connection.status = 'connecting';
       this.notifyStatusChange(chatId, 'connecting');
-      
+
       await this.connectToChat(chatId);
     }
   }
@@ -125,11 +149,11 @@ export class WebSocketManager {
         clearTimeout(this.reconnectTimeouts.get(chatId));
         this.reconnectTimeouts.delete(chatId);
       }
-      
+
       if (connection.socket) {
         connection.socket.close();
       }
-      
+
       this.connections.delete(chatId);
     }
   }

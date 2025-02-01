@@ -25,9 +25,9 @@ export class SignupView extends View {
                 </div>
 
                 <div class="signup-form">
-                <div class="logo-container">
-            <img src="/images/logo.png" alt="Company Logo" class="logo" />
-          </div>
+                  <div class="logo-container">
+                    <img src="/images/logo.png" alt="Company Logo" class="logo" />
+                  </div>
                     <div class="form-wrapper">
                         <h1 class="title">Create Account</h1>
                         

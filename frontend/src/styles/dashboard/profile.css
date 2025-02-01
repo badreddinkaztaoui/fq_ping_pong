@@ -10,7 +10,7 @@
   margin: 0 auto;
   padding: 2rem;
   color: var(--text-color);
-  font-family: "VALORANT", sans-serif;
+  font-family: "VALORANT";
   position: relative;
   z-index: 10;
 }

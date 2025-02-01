@@ -14,7 +14,7 @@ import { GamblingView } from './views/Gambling.js'
 import { ProfileView } from './views/Profile.js'
 import { FriendsView } from "./views/Friends.js"
 import { BlockedFriendsView } from "./views/BlockedFriends.js"
-
+import { NotificationsView } from './views/Notifications'
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
 import { NotFoundView } from "./views/404.js"
@@ -29,8 +29,8 @@ import { ResetPasswordConfirmView } from './views/ResetPasswordConfirm.js';
 const errorBoundary = new ErrorBoundary();
 
 const routes = [
-  { 
-    path: '/login', 
+  {
+    path: '/login',
     view: LoginView,
     handler: AuthGuard.requireGuest
   },
@@ -39,8 +39,8 @@ const routes = [
     view: SignupView,
     handler: AuthGuard.requireGuest
   },
-  { 
-    path: '/reset-password', 
+  {
+    path: '/reset-password',
     view: ResetPasswordView,
     handler: AuthGuard.requireGuest
   },
@@ -49,12 +49,12 @@ const routes = [
     view: ResetPasswordConfirmView,
     handler: AuthGuard.requireGuest
   },
-  { 
-    path: '/', 
+  {
+    path: '/',
     view: HomeView
   },
-  { 
-    path: '/heros', 
+  {
+    path: '/heros',
     view: HerosView,
   },
   {
@@ -88,6 +88,11 @@ const routes = [
     handler: AuthGuard.requireAuth
   },
   {
+    path: '/dashboard/notifications',
+    view: NotificationsView,
+    handler: AuthGuard.requireAuth
+  },
+  {
     path: '/dashboard/blocked-friends',
     view: BlockedFriendsView,
     handler: AuthGuard.requireAuth
@@ -117,8 +122,8 @@ const routes = [
     view: DashboardView,
     handler: AuthGuard.requireAuth
   },
-  { 
-    path: '*', 
+  {
+    path: '*',
     view: NotFoundView
   }
 ];

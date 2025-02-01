@@ -1,0 +1,251 @@
+.val-notif-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  background: #0f1923;
+  max-height: 100%;
+  position: relative;
+  overflow-y: scroll;
+  z-index: 4;
+}
+
+.val-notif-wrapper {
+  width: 100%;
+}
+
+.val-header {
+  margin-bottom: 32px;
+  position: sticky;
+  top: 0;
+  background: #0f1923;
+  padding: 20px 0;
+  z-index: 10;
+}
+
+.val-header__content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.val-header__title {
+  color: #ece8e1;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.val-badge {
+  background: #ff4655;
+  color: #ece8e1;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.val-divider {
+  height: 2px;
+  background: linear-gradient(90deg, #ff4655 0%, transparent 100%);
+  margin-top: 8px;
+}
+
+.val-notif-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.val-card {
+  position: relative;
+  background: #1f2933;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+}
+
+.val-card:hover {
+  transform: translateY(-2px);
+  border-color: #ff4655;
+  box-shadow: 0 0 20px rgba(255, 70, 85, 0.2);
+}
+
+.val-card__glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+  background: #ff4655;
+  box-shadow: 0 0 10px rgba(255, 70, 85, 0.4);
+}
+
+.val-card__content {
+  display: flex;
+  padding: 20px;
+  gap: 20px;
+}
+
+.val-avatar {
+  position: relative;
+  width: 60px;
+  height: 60px;
+}
+
+.val-avatar__img {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #ff4655;
+}
+
+.val-type-icon {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  background: #1f2933;
+  border-radius: 50%;
+  padding: 4px;
+  border: 2px solid #ff4655;
+}
+
+.val-icon {
+  width: 20px;
+  height: 20px;
+  fill: #ff4655;
+}
+
+.val-info {
+  flex: 1;
+}
+
+.val-info__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.val-info__name {
+  color: #ece8e1;
+  font-size: 18px;
+  margin: 0;
+  font-weight: 600;
+}
+
+.val-info__time {
+  color: #8b978f;
+  font-size: 14px;
+}
+
+.val-info__msg {
+  color: #8b978f;
+  margin: 0 0 16px;
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.val-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.val-btn {
+  position: relative;
+  padding: 8px 24px;
+  border: none;
+  border-radius: 2px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  font-family: "VALORANT";
+}
+
+.val-btn--primary {
+  background: #ff4655;
+  color: #ece8e1;
+}
+
+.val-btn--primary:hover {
+  background: #ff5c69;
+  box-shadow: 0 0 15px rgba(255, 70, 85, 0.4);
+}
+
+.val-btn--secondary {
+  background: transparent;
+  color: #8b978f;
+  border: 1px solid #8b978f;
+}
+
+.val-btn--secondary:hover {
+  border-color: #ece8e1;
+  color: #ece8e1;
+}
+
+.val-btn__text {
+  position: relative;
+  z-index: 1;
+}
+
+.val-btn__glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 70, 85, 0.4),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: val-glow 2s infinite;
+}
+
+@keyframes val-glow {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 768px) {
+  .val-notif-container {
+    padding: 16px;
+  }
+
+  .val-card__content {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+  }
+
+  .val-info__header {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .val-actions {
+    justify-content: center;
+  }
+
+  .val-header__title {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .val-actions {
+    flex-direction: column;
+  }
+
+  .val-btn {
+    width: 100%;
+  }
+}

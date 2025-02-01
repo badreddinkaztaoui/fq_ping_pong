@@ -14,7 +14,6 @@
 
 :root {
   --bg-color: #ece8e1;
-  --principale: #bb3b3b;
   --text-game: #38bda2;
   --body-color: #e4e9f7;
   --sidebar-color: #fff;
@@ -103,7 +102,7 @@ body {
 
 @keyframes spin {
   to {
-      transform: rotate(360deg);
+    transform: rotate(360deg);
   }
 }
 
@@ -118,7 +117,7 @@ body {
   width: 100%;
   padding: 2rem;
   color: var(--text-color);
-  font-family: "VALORANT", sans-serif;
+  font-family: "VALORANT";
   background-color: var(--bg-color);
   height: 100vh;
 }
