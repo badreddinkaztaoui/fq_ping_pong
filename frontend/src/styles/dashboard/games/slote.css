@@ -1,0 +1,633 @@
+/* Root Variables */
+:root {
+  --neon-pink: #ff2975;
+  --neon-blue: #2bd9fe;
+  --neon-purple: #7e54ed;
+  --neon-green: #26e999;
+  --neon-yellow: #fff951;
+  --dark-bg: #0a0a1f;
+  --darker-bg: #050510;
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Neon Animations */
+@keyframes neonPulse {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    filter: brightness(1.5) drop-shadow(0 0 20px currentColor);
+  }
+}
+
+@keyframes neonBorder {
+  0%,
+  100% {
+    box-shadow: 0 0 5px var(--neon-blue), inset 0 0 5px var(--neon-blue);
+  }
+  50% {
+    box-shadow: 0 0 20px var(--neon-blue), inset 0 0 10px var(--neon-blue);
+  }
+}
+
+@keyframes spinningGlow {
+  0% {
+    opacity: 0.3;
+    transform: translateY(-100%) rotate(0deg);
+  }
+  100% {
+    opacity: 0.6;
+    transform: translateY(100%) rotate(360deg);
+  }
+}
+
+@keyframes winningParticles {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100%) scale(0);
+    opacity: 0;
+  }
+}
+
+/* Base Container */
+.slot-machine-container {
+  min-height: 100%;
+  background: linear-gradient(135deg, var(--darker-bg), var(--dark-bg));
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Arial", sans-serif;
+  color: #fff;
+  position: relative;
+  z-index: 4;
+}
+
+/* Game Layout */
+.game-layout-slote {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(10, 10, 31, 0.95);
+  border-radius: 20px;
+  padding: 2rem;
+  display: grid;
+  gap: 2rem;
+  position: relative;
+  border: 2px solid var(--neon-purple);
+  box-shadow: 0 0 30px var(--neon-purple);
+  backdrop-filter: blur(10px);
+}
+
+/* Stats Section */
+.stats-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  border: 2px solid var(--glass-border);
+}
+
+.coins-display {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 2rem;
+  padding: 1rem 2rem;
+  background: linear-gradient(45deg, #1a1a3f, #0a0a1f);
+  border-radius: 12px;
+  border: 2px solid var(--neon-yellow);
+  box-shadow: 0 0 20px rgba(255, 249, 81, 0.2);
+}
+
+.mega-jackpot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: linear-gradient(45deg, #ff1a1a, #ff4d4d);
+  border-radius: 12px;
+  text-transform: uppercase;
+}
+
+/* Slot Machine */
+.slot-machine {
+  padding: 2rem;
+  background: linear-gradient(145deg, #1a1a3f, #0a0a1f);
+  border-radius: 20px;
+  border: 3px solid var(--neon-blue);
+  box-shadow: 0 0 40px rgba(43, 217, 254, 0.2);
+}
+
+.reels-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  padding: 2rem;
+  background: var(--darker-bg);
+  border-radius: 15px;
+  position: relative;
+  overflow: hidden;
+}
+
+.reel {
+  height: 300px;
+  overflow: hidden;
+  background: #000;
+  border-radius: 10px;
+  position: relative;
+  border: 2px solid var(--neon-blue);
+  box-shadow: inset 0 0 20px rgba(43, 217, 254, 0.2);
+}
+
+.glow-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(transparent, var(--neon-blue), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.reel.spinning .glow-overlay {
+  opacity: 0.2;
+  animation: spinningGlow 1s linear infinite;
+}
+
+/* Symbols */
+.symbols-container {
+  transform: translateY(0);
+  transition: transform 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.symbol {
+  height: 100px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4rem;
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.winning-symbol {
+  animation: winningPulse 0.5s ease-in-out infinite;
+  filter: brightness(1.5) drop-shadow(0 0 10px var(--neon-yellow));
+}
+
+/* Controls Section */
+.controls-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  margin-top: 2rem;
+}
+
+.bet-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+}
+
+.bet-adjust {
+  width: 50px;
+  height: 50px;
+  border: none;
+  background: linear-gradient(45deg, var(--neon-pink), var(--neon-purple));
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.spin-buttons {
+  display: flex;
+  gap: 1rem;
+}
+
+.spin-button {
+  padding: 1rem 3rem;
+  font-size: 1.5rem;
+  background: linear-gradient(45deg, var(--neon-green), var(--darker-bg));
+  border: 2px solid var(--neon-green);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.auto-spin-button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  background: linear-gradient(45deg, var(--neon-purple), var(--darker-bg));
+  border: 2px solid var(--neon-purple);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+/* Win Line */
+.win-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  background: var(--neon-yellow);
+  transform: translateY(-50%);
+  opacity: 0;
+  box-shadow: 0 0 20px var(--neon-yellow);
+  transition: opacity 0.3s ease;
+}
+
+.win-line.active {
+  opacity: 1;
+  animation: winLinePulse 0.5s ease-in-out infinite;
+}
+
+/* Pay Table */
+.pay-table {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 15px;
+  padding: 1.5rem;
+}
+
+.pay-table h3 {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+}
+
+.pay-table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.pay-combo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.2rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* Celebration Overlay */
+.celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.5s ease;
+  backdrop-filter: blur(10px);
+}
+
+.celebration-overlay.show {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.celebration-content {
+  background: linear-gradient(45deg, #1a1a3f, #0a0a1f);
+  padding: 3rem;
+  border-radius: 20px;
+  text-align: center;
+  transform: scale(0);
+  animation: celebrationPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.celebration-content.big-win {
+  animation: bigWinPulse 1s ease-in-out infinite;
+}
+
+.celebration-content h2 {
+  font-size: 4rem;
+  margin: 0 0 2rem 0;
+  background: linear-gradient(45deg, var(--neon-yellow), var(--neon-pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: winTextPulse 2s ease-in-out infinite;
+}
+
+.win-amount {
+  font-size: 3.5rem;
+  color: var(--neon-green);
+  margin: 2rem 0;
+  text-shadow: 0 0 20px var(--neon-green);
+  animation: winAmountPulse 1s ease-in-out infinite;
+}
+
+.continue-button {
+  padding: 1rem 3rem;
+  font-size: 1.5rem;
+  background: linear-gradient(45deg, var(--neon-green), var(--darker-bg));
+  border: 2px solid var(--neon-green);
+  color: white;
+  border-radius: 12px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+/* Particles Effect */
+.particles-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.particle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: var(--neon-yellow);
+  border-radius: 50%;
+  animation: particleFly 2s ease-out forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+@keyframes particleFly {
+  0% {
+    transform: translate(var(--x), 100%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--x), -100px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes celebrationPop {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bigWinPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 30px var(--neon-yellow);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 0 50px var(--neon-yellow);
+  }
+}
+
+@keyframes winTextPulse {
+  0%,
+  100% {
+    filter: brightness(1) drop-shadow(0 0 10px var(--neon-yellow));
+  }
+  50% {
+    filter: brightness(1.5) drop-shadow(0 0 20px var(--neon-yellow));
+  }
+}
+
+@keyframes winAmountPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.3);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .game-layout-slote {
+    padding: 1.5rem;
+  }
+
+  .reels-container {
+    padding: 1.5rem;
+  }
+
+  .symbol {
+    font-size: 3.5rem;
+  }
+
+  .coins-display {
+    font-size: 1.5rem;
+    padding: 0.8rem 1.5rem;
+  }
+}
+
+@media (max-width: 992px) {
+  .stats-section {
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .mega-jackpot {
+    order: -1;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  .symbol {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .game-layout-slote {
+    padding: 1rem;
+  }
+
+  .controls-section {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .bet-controls {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .spin-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .spin-button,
+  .auto-spin-button {
+    width: 100%;
+  }
+
+  .pay-table-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .celebration-content {
+    padding: 2rem;
+    margin: 1rem;
+  }
+
+  .celebration-content h2 {
+    font-size: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .reels-container {
+    gap: 0.5rem;
+    padding: 1rem;
+  }
+
+  .reel {
+    height: 240px;
+  }
+
+  .symbol {
+    height: 80px;
+    font-size: 2.5rem;
+  }
+
+  .bet-adjust {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
+  .spin-button {
+    font-size: 1.2rem;
+    padding: 0.8rem 2rem;
+  }
+
+  .celebration-content h2 {
+    font-size: 2.5rem;
+  }
+
+  .win-amount {
+    font-size: 2rem;
+  }
+}
+
+/* Utility Classes */
+.neon-text {
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px var(--neon-blue);
+  animation: neonPulse 2s infinite;
+}
+
+.neon-box-slote {
+  border: 2px solid var(--neon-blue);
+  box-shadow: 0 0 10px var(--neon-blue);
+}
+
+.neon-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.neon-button::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
+  transform: rotate(45deg);
+  animation: buttonShine 3s linear infinite;
+}
+
+@keyframes buttonShine {
+  0% {
+    transform: rotate(45deg) translateX(-100%);
+  }
+  100% {
+    transform: rotate(45deg) translateX(100%);
+  }
+}
+
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Disable styles */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(100%);
+}
+
+/* Active states */
+.active {
+  background: var(--neon-green);
+  color: var(--darker-bg);
+}
+
+/* Focus states for accessibility */
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--neon-yellow);
+  outline-offset: 2px;
+}
+
+/* Hover effects */
+.neon-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px currentColor;
+}
+
+.pay-combo:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.1);
+}

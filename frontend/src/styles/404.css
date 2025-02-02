@@ -1,155 +1,160 @@
 .not-found-page {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: #e94560;
-    font-family: 'VALORANT', sans-serif;
-    overflow: hidden;
-    position: relative;
-    
-    will-change: transform;
-    contain: content;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #e94560;
+  font-family: "VALORANT", sans-serif;
+  overflow: hidden;
+  position: relative;
+  z-index: 4;
+  will-change: transform;
+  contain: content;
+}
+
+.error-content {
+  text-align: center;
+  z-index: 2;
+  padding: 2rem;
+  background: rgba(22, 33, 62, 0.85);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+.error-code {
+  font-size: clamp(8rem, 15vw, 15rem);
+  font-weight: bold;
+  background: linear-gradient(45deg, #e94560, #0f3460);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.error-message h1 {
+  font-size: clamp(1.5rem, 4vw, 2.5rem);
+  margin-bottom: 1rem;
+  color: #e94560;
+}
+
+.error-message p {
+  color: #b6b6b6;
+  margin-bottom: 2rem;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+}
+
+.error-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn-not-found {
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-home {
+  background-color: #e94560;
+  color: white;
+}
+
+.btn-refresh {
+  background-color: #0f3460;
+  color: white;
+  border: none;
+}
+
+.btn-not-found:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+.background-elements {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.ping-pong-scene {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0.1;
+}
+
+.table {
+  width: 80%;
+  height: 40%;
+  background: #333;
+  position: absolute;
+  border: 4px solid #555;
+}
+
+.ball {
+  width: 20px;
+  height: 20px;
+  background: #e94560;
+  border-radius: 50%;
+  position: absolute;
+  animation: bounce 1.5s infinite;
+  will-change: transform;
+}
+
+.paddle {
+  width: 15px;
+  height: 100px;
+  background: #0f3460;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.left-paddle {
+  left: 10%;
+}
+.right-paddle {
+  right: 10%;
+}
+
+.error-footer {
+  position: absolute;
+  bottom: 2rem;
+  color: #b6b6b6;
+  z-index: 2;
+}
+
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateX(0);
   }
-  
-  .error-content {
-    text-align: center;
-    z-index: 2;
-    padding: 2rem;
-    background: rgba(22, 33, 62, 0.85);
-    border-radius: 20px;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    
-    transform: translateZ(0);
-    will-change: transform;
+  50% {
+    transform: translateX(100px) rotate(180deg);
   }
-  
-  .error-code {
-    font-size: clamp(8rem, 15vw, 15rem);
-    font-weight: bold;
-    background: linear-gradient(45deg, #e94560, #0f3460);
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-    margin-bottom: 1rem;
-    line-height: 1;
-  }
-  
-  .error-message h1 {
-    font-size: clamp(1.5rem, 4vw, 2.5rem);
-    margin-bottom: 1rem;
-    color: #e94560;
-  }
-  
-  .error-message p {
-    color: #b6b6b6;
-    margin-bottom: 2rem;
-    font-size: clamp(1rem, 2vw, 1.2rem);
-  }
-  
+}
+
+@media (max-width: 768px) {
   .error-actions {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
+    flex-direction: column;
   }
-  
-  .btn-not-found {
-    text-decoration: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 10px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  
-  .btn-home {
-    background-color: #e94560;
-    color: white;
-  }
-  
-  .btn-refresh {
-    background-color: #0f3460;
-    color: white;
-    border: none;
-  }
-  
-  .btn-not-found:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
-  }
-  
-  .background-elements {
-    position: absolute;
-    inset: 0;
-    overflow: hidden;
-    z-index: 1;
-    pointer-events: none;
-  }
-  
-  .ping-pong-scene {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    opacity: 0.1;
-  }
-  
-  .table {
-    width: 80%;
-    height: 40%;
-    background: #333;
-    position: absolute;
-    border: 4px solid #555;
-  }
-  
-  .ball {
-    width: 20px;
-    height: 20px;
-    background: #e94560;
-    border-radius: 50%;
-    position: absolute;
-    animation: bounce 1.5s infinite;
-    will-change: transform;
-  }
-  
-  .paddle {
-    width: 15px;
-    height: 100px;
-    background: #0f3460;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-  }
-  
-  .left-paddle { left: 10%; }
-  .right-paddle { right: 10%; }
-  
-  .error-footer {
-    position: absolute;
-    bottom: 2rem;
-    color: #b6b6b6;
-    z-index: 2;
-  }
-  
-  @keyframes bounce {
-    0%, 100% { 
-      transform: translateX(0); 
-    }
-    50% { 
-      transform: translateX(100px) rotate(180deg);
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .error-actions {
-      flex-direction: column;
-    }
-  }
+}
