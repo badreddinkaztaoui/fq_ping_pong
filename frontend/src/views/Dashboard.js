@@ -3,7 +3,6 @@ import { State } from "../core/State";
 import { userState } from "../utils/UserState";
 import { WelcomeBanner } from "../components/WelcomeBanner";
 import { GameModes } from "../components/GameModes";
-import { SpecialModes } from "../components/SpecialModes";
 import { MatchList } from "../components/MatchList";
 import "../styles/dashboard/specialsModes.css";
 
@@ -89,10 +88,11 @@ export class DashboardView extends View {
   }
 
   setupGameModeListeners() {
-    const gameModeCards = this.$$(".game-mode-card");
+    const gameModeCards = this.$$(".game-mode");
+
     gameModeCards.forEach((card) => {
-      card.addEventListener("click", () => {
-        const mode = card.dataset.mode;
+      card.addEventListener("click", (event) => {
+        const mode = event.currentTarget.id;
         this.handleGameModeSelect(mode);
       });
     });
@@ -107,12 +107,10 @@ export class DashboardView extends View {
   }
 
   handleGameModeSelect(mode) {
-    console.log(`Selected game mode: ${mode}`);
     this.router.navigate(`/dashboard/${mode}`);
   }
 
   handleSpecialModeSelect(mode) {
-    console.log(`Selected special mode: ${mode}`);
     this.router.navigate(`/dashboard/${mode}`);
   }
 

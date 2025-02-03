@@ -399,7 +399,7 @@ export class FlapyBirdGameView extends View {
           </div>
         </div>
 
-        <div class="game-container neon-border">
+        <div class="bird-game-container neon-border">
           <canvas id="board"></canvas>
         </div>
 

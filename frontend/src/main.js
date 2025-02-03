@@ -23,7 +23,7 @@ import { ResetPasswordView } from "./views/ResetPassword.js";
 import { ResetPasswordConfirmView } from "./views/ResetPasswordConfirm.js";
 import { FlapyBirdGameView } from "./views/FlapyBirdGame.js";
 import { CubeDiceGameView } from "./views/CubeDiceGame.js";
-
+import { TrainingView } from "./views/Training";
 const errorBoundary = new ErrorBoundary();
 
 const routes = [
@@ -120,7 +120,11 @@ const routes = [
     view: FlapyBirdGameView,
     handler: AuthGuard.requireAuth,
   },
-
+  {
+    path: "/dashboard/training",
+    view: TrainingView,
+    handler: AuthGuard.requireAuth,
+  },
   {
     path: "/dashboard/profile",
     view: ProfileView,
