@@ -12,38 +12,36 @@ class WebSocketAuthMiddleware(BaseMiddleware):
         Handle WebSocket authentication using JWT tokens from either cookies or query parameters.
         Verifies the token with the auth service and checks chat access permissions.
         """
+        if scope["type"] != "websocket":
+            return await super().__call__(scope, receive, send)
+
         token = await self.get_token_from_cookies(scope)
         
         if not token:
             token = await self.get_token_from_query(scope)
 
         if not token:
-            await self.close_connection(send, "Authentication required")
-            return
+            return await self.close_connection_safe(send, "Authentication required")
         
         try:
             user_data = await verify_token_with_auth_service(token)
             
             if not user_data:
-                await self.close_connection(send, "Invalid token")
-                return
+                return await self.close_connection_safe(send, "Invalid token")
             
             chat_id = self.get_chat_id_from_path(scope.get('path', ''))
             if chat_id:
                 can_access = await self.verify_chat_access(chat_id, user_data['id'])
                 if not can_access:
-                    await self.close_connection(send, "Unauthorized chat access")
-                    return
+                    return await self.close_connection_safe(send, "Unauthorized chat access")
 
             scope['user'] = user_data
             return await super().__call__(scope, receive, send)
                 
         except AuthServiceError as e:
-            await self.close_connection(send, "Authentication service unavailable")
-            return
+            return await self.close_connection_safe(send, "Authentication service unavailable")
         except Exception as e:
-            await self.close_connection(send, f"Authentication failed: {str(e)}")
-            return
+            return await self.close_connection_safe(send, f"Authentication failed: {str(e)}")
 
     async def get_token_from_cookies(self, scope):
         """
@@ -105,12 +103,20 @@ class WebSocketAuthMiddleware(BaseMiddleware):
         except Exception:
             return False
     
-    async def close_connection(self, send, reason):
+    async def close_connection_safe(self, send, reason):
         """
-        Close the WebSocket connection with an error message.
+        Safely close the WebSocket connection with enhanced error handling.
+        This implementation avoids the transfer_data_task issue by using a simpler close sequence.
         """
-        await send({
-            'type': 'websocket.close',
-            'code': 4001,
-            'text': json.dumps({'error': reason})
-        })
+        try:
+            await send({
+                "type": "websocket.close",
+                "code": 4001
+            })
+        except Exception as e:
+            print(f"Error during connection close: {str(e)}")
+            try:
+                await send({"type": "websocket.disconnect"})
+            except Exception:
+                pass
+        return

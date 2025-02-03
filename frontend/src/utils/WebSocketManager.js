@@ -97,6 +97,7 @@ export class WebSocketManager {
 
     async handleOpen(chatId, socket) {
         const connection = this.connections.get(chatId);
+        console.log({connection})
         if (connection) {
             connection.reconnectAttempts = 0;
             connection.status = 'connected';
@@ -111,17 +112,26 @@ export class WebSocketManager {
         if (connection) {
             connection.status = 'disconnected';
             this.notifyStatusChange(chatId, 'disconnected');
-
+    
             if (this.reconnectTimeouts.has(chatId)) {
                 clearTimeout(this.reconnectTimeouts.get(chatId));
             }
-
+    
+            const skipReconnectCodes = [4001, 4002, 4003];
+            if (skipReconnectCodes.includes(event.code)) {
+                console.log(`WebSocket closed with code ${event.code}, skipping reconnection`);
+                this.notifyStatusChange(chatId, 'auth_error');
+                return;
+            }
+    
             if (connection.reconnectAttempts < this.maxReconnectAttempts) {
                 const timeout = setTimeout(() => {
                     this.reconnect(chatId);
                 }, this.getBackoffTime(connection.reconnectAttempts));
-
+    
                 this.reconnectTimeouts.set(chatId, timeout);
+            } else {
+                this.notifyStatusChange(chatId, 'max_retries_exceeded');
             }
         }
     }

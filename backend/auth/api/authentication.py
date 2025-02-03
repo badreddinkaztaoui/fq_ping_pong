@@ -11,7 +11,7 @@ class JWTCookieAuthentication(JWTAuthentication):
     def authenticate(self, request):
         if request.path in ['/api/auth/login/', '/api/auth/register/']:
             pass
-        elif request.method not in ['GET', 'HEAD', 'OPTIONS']:
+        elif request.method not in ['GET', 'HEAD', 'OPTIONS', 'POST']:
             self.enforce_csrf(request)
 
         token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])

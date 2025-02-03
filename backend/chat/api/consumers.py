@@ -68,10 +68,11 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             await self.accept()
             await self.mark_user_online()
             
-            await self.send_json({
+            
+            await self.send(json.dumps({
                 'type': 'connection_established',
                 'chat_id': self.chat_id
-            })
+            }))
             
             await self.notify_user_presence('user_joined')
             
@@ -87,27 +88,40 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
 
     async def disconnect(self, close_code):
         """
-        Enhanced disconnection handler with presence management and cleanup.
+        Enhanced disconnection handler with more robust cleanup.
         """
+        cleanup_successful = False
         try:
             if self.is_connected:
                 await self.update_last_seen()
-                
                 if hasattr(self, 'chat_group_name'):
                     await self.channel_layer.group_discard(
                         self.chat_group_name,
                         self.channel_name
                     )
-                
                 await self.mark_user_offline()
                 
-                await self.notify_user_presence('user_left')
-            
-            if self.redis_connection:
-                await self.redis_connection.close()
+                if not close_code or close_code < 4000:
+                    await self.notify_user_presence('user_left')
+                cleanup_successful = True
             
         except Exception as e:
-            print(f"Error during disconnect: {e}")
+            print(f"Error during disconnect cleanup: {e}")
+        finally:
+            if self.redis_connection:
+                try:
+                    await self.redis_connection.close()
+                except Exception as e:
+                    print(f"Error closing Redis connection: {e}")
+            
+            if not cleanup_successful:
+                try:
+                    await self.channel_layer.group_discard(
+                        getattr(self, 'chat_group_name', ''),
+                        self.channel_name
+                    )
+                except Exception:
+                    pass
 
     async def receive(self, text_data):
         """
@@ -148,11 +162,11 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 }
             )
             
-            await self.send_json({
+            await self.send(json.dumps({
                 'type': 'message_ack',
                 'message_id': message_id,
                 'timestamp': timestamp
-            })
+            }))
             
         except json.JSONDecodeError:
             await self.send_error("Invalid message format")
@@ -169,10 +183,10 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             message['status'] = 'delivered'
             await self.update_message_status(message['id'], 'delivered')
         
-        await self.send_json({
+        await self.send(json.dumps({
             'type': 'chat_message',
             'message': message
-        })
+        }))
 
     async def send_recent_messages(self, limit=50):
         """
@@ -186,10 +200,10 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             
             for msg in reversed(recent_messages):
                 message = json.loads(msg)
-                await self.send_json({
+                await self.send(json.dumps({
                     'type': 'chat_message',
                     'message': message
-                })
+                }))
                 
         except Exception as e:
             await self.send_error(f"Error retrieving messages: {str(e)}")
@@ -212,10 +226,10 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
                 for msg in missed_messages:
                     message = json.loads(msg)
                     if message['id'] != last_seen_id:
-                        await self.send_json({
+                        await self.send(json.dumps({
                             'type': 'chat_message',
                             'message': message
-                        })
+                        }))
                         
         except Exception as e:
             await self.send_error(f"Error retrieving missed messages: {str(e)}")
@@ -350,22 +364,34 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         """
         Sends error message to the client.
         """
-        await self.send_json({
+        await self.send(json.dumps({
             'type': 'error',
             'message': message
-        })
+        }))
 
     async def handle_connection_error(self, error: Exception):
         """
-        Handles connection errors with appropriate error codes.
+        Enhanced error handler that safely closes the connection without triggering
+        the transfer_data_task issue.
         """
         error_code = 4000
         if isinstance(error, redis.RedisError):
             error_code = 4002
         elif isinstance(error, ValueError):
             error_code = 4001
+
+        try:
+            await self.close(code=error_code)
+        except Exception as e:
+            try:
+                await self.channel_layer.group_discard(
+                    self.chat_group_name,
+                    self.channel_name
+                )
+                await self.disconnect(error_code)
+            except Exception:
+                pass
             
-        await self.close(code=error_code)
         print(f"Connection error: {error}")
 
     async def get_redis_connection(self) -> redis.Redis:
