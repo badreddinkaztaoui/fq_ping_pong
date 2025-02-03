@@ -13,7 +13,6 @@ import { AnalyticsView } from './views/Analytics.js'
 import { GamblingView } from './views/Gambling.js'
 import { ProfileView } from './views/Profile.js'
 import { FriendsView } from "./views/Friends.js"
-import { BlockedFriendsView } from "./views/BlockedFriends.js"
 import { NotificationsView } from './views/Notifications'
 
 import { OAuthCallbackView } from './views/OAuthCallback.js';
@@ -90,11 +89,6 @@ const routes = [
   {
     path: '/dashboard/notifications',
     view: NotificationsView,
-    handler: AuthGuard.requireAuth
-  },
-  {
-    path: '/dashboard/blocked-friends',
-    view: BlockedFriendsView,
     handler: AuthGuard.requireAuth
   },
   {

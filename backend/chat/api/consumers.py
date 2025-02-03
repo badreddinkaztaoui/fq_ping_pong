@@ -273,8 +273,8 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             current = await self.redis_connection.incr(key)
             
             if current == 1:
-                await self.redis_connection.expire(key, 60)  # 1 minute window
-                
+                await self.redis_connection.expire(key, 60)
+
             return current <= settings.MAX_MESSAGES_PER_MINUTE
             
         except Exception as e:

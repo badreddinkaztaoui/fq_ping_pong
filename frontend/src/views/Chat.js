@@ -308,7 +308,9 @@ export class ChatView extends View {
             console.error('No chat ID available for WebSocket connection');
             return;
         }
-
+    
+        const wsUrl = `ws://localhost:8000/ws/chat/${this.currentChatId}/`;
+        
         wsManager.disconnect(this.currentChatId);
         wsManager.onMessage(this.handleMessage);
         wsManager.onStatusChange(this.handleStatus);
@@ -325,9 +327,13 @@ export class ChatView extends View {
 
     async startChat(friendId) {
         try {
+            this.hideError();
+            
             const response = await this.http.post('/chat/start/', {
                 friend_id: friendId
             });
+
+            console.log({response})
             
             if (response.id) {
                 window.history.pushState({}, '', `/chat/${response.id}`);
@@ -342,8 +348,14 @@ export class ChatView extends View {
                 this.connectWebSocket();
             }
         } catch (err) {
-            console.error('Failed to start chat:', err);
-            this.showError('Failed to start chat');
+            console.error({err});
+            
+            if (err.message.includes('Authentication required')) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            this.showError(err.message || 'Failed to start chat');
         }
     }
 
@@ -357,15 +369,20 @@ export class ChatView extends View {
     }
 
     handleStatus(statusChatId, status) {
-        if (statusChatId === this.chatId) {
+        if (statusChatId === this.currentChatId) {
             this.connectionStatus = status;
             this.updateStatusBar();
-            this.sendButton.disabled = !this.input.value.trim() || status !== 'connected';
+            
+            if (this.sendButton) {
+                this.sendButton.disabled = !this.input?.value.trim() || status !== 'connected';
+            }
             
             if (status === 'error') {
-                this.showError('Connection error occurred');
-            } else {
+                this.showError('Connection error occurred. Trying to reconnect...');
+            } else if (status === 'connected') {
                 this.hideError();
+            } else if (status === 'authentication_failed') {
+                window.location.href = '/login';
             }
         }
     }
@@ -374,21 +391,29 @@ export class ChatView extends View {
         e.preventDefault();
         const message = this.input.value.trim();
         if (!message) return;
-
+    
         try {
-            const success = wsManager.send(this.chatId, {
+            const success = wsManager.send(this.currentChatId, {
                 type: 'chat_message',
                 message: message
             });
-
+    
             if (!success) {
-                this.showError('Failed to send message - not connected');
-                return;
+                await this.http.post(`/chat/${this.currentChatId}/send/`, {
+                    content: message
+                });
             }
-
+    
             this.input.value = '';
             this.sendButton.disabled = true;
         } catch (err) {
+            console.error('Failed to send message:', err);
+            
+            if (err.message.includes('Authentication required')) {
+                window.location.href = '/login';
+                return;
+            }
+            
             this.showError('Failed to send message');
         }
     }
@@ -397,6 +422,35 @@ export class ChatView extends View {
         const { scrollTop } = this.messagesContainer;
         if (scrollTop === 0) {
             await this.loadMoreMessages();
+        }
+    }
+
+    async loadInitialMessages() {
+        try {
+            if (!this.currentChatId) return;
+            
+            const response = await this.http.get(
+                `/chat/${this.currentChatId}/messages/?offset=0&limit=${this.messagesPerPage}`
+            );
+            
+            this.messages = response.messages.reverse();
+            this.hasMoreMessages = response.total_count > this.messages.length;
+            
+            if (!this.hasMoreMessages) {
+                this.loadMoreBtn.style.display = 'none';
+            }
+            
+            this.renderMessages();
+            this.scrollToBottom();
+        } catch (err) {
+            console.error('Failed to load messages:', err);
+            
+            if (err.message.includes('Authentication required')) {
+                window.location.href = '/login';
+                return;
+            }
+            
+            this.showError('Failed to load messages');
         }
     }
 
@@ -449,27 +503,33 @@ export class ChatView extends View {
     }
 
     updateStatusBar() {
+        if (!this.statusBar) return;
+    
         let statusText = '';
         let statusClass = '';
-
+    
         switch (this.connectionStatus) {
             case 'connecting':
                 statusText = 'CONNECTING...';
                 statusClass = 'status-connecting';
                 break;
             case 'error':
-                statusText = 'CONNECTION ERROR';
+                statusText = 'CONNECTION ERROR - RECONNECTING...';
                 statusClass = 'status-error';
                 break;
             case 'disconnected':
-                statusText = 'DISCONNECTED';
+                statusText = 'DISCONNECTED - TRYING TO RECONNECT...';
                 statusClass = 'status-disconnected';
+                break;
+            case 'authentication_failed':
+                statusText = 'AUTHENTICATION FAILED';
+                statusClass = 'status-error';
                 break;
             default:
                 this.statusBar.style.display = 'none';
                 return;
         }
-
+    
         this.statusBar.textContent = statusText;
         this.statusBar.className = `chat-status-bar ${statusClass}`;
         this.statusBar.style.display = 'block';

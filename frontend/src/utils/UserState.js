@@ -7,36 +7,12 @@ export class UserState extends State {
       user: null,
       isAuthenticated: false,
       loading: false,
-      error: null,
-      wsToken: null
+      error: null
     });
-    this.http = new Http();
-    this.checkAuth();
-  }
 
-  async getWebSocketToken() {
-    try {
-      if (this.state.wsToken && !this.isTokenExpired()) {
-        return this.state.wsToken;
-      }
-      
-      const response = await this.http.get('/auth/ws-token/');
-      
-      this.setState({
-        wsToken: response.token,
-        wsTokenExpiry: Date.now() + (response.expires_in * 1000)
-      });
-      
-      return response.token;
-    } catch (error) {
-      console.error('WebSocket token retrieval failed', error);
-      throw error;
-    }
-  }
-  
-  isTokenExpired() {
-    return !this.state.wsTokenExpiry || 
-           Date.now() >= this.state.wsTokenExpiry - (5 * 60 * 1000);
+    this.http = new Http(this);
+    
+    this.checkAuth();
   }
 
   async checkAuth() {
@@ -46,27 +22,18 @@ export class UserState extends State {
       const response = await this.http.get('/auth/me/');
       
       this.setState({
-        user: response,
-        isAuthenticated: true,
+        user: response.user,
+        isAuthenticated: response.is_authenticated,
         loading: false,
         error: null
       });
     } catch (error) {
-      if (error.isAuthenticationError) {
-        this.setState({
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: null
-        });
-      } else {
-        this.setState({
-          user: null,
-          isAuthenticated: false,
-          loading: false,
-          error: error.isExpectedError ? null : error.message
-        });
-      }
+      this.setState({
+        user: null,
+        isAuthenticated: false,
+        loading: false,
+        error: error.message
+      });
     }
   }
 
@@ -93,9 +60,11 @@ export class UserState extends State {
     }
   }
 
-  async verify2FALogin(userId, code) {
+  async register(userData) {
+    this.setState({ loading: true, error: null });
+    
     try {
-      const response = await this.http.post('/auth/verify-2fa-login/', { user_id: userId, otp: code });
+      const response = await this.http.post('/auth/register/', userData);
       
       this.setState({
         user: response.user,
@@ -106,6 +75,51 @@ export class UserState extends State {
       
       return response;
     } catch (error) {
+      this.setState({
+        error: error.message,
+        loading: false
+      });
+      throw error;
+    }
+  }
+
+  async logout() {
+    try {
+      await this.http.post('/auth/logout/');
+      
+      this.setState({
+        user: null,
+        isAuthenticated: false,
+        error: null
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
+  }
+
+  async verify2FALogin(userId, code) {
+    this.setState({ loading: true, error: null });
+    
+    try {
+      const response = await this.http.post('/auth/verify-2fa-login/', { 
+        user_id: userId, 
+        otp: code 
+      });
+      
+      this.setState({
+        user: response.user,
+        isAuthenticated: true,
+        loading: false,
+        error: null
+      });
+      
+      return response;
+    } catch (error) {
+      this.setState({
+        error: error.message,
+        loading: false
+      });
       throw error;
     }
   }
@@ -130,159 +144,118 @@ export class UserState extends State {
     this.setState({ loading: true, error: null });
     
     try {
-      const response = await this.http.get(`/auth/42/callback/?code=${code}`);
+      await this.http.get(`/auth/42/callback/?code=${code}`);
       
-      this.setState({
-        user: response.user,
-        isAuthenticated: true,
-        loading: false,
-        error: null
-      });
+      await this.checkAuth();
       
       const redirectUrl = sessionStorage.getItem('redirectAfterLogin') || '/dashboard';
       sessionStorage.removeItem('redirectAfterLogin');
       
       window.location.href = redirectUrl;
-      
-      return response;
     } catch (error) {
       this.setState({
         error: error.message,
         loading: false
       });
-      throw error;
-    }
-  }
-
-  async register(userData) {
-    this.setState({ loading: true, error: null });
-    
-    try {
-      const response = await this.http.post('/auth/register/', userData);
-      this.setState({
-        loading: false,
-        error: null
-      });
-  
-      return await this.login({email: userData.email, password: userData.password})
-    } catch (error) {
-      this.setState({
-        error: error.message,
-        loading: false
-      });
-      throw error;
-    }
-  }
-
-  async logout() {
-    try {
-      await this.http.post('/auth/logout/');
-      this.setState({
-        user: null,
-        isAuthenticated: false,
-        error: null,
-        wsToken: null
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
       throw error;
     }
   }
 
   async updateProfile(userData) {
     this.setState({ loading: true, error: null });
+    
     try {
-        const response = await this.http.put('/auth/update/', userData);
-        this.setState({ 
-            user: { ...this.state.user, ...response },
-            loading: false 
-        });
-        return response;
+      const response = await this.http.put('/auth/update/', userData);
+      
+      this.setState({ 
+        user: { ...this.state.user, ...response },
+        loading: false 
+      });
+      
+      return response;
     } catch (error) {
-        this.setState({ error: error.message, loading: false });
-        throw error;
+      this.setState({ 
+        error: error.message, 
+        loading: false 
+      });
+      throw error;
     }
   }
 
   async updateProfileAvatar(file) {
     this.setState({ loading: true, error: null });
+    
     try {
-        const formData = new FormData();
-        formData.append('avatar', file);
+      const formData = new FormData();
+      formData.append('avatar', file);
 
-        const response = await this.http.post('/auth/update-avatar/', formData);
-        this.setState({ 
-            user: { ...this.state.user, avatar_url: response.avatar_url },
-            loading: false 
-        });
-        return response;
+      const response = await this.http.post('/auth/update-avatar/', formData);
+      
+      this.setState({ 
+        user: { ...this.state.user, avatar_url: response.avatar_url },
+        loading: false 
+      });
+      
+      return response;
     } catch (error) {
-        this.setState({ error: error.message, loading: false });
-        throw error;
+      this.setState({ 
+        error: error.message, 
+        loading: false 
+      });
+      throw error;
     }
   }
 
   async searchUsers(query, options = {}) {
     try {
-      const {
-        exclude_friends = false,
-        exclude_blocked = true,
-        limit = 10
-      } = options;
-
       const params = new URLSearchParams({
         query,
-        exclude_friends: exclude_friends.toString(),
-        exclude_blocked: exclude_blocked.toString(),
-        limit: limit.toString()
+        exclude_friends: options.exclude_friends?.toString() || 'false',
+        exclude_blocked: options.exclude_blocked?.toString() || 'true',
+        limit: options.limit?.toString() || '10'
       });
 
-      const response = await this.http.get(`/auth/search/?${params.toString()}`);
-      return response;
+      return await this.http.get(`/auth/search/?${params.toString()}`);
     } catch (error) {
-      console.error('Failed to search users:', error);
+      console.error('Search users error:', error);
       throw error;
     }
   }
 
   async getFriends() {
     try {
-      const response = await this.http.get('/auth/friends/');
-      return response;
+      return await this.http.get('/auth/friends/');
     } catch (error) {
-      console.error('Failed to get friends:', error);
+      console.error('Get friends error:', error);
       throw error;
     }
   }
   
   async getFriendRequests() {
     try {
-      const response = await this.http.get('/auth/friends/requests/');
-      return response;
+      return await this.http.get('/auth/friends/requests/');
     } catch (error) {
-      console.error('Failed to get friend requests:', error);
+      console.error('Get friend requests error:', error);
       throw error;
     }
   }
   
   async sendFriendRequest(friendId) {
     try {
-      const response = await this.http.post('/auth/friends/request/', {
+      return await this.http.post('/auth/friends/request/', {
         friend_id: friendId
       });
-      return response;
     } catch (error) {
-      console.error('Failed to send friend request:', error);
+      console.error('Send friend request error:', error);
       throw error;
     }
   }
   
   async acceptFriendRequest(friendshipId) {
     try {
-      const response = await this.http.post(`/auth/friends/accept/${friendshipId}/`);
-      return response;
+      return await this.http.post(`/auth/friends/accept/${friendshipId}/`);
     } catch (error) {
-      console.error('Failed to accept friend request:', error);
+      console.error('Accept friend request error:', error);
       throw error;
     }
   }
@@ -291,7 +264,7 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/friends/reject/${friendshipId}/`);
     } catch (error) {
-      console.error('Failed to reject friend request:', error);
+      console.error('Reject friend request error:', error);
       throw error;
     }
   }
@@ -300,16 +273,16 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/friends/remove/${friendshipId}/`);
     } catch (error) {
-      console.error('Failed to remove friend:', error);
+      console.error('Remove friend error:', error);
       throw error;
     }
   }
-  
+
   async blockUser(userId) {
     try {
       await this.http.post('/auth/blocks/block/', { user_id: userId });
     } catch (error) {
-      console.error('Failed to block user:', error);
+      console.error('Block user error:', error);
       throw error;
     }
   }
@@ -318,17 +291,16 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/blocks/unblock/${userId}/`);
     } catch (error) {
-      console.error('Failed to unblock user:', error);
+      console.error('Unblock user error:', error);
       throw error;
     }
   }
   
   async getBlockedUsers() {
     try {
-      const response = await this.http.get('/auth/blocks/');
-      return response;
+      return await this.http.get('/auth/blocks/');
     } catch (error) {
-      console.error('Failed to get blocked users:', error);
+      console.error('Get blocked users error:', error);
       throw error;
     }
   }
@@ -337,53 +309,61 @@ export class UserState extends State {
     try {
       return await this.http.post('/auth/reset-password/', { email });
     } catch (error) {
+      console.error('Reset password request error:', error);
       throw error;
     }
   }
 
   async resetPasswordConfirm(uidb64, token, newPassword) {
     try {
-      return await this.http.post(`/auth/reset-password/${uidb64}/${token}/`, { new_password: newPassword });
+      return await this.http.post(
+        `/auth/reset-password/${uidb64}/${token}/`, 
+        { new_password: newPassword }
+      );
     } catch (error) {
+      console.error('Reset password confirm error:', error);
       throw error;
     }
   }
 
   async enable2FA() {
     try {
-        const response = await this.http.post('/auth/enable-2fa/', {});
-        return response;
+      const response = await this.http.post('/auth/enable-2fa/');
+      return response;
     } catch (error) {
-        throw error;
+      console.error('Enable 2FA error:', error);
+      throw error;
     }
   }
 
   async verify2FA(otp) {
     try {
-        const response = await this.http.post('/auth/verify-2fa/', { otp });
-        this.setState({ 
-            user: { 
-                ...this.state.user, 
-                is_2fa_enabled: true 
-            } 
-        });
-        return response;
+      const response = await this.http.post('/auth/verify-2fa/', { otp });
+      this.setState({ 
+        user: { 
+          ...this.state.user, 
+          is_2fa_enabled: true 
+        } 
+      });
+      return response;
     } catch (error) {
-        throw error;
+      console.error('Verify 2FA error:', error);
+      throw error;
     }
   }
 
   async disable2FA() {
     try {
-        await this.http.post('/auth/disable-2fa/');
-        this.setState({ 
-            user: { 
-                ...this.state.user, 
-                is_2fa_enabled: false 
-            } 
-        });
+      await this.http.post('/auth/disable-2fa/');
+      this.setState({ 
+        user: { 
+          ...this.state.user, 
+          is_2fa_enabled: false 
+        } 
+      });
     } catch (error) {
-        throw error;
+      console.error('Disable 2FA error:', error);
+      throw error;
     }
   }
 }
