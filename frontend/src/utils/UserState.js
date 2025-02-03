@@ -37,6 +37,21 @@ export class UserState extends State {
     }
   }
 
+  async getWebSocketToken() {
+    try {
+        if (this.accessToken) {
+            return this.accessToken;
+        }
+
+        const response = await this.http.get('/auth/token/');
+        this.accessToken = response.access_token;
+        return this.accessToken;
+    } catch (error) {
+        console.error('Failed to get WebSocket token:', error);
+        throw error;
+    }
+  }
+
   async login(credentials) {
     this.setState({ loading: true, error: null });
     
