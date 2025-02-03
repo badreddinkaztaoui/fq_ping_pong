@@ -21,7 +21,6 @@ import { NotFoundView } from "./views/404.js";
 import { GameView } from "./views/Game.js";
 import { ResetPasswordView } from "./views/ResetPassword.js";
 import { ResetPasswordConfirmView } from "./views/ResetPasswordConfirm.js";
-import { SlotMachineGameView } from "./views/SlotMachineGame.js";
 import { FlapyBirdGameView } from "./views/FlapyBirdGame.js";
 import { CubeDiceGameView } from "./views/CubeDiceGame.js";
 
@@ -121,11 +120,7 @@ const routes = [
     view: FlapyBirdGameView,
     handler: AuthGuard.requireAuth,
   },
-  {
-    path: "/dashboard/slot-machine",
-    view: SlotMachineGameView,
-    handler: AuthGuard.requireAuth,
-  },
+
   {
     path: "/dashboard/profile",
     view: ProfileView,

@@ -1,15 +1,17 @@
+/* bird.css */
 .flappy-bird-container {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100%;
-  font-family: "Courier New", Courier, monospace;
+  font-family: "Press Start 2P", "Courier New", Courier, monospace;
   padding: 20px;
   position: relative;
   z-index: 4;
+  background-color: #1a1a1a;
 }
 
-.game-layout {
+.game-layout-bird {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -21,43 +23,30 @@
   position: relative;
   width: fit-content;
   margin: 0 auto;
+  border: 3px solid #0ff;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3),
+    inset 0 0 20px rgba(0, 255, 255, 0.2);
+  overflow: hidden;
 }
 
 #board {
   display: block;
   max-width: 100%;
   height: auto;
-  background-color: skyblue;
-}
-
-.game-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.overlay-content {
-  text-align: center;
-  padding: 20px;
-  border-radius: 10px;
 }
 
 .stats-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px;
+  padding: 15px 20px;
+  backdrop-filter: blur(4px);
 }
 
 .score-display {
   display: flex;
-  gap: 20px;
+  gap: 30px;
 }
 
 .current-score,
@@ -65,34 +54,85 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-}
-
-.controls-info {
-  padding: 15px;
-}
-
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.control-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   gap: 5px;
 }
 
-.key {
-  padding: 5px 10px;
-  border: 1px solid #fff;
-  border-radius: 5px;
-  font-size: 0.9em;
+.score-label {
+  font-size: 14px;
+  letter-spacing: 1px;
+  opacity: 0.9;
+  text-transform: uppercase;
+  color: #fff;
 }
 
-/* Neon theme */
+.controls-info {
+  padding: 20px;
+  backdrop-filter: blur(4px);
+}
+
+.controls-grid.modern {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.key-modern {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+  border: 2px solid #333;
+  border-radius: 10px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #111, 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.key-modern:hover {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #111, 0 0 20px rgba(0, 255, 255, 0.4);
+}
+
+.key-modern:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #111, 0 0 30px rgba(0, 255, 255, 0.6);
+}
+
+.key-cap {
+  color: #fff;
+  font-size: 16px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+.key-light {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 40%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  border-radius: 8px 8px 0 0;
+  pointer-events: none;
+}
+
+.control-label {
+  text-align: center;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 2px;
+  margin-top: 15px;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+  opacity: 0.8;
+}
+
+/* Neon Theme */
 .neon-theme {
   --neon-primary: #0ff;
   --neon-secondary: #f0f;
@@ -101,28 +141,79 @@
 }
 
 .neon-box {
-  background: var(--neon-bg);
+  background: rgba(0, 0, 0, 0.8);
   border: 2px solid var(--neon-primary);
-  box-shadow: 0 0 10px var(--neon-primary);
-  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.neon-box:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
 }
 
 .neon-text {
   color: var(--neon-text);
-  text-shadow: 0 0 5px var(--neon-primary);
+  text-shadow: 0 0 5px var(--neon-primary), 0 0 10px var(--neon-primary);
+  font-weight: bold;
 }
 
-.neon-button {
-  background: transparent;
-  border: 2px solid var(--neon-primary);
-  color: var(--neon-text);
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .flappy-bird-container {
+    padding: 10px;
+  }
+
+  .game-layout-bird {
+    gap: 15px;
+  }
+
+  .controls-grid.modern {
+    gap: 15px;
+  }
+
+  .key-modern {
+    width: 50px;
+    height: 50px;
+  }
+
+  .key-cap {
+    font-size: 14px;
+  }
+
+  .score-label {
+    font-size: 12px;
+  }
+
+  .control-label {
+    font-size: 12px;
+  }
 }
 
-.neon-button:hover {
-  background: var(--neon-primary);
-  color: var(--neon-bg);
+/* Game Over Animation */
+@keyframes gameOverPulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes scoreFlash {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
 }

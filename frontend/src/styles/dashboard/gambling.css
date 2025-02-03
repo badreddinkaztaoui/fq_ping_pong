@@ -41,7 +41,7 @@
 
 .games-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(2, minmax(380px, 1fr));
   gap: 2.5rem;
   padding: 1rem;
   max-width: 1600px;
@@ -146,7 +146,7 @@
   bottom: 40px;
 }
 
-.play-button {
+.play-button-gambling {
   position: absolute;
   top: 1.5rem;
   right: 1.5rem;
@@ -162,7 +162,7 @@
   transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
-.play-button::before {
+.play-button-gambling::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -173,7 +173,7 @@
   z-index: -1;
 }
 
-.play-button::after {
+.play-button-gambling::after {
   content: "";
   position: absolute;
   inset: 1px;
@@ -183,7 +183,7 @@
   transition: background-color 0.3s ease;
 }
 
-.play-button span {
+.play-button-gambling span {
   display: flex;
   align-items: center;
   padding: 0.75rem 1.5rem;
@@ -194,31 +194,31 @@
   text-transform: uppercase;
 }
 
-.play-button svg {
+.play-button-gambling svg {
   width: 16px;
   height: 16px;
   margin-left: 8px;
   transition: transform 0.3s ease;
 }
 
-.game-box:hover .play-button {
+.game-box:hover .play-button-gambling {
   opacity: 1;
   transform: translateY(0);
 }
 
-.play-button:hover::before {
+.play-button-gambling:hover::before {
   transform: translateX(0);
 }
 
-.play-button:hover {
+.play-button-gambling:hover {
   transform: translateY(0) scale(0.98);
 }
 
-.play-button:hover svg {
+.play-button-gambling:hover svg {
   transform: translateX(3px);
 }
 
-.play-button:active {
+.play-button-gambling:active {
   transform: translateY(0) scale(0.95);
 }
 

@@ -18,12 +18,6 @@ export class GamblingView extends View {
           "A game where you control a bird and avoid obstacles to reach",
         image: "/images/game/Flappy-bird.avif",
       },
-      {
-        id: "slot-machine",
-        name: "Spin the wheel",
-        description: "A game where you pull the lever and match symbols to win",
-        image: "/images/game/spin.jpg",
-      },
     ];
   }
 
@@ -36,7 +30,7 @@ export class GamblingView extends View {
                 <div class="game-image-container">
                     <img src="${game.image}" alt="${game.name}" class="game-image">
                     <div class="game-overlay">
-                    <button class="play-button" aria-label="Play ${game.name}">
+                    <button class="play-button-gambling" aria-label="Play ${game.name}">
                         <span>
                         PLAY
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
@@ -102,7 +96,7 @@ export class GamblingView extends View {
   setupInteractions(container) {
     container.querySelectorAll(".game-wrapper").forEach((wrapper) => {
       const gameBox = wrapper.querySelector(".game-box");
-      const playButton = wrapper.querySelector(".play-button");
+      const playButton = wrapper.querySelector(".play-button-gambling");
       const image = wrapper.querySelector(".game-image");
 
       // Parallax effect on mouse move

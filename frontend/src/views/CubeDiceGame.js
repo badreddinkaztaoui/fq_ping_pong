@@ -115,7 +115,9 @@ export class CubeDiceGameView extends View {
         <div class="betting-section">
           <div class="stats-bar">
             <div class="coins-display">
-              <i class="coin-icon">🪙</i>
+              <i class="coin-icon">
+                <img src="/images/coin.png" alt="Coin Icon" />
+              </i>
               <span id="coinsAmount">${this.coins}</span>
             </div>
           </div>
@@ -161,9 +163,19 @@ export class CubeDiceGameView extends View {
       <!-- Lose Overlay -->
       <div class="celebration-overlay" id="lose-overlay">
         <div class="celebration-content lose">
-          <h2>YOU LOSE!</h2>
-          <div class="lose-amount">-<span id="loseAmount">0</span></div>
-          <button class="continue-button">CONTINUE</button>
+          <h2 class="manga-text">YOU LOSE!</h2>
+          <div class="lose-amount manga-effect">-<span id="loseAmount">0</span></div>
+          <div class="manga-bubble">
+            <div class="manga-suggestion">
+              <span class="manga-bold">شووووويآآ</span>
+              <span class="manga-bold">علا</span>
+              <div class="manga-number">
+                <span id="suggestionNumber" class="manga-highlight"></span>
+              </div>
+              <div class="manga-sfx">!!!!</div>
+            </div>
+          </div>
+          <button class="continue-button manga-button">CONTINUE</button>
         </div>
       </div>
     `;
@@ -305,9 +317,14 @@ export class CubeDiceGameView extends View {
       }
       celebration.classList.add("show");
     } else {
-      // Lose
       if (loseAmount) {
         loseAmount.textContent = this.betAmount;
+      }
+      // Update the suggestion number with the dice result
+      const suggestionNumber =
+        this.container.querySelector("#suggestionNumber");
+      if (suggestionNumber) {
+        suggestionNumber.textContent = result;
       }
       loseOverlay.classList.add("show");
     }

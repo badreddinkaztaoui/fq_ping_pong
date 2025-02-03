@@ -161,7 +161,6 @@
   text-align: center;
 }
 
-/* Celebration Overlay */
 .celebration-overlay {
   position: fixed;
   inset: 0;
@@ -222,7 +221,7 @@
   font-size: 1.2rem;
   border-radius: 8px;
   cursor: pointer;
-  font-family: "VALORANT", sans-serif;
+  font-family: "VALORANT";
   letter-spacing: 1px;
   transition: all 0.2s ease;
 }
@@ -253,7 +252,6 @@
   }
 }
 
-/* Confetti Animation */
 @keyframes confetti {
   0% {
     transform: translateY(0) rotateZ(0);
@@ -313,7 +311,6 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Cube Section Styles */
 .cube-section {
   display: flex;
   justify-content: center;
@@ -358,7 +355,6 @@
   place-self: center;
 }
 
-/* Face Positions */
 .front {
   transform: translateZ(100px);
 }
@@ -378,7 +374,6 @@
   transform: translateY(100px) rotateX(-90deg);
 }
 
-/* Betting Section Styles */
 .betting-section {
   display: flex;
   flex-direction: column;
@@ -521,7 +516,6 @@
   cursor: not-allowed;
 }
 
-/* Celebration Overlay */
 .celebration-overlay {
   position: fixed;
   inset: 0;
@@ -560,7 +554,6 @@
   }
 }
 
-/* Mobile Responsiveness */
 @media (max-width: 1024px) {
   .game-layout {
     grid-template-columns: 1fr;
@@ -597,7 +590,6 @@
   }
 }
 
-/* Container and Layout */
 .cube-dice-container {
   width: 100%;
   min-height: 100%;
@@ -637,7 +629,6 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-/* Stats Display */
 .stats-display {
   display: flex;
   flex-direction: column;
@@ -665,7 +656,6 @@
   transition: all 0.3s ease;
 }
 
-/* Dice Area */
 .dice-area {
   width: 200px;
   height: 200px;
@@ -682,7 +672,6 @@
   transition: transform 2s cubic-bezier(0.17, 0.67, 0.83, 0.67);
 }
 
-/* Dice Faces */
 .face {
   position: absolute;
   width: 100%;
@@ -715,7 +704,6 @@
   transform: translateY(100px) rotateX(-90deg);
 }
 
-/* Dice Dots */
 .dot {
   width: 80%;
   height: 80%;
@@ -725,7 +713,6 @@
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
 }
 
-/* Dot Positions */
 .center {
   grid-area: 2 / 2 / 3 / 3;
 }
@@ -748,7 +735,6 @@
   grid-area: 2 / 3 / 3 / 4;
 }
 
-/* Betting Section */
 .betting-section {
   display: flex;
   flex-direction: column;
@@ -799,7 +785,6 @@
   transform: scale(0.98);
 }
 
-/* Roll Button */
 .roll-button {
   position: relative;
   width: 100%;
@@ -839,7 +824,6 @@
   cursor: not-allowed;
 }
 
-/* Celebration Overlay */
 .celebration-overlay {
   position: fixed;
   inset: 0;
@@ -870,7 +854,6 @@
   animation: celebrationPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Confetti Styles */
 .confetti {
   position: fixed;
   width: 10px;
@@ -891,7 +874,6 @@
   clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
 }
 
-/* Animations */
 @keyframes confetti {
   0% {
     transform: translateY(0) rotate(0deg);
@@ -924,7 +906,6 @@
   }
 }
 
-/* Win/Lose Styles */
 .win-amount {
   font-size: 4rem;
   margin: 2rem 0;
@@ -938,7 +919,6 @@
   margin-top: 1rem;
 }
 
-/* Responsive Design */
 @media (max-width: 1024px) {
   .game-layout {
     grid-template-columns: 1fr;
@@ -976,7 +956,6 @@
   }
 }
 
-/* Button Styles */
 .continue-button {
   background: #ff4655;
   border: none;
@@ -996,7 +975,6 @@
   box-shadow: 0 5px 15px rgba(255, 70, 85, 0.3);
 }
 
-/* Bet Amount Controls */
 .bet-amount {
   display: flex;
   align-items: center;
@@ -1019,4 +997,137 @@
 
 .bet-adjust:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+.celebration-content {
+  background: rgba(255, 255, 255, 0.2);
+  padding: 3rem;
+  border-radius: 20px;
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  border: 4px solid #000;
+  animation: celebrationPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: relative;
+}
+
+.manga-text {
+  font-family: "Comic Sans MS", "Bangers", cursive;
+  font-size: 3.5rem;
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 3px 3px 0 #ff4655, -3px -3px 0 #ff4655, 3px -3px 0 #ff4655,
+    -3px 3px 0 #ff4655;
+  transform: skew(-5deg);
+}
+
+.manga-bubble {
+  background: #fff;
+  border: 3px solid #000;
+  border-radius: 30px;
+  padding: 1.5rem;
+  margin: 2rem auto;
+  position: relative;
+  max-width: 80%;
+  transform: rotate(-2deg);
+}
+
+.manga-bubble::before {
+  content: "";
+  position: absolute;
+  bottom: -20px;
+  left: 30px;
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  border-right: 3px solid #000;
+  border-bottom: 3px solid #000;
+  transform: rotate(45deg);
+}
+
+.manga-suggestion {
+  font-family: "Comic Sans MS", "Bangers", cursive;
+  font-size: 1.8rem;
+  line-height: 1.4;
+  color: #000;
+}
+
+.manga-bold {
+  font-weight: bold;
+  font-size: 2rem;
+}
+
+.manga-number {
+  display: inline-block;
+  background: #ff4655;
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 50%;
+  font-size: 2.5rem;
+  font-weight: bold;
+  transform: rotate(3deg);
+  margin: 0.5rem;
+  border: 3px solid #000;
+  box-shadow: 3px 3px 0 #000;
+}
+
+.manga-sfx {
+  position: absolute;
+  top: -15px;
+  right: -10px;
+  transform: rotate(15deg);
+  font-family: "Comic Sans MS", "Bangers", cursive;
+  font-size: 1.2rem;
+  color: #ff4655;
+  text-shadow: 1px 1px 0 #000;
+  animation: sfxBounce 0.5s ease infinite alternate;
+}
+
+.manga-effect {
+  font-size: 5rem;
+  font-weight: bold;
+  color: #ff4655;
+  text-shadow: 3px 3px 0 #000;
+  transform: skew(-5deg) rotate(-2deg);
+  margin: 1.5rem 0;
+  animation: shakeEffect 0.5s ease infinite;
+}
+
+.manga-button {
+  background: #ff4655;
+  border: 3px solid #000;
+  color: #fff;
+  font-family: "VALORANT", "Bangers", cursive;
+  font-size: 1.5rem;
+  padding: 0.8rem 2rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transform: skew(-5deg);
+  box-shadow: 3px 3px 0 #000;
+  transition: all 0.2s ease;
+}
+
+.manga-button:hover {
+  transform: skew(-5deg) translateY(-3px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+@keyframes sfxBounce {
+  from {
+    transform: rotate(15deg) scale(1);
+  }
+  to {
+    transform: rotate(15deg) scale(1.1);
+  }
+}
+
+@keyframes shakeEffect {
+  0%,
+  100% {
+    transform: skew(-5deg) rotate(-2deg);
+  }
+  50% {
+    transform: skew(-5deg) rotate(2deg);
+  }
 }

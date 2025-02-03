@@ -1,3 +1,4 @@
+// FlapyBirdGame.js
 import { View } from "../core/View";
 import "../styles/dashboard/games/bird.css";
 
@@ -12,9 +13,10 @@ export class FlapyBirdGameView extends View {
 
     // Game state
     this.isPlaying = false;
+    this.gameOver = false;
+    this.hasStarted = false;
     this.score = 0;
     this.highScore = parseInt(localStorage.getItem("flappyHighScore")) || 0;
-    this.soundEnabled = localStorage.getItem("flappySound") !== "false";
     this.pipeGenerationInterval = null;
 
     // Bird properties
@@ -42,10 +44,13 @@ export class FlapyBirdGameView extends View {
     this.gravity = 0.4;
 
     // Audio elements
-    this.jumpSound = new Audio("/images/game/flappy-bird/sounds/swooshing.wav");
-    this.scoreSound = new Audio("/images/game/flappy-bird/sounds/point.wav");
-    this.hitSound = new Audio("/images/game/flappy-bird/sounds/hit.wav");
-    this.buttonSound = new Audio("/images/game/flappy-bird/button.mp3");
+    this.jumpSound = null;
+    this.scoreSound = null;
+    this.hitSound = null;
+    this.buttonSound = null;
+
+    // Load audio
+    this.loadAudio();
 
     // Bind methods
     this.update = this.update.bind(this);
@@ -84,7 +89,9 @@ export class FlapyBirdGameView extends View {
   }
 
   startGame() {
+    this.hasStarted = true;
     this.isPlaying = true;
+    this.gameOver = false;
     this.bird.y = this.birdY;
     this.pipeArray = [];
     this.velocityY = 0;
@@ -98,16 +105,11 @@ export class FlapyBirdGameView extends View {
 
     // Start generating pipes
     this.pipeGenerationInterval = setInterval(this.placePipes, 1500);
-
-    const overlay = this.container.querySelector(".game-overlay");
-    if (overlay) {
-      overlay.style.display = "none";
-    }
   }
 
-  gameOver() {
+  handleGameOver() {
     this.isPlaying = false;
-    this.playSound(this.hitSound);
+    this.gameOver = true;
 
     // Stop generating pipes
     if (this.pipeGenerationInterval) {
@@ -115,16 +117,15 @@ export class FlapyBirdGameView extends View {
       this.pipeGenerationInterval = null;
     }
 
-    const overlay = this.container.querySelector(".game-overlay");
-    if (overlay) {
-      overlay.style.display = "flex";
+    if (this.hitSound) {
+      this.playSound(this.hitSound);
     }
   }
 
   handleClick() {
-    if (!this.isPlaying) {
+    if (!this.hasStarted || this.gameOver) {
       this.startGame();
-    } else {
+    } else if (this.isPlaying) {
       this.velocityY = -6;
       this.playSound(this.jumpSound);
     }
@@ -144,6 +145,70 @@ export class FlapyBirdGameView extends View {
       this.board.height
     );
 
+    if (!this.hasStarted) {
+      // Draw start screen
+      this.context.save();
+      this.context.fillStyle = "rgba(0, 0, 0, 0.7)";
+      this.context.fillRect(0, 0, this.boardWidth, this.boardHeight);
+
+      this.context.font = "bold 48px 'Press Start 2P', cursive";
+      this.context.fillStyle = "#00FF00";
+      this.context.strokeStyle = "#FFFFFF";
+      this.context.lineWidth = 2;
+      this.context.textAlign = "center";
+      this.context.textBaseline = "middle";
+
+      const x = this.boardWidth / 2;
+      const y = this.boardHeight / 2 - 50;
+
+      this.context.shadowColor = "#00FF00";
+      this.context.shadowBlur = 15;
+      this.context.fillText("START", x, y);
+      this.context.strokeText("START", x, y);
+
+      this.context.font = "18px 'Press Start 2P', cursive";
+      this.context.fillStyle = "#FFFFFF";
+      this.context.shadowBlur = 5;
+      this.context.fillText("Press Space to Play", x, y + 50);
+
+      this.context.restore();
+      return;
+    }
+
+    if (this.gameOver) {
+      // Draw game over screen
+      this.context.save();
+      this.context.fillStyle = "rgba(0, 0, 0, 0.7)";
+      this.context.fillRect(0, 0, this.boardWidth, this.boardHeight);
+
+      this.context.font = "bold 48px 'Press Start 2P', cursive";
+      this.context.fillStyle = "#FF0000";
+      this.context.strokeStyle = "#FFFFFF";
+      this.context.lineWidth = 2;
+      this.context.textAlign = "center";
+      this.context.textBaseline = "middle";
+
+      const x = this.boardWidth / 2;
+      const y = this.boardHeight / 2 - 50;
+
+      this.context.shadowColor = "#FF0000";
+      this.context.shadowBlur = 15;
+      this.context.fillText("GAME OVER", x, y);
+      this.context.strokeText("GAME OVER", x, y);
+
+      this.context.font = "24px 'Press Start 2P', cursive";
+      this.context.fillStyle = "#FFFFFF";
+      this.context.shadowBlur = 5;
+      this.context.fillText(`Score: ${this.score}`, x, y + 50);
+
+      this.context.font = "18px 'Press Start 2P', cursive";
+      this.context.fillStyle = "#FFFF00";
+      this.context.fillText("Press Space to Restart", x, y + 100);
+
+      this.context.restore();
+      return;
+    }
+
     if (!this.isPlaying) return;
 
     // Update bird
@@ -162,7 +227,7 @@ export class FlapyBirdGameView extends View {
 
     // Check collisions
     if (this.bird.y > this.board.height) {
-      this.gameOver();
+      this.handleGameOver();
       return;
     }
 
@@ -186,7 +251,7 @@ export class FlapyBirdGameView extends View {
       }
 
       if (this.detectCollision(this.bird, pipe)) {
-        this.gameOver();
+        this.handleGameOver();
         return;
       }
     }
@@ -195,23 +260,55 @@ export class FlapyBirdGameView extends View {
     this.pipeArray = this.pipeArray.filter((pipe) => pipe.x > -this.pipeWidth);
   }
 
-  playSound(sound) {
-    if (!this.soundEnabled) return;
+  async loadAudio() {
+    const audioFiles = {
+      jump: "/images/game/flappy-bird/sounds/flap.wav",
+      score: "/images/game/flappy-bird/sounds/point.wav",
+      hit: "/images/game/flappy-bird/sounds/hit.wav",
+      button: "/images/game/flappy-bird/sounds/swooshing.wav",
+    };
+
     try {
-      sound.currentTime = 0;
-      sound.play();
+      this.jumpSound = await this.createAudio(audioFiles.jump);
+      this.scoreSound = await this.createAudio(audioFiles.score);
+      this.hitSound = await this.createAudio(audioFiles.hit);
+      this.buttonSound = await this.createAudio(audioFiles.button);
     } catch (error) {
-      console.warn("Sound playback failed:", error);
+      console.warn("Failed to load audio files:", error);
     }
   }
 
-  toggleSound() {
-    this.soundEnabled = !this.soundEnabled;
-    localStorage.setItem("flappySound", this.soundEnabled.toString());
-    const soundButton = this.container.querySelector("#soundToggle");
-    if (soundButton) {
-      soundButton.innerHTML = this.soundEnabled ? "🔊" : "🔈";
-      soundButton.classList.toggle("active", this.soundEnabled);
+  createAudio(src) {
+    return new Promise((resolve, reject) => {
+      try {
+        const audio = new Audio();
+        audio.addEventListener("canplaythrough", () => resolve(audio), {
+          once: true,
+        });
+        audio.addEventListener(
+          "error",
+          () => reject(new Error(`Failed to load audio: ${src}`)),
+          { once: true }
+        );
+        audio.src = src;
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  playSound(sound) {
+    if (!sound) return;
+    try {
+      sound.currentTime = 0;
+      const playPromise = sound.play();
+      if (playPromise) {
+        playPromise.catch((error) => {
+          console.warn("Sound playback failed:", error);
+        });
+      }
+    } catch (error) {
+      console.warn("Sound playback failed:", error);
     }
   }
 
@@ -235,9 +332,9 @@ export class FlapyBirdGameView extends View {
   moveBird(e) {
     if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyX") {
       e.preventDefault();
-      if (!this.isPlaying) {
+      if (!this.hasStarted || this.gameOver) {
         this.startGame();
-      } else {
+      } else if (this.isPlaying) {
         this.velocityY = -6;
         this.playSound(this.jumpSound);
       }
@@ -284,7 +381,7 @@ export class FlapyBirdGameView extends View {
     this.container.className = "flappy-bird-container neon-theme";
 
     this.container.innerHTML = `
-      <div class="game-layout">
+      <div class="game-layout-bird">
         <div class="stats-section neon-box">
           <div class="score-display">
             <div class="current-score">
@@ -300,43 +397,34 @@ export class FlapyBirdGameView extends View {
               )}</span>
             </div>
           </div>
-          <button id="soundToggle" class="sound-toggle neon-button">
-            ${this.soundEnabled ? "🔊" : "🔈"}
-          </button>
         </div>
 
         <div class="game-container neon-border">
           <canvas id="board"></canvas>
-          <div class="game-overlay">
-            <div class="overlay-content neon-box">
-              <h2 class="neon-text">${
-                this.score > 0 ? "GAME OVER!" : "READY?"
-              }</h2>
-              <div class="instructions">
-                <p>Press SPACE or ⬆️ to ${
-                  this.score > 0 ? "play again" : "start"
-                }</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div class="controls-info neon-box">
-          <h3 class="neon-text">CONTROLS</h3>
-          <div class="controls-grid">
+          <div class="controls-grid modern">
             <div class="control-item">
-              <span class="key">SPACE</span>
-              <span class="action">Jump</span>
+              <div class="key-modern">
+                <span class="key-cap">Space</span>
+                <div class="key-light"></div>
+              </div>
             </div>
             <div class="control-item">
-              <span class="key">⬆️</span>
-              <span class="action">Jump</span>
+              <div class="key-modern">
+                <span class="key-cap">↑</span>
+                <div class="key-light"></div>
+              </div>
             </div>
             <div class="control-item">
-              <span class="key">X</span>
-              <span class="action">Jump</span>
+              <div class="key-modern">
+                <span class="key-cap">X</span>
+                <div class="key-light"></div>
+              </div>
             </div>
           </div>
+          <div class="control-label">JUMP / START</div>
         </div>
       </div>
     `;
@@ -360,14 +448,6 @@ export class FlapyBirdGameView extends View {
 
   setupEventListeners() {
     document.addEventListener("keydown", this.moveBird);
-
-    const soundToggle = this.container.querySelector("#soundToggle");
-    if (soundToggle) {
-      soundToggle.addEventListener("click", () => {
-        this.playSound(this.buttonSound);
-        this.toggleSound();
-      });
-    }
 
     if (this.board) {
       this.board.addEventListener("click", this.handleClick);

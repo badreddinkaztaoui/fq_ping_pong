@@ -54,8 +54,8 @@ export class DashboardView extends View {
               <p class="tournament-subtitle">Win Big, Risk More</p>
               <div class="tournament-stats">
                 <div class="stat-item">
-                  <div class="stat-label">Lives</div>
-                  <div class="stat-value">7</div>
+                  <div class="stat-label">Games</div>
+                  <div class="stat-value">2</div>
                 </div>
                 <div class="stat-item">
                   <div class="stat-label">Prize Coins</div>

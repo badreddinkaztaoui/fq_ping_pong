@@ -72,7 +72,7 @@ export class Layout {
           <div class="nav-right">
             <div class="user-info">
               <div class="coins">
-                <img src="/images/icons/coin.png" alt="Coins" class="coin-icon" />
+                <img src="/images/coin.png" alt="Coins" class="coin-icon" />
                 <span>1,500</span>
               </div>
                 <div class="notifications">
