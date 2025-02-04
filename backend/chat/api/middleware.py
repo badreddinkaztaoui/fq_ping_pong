@@ -3,44 +3,36 @@ from channels.middleware import BaseMiddleware
 from channels.db import database_sync_to_async
 from django.db.models import Q
 from django.conf import settings
-from .utils import AuthServiceError, verify_token_with_auth_service
-import json
+from .utils import verify_token_with_auth_service
 
 class WebSocketAuthMiddleware(BaseMiddleware):
     async def __call__(self, scope, receive, send):
-        """
-        Handle WebSocket authentication using JWT tokens from either cookies or query parameters.
-        Verifies the token with the auth service and checks chat access permissions.
-        """
         if scope["type"] != "websocket":
             return await super().__call__(scope, receive, send)
 
-        token = await self.get_token_from_cookies(scope)
-        
-        if not token:
-            token = await self.get_token_from_query(scope)
-
-        if not token:
-            return await self.close_connection_safe(send, "Authentication required")
-        
         try:
-            user_data = await verify_token_with_auth_service(token)
+            print(f"Processing WebSocket connection request for path: {scope.get('path', '')}")
             
+            token = await self.get_token_from_cookies(scope)
+            if not token:
+                token = await self.get_token_from_query(scope)
+                print(f"Using token from query parameters: {bool(token)}")
+            
+            if not token:
+                print("No token found in cookies or query parameters")
+                return await self.close_connection_safe(send, "Authentication required")
+
+            user_data = await verify_token_with_auth_service(token)
+            print(f"Token verification result: {bool(user_data)}")
+
             if not user_data:
                 return await self.close_connection_safe(send, "Invalid token")
-            
-            chat_id = self.get_chat_id_from_path(scope.get('path', ''))
-            if chat_id:
-                can_access = await self.verify_chat_access(chat_id, user_data['id'])
-                if not can_access:
-                    return await self.close_connection_safe(send, "Unauthorized chat access")
 
             scope['user'] = user_data
             return await super().__call__(scope, receive, send)
-                
-        except AuthServiceError as e:
-            return await self.close_connection_safe(send, "Authentication service unavailable")
+
         except Exception as e:
+            print(f"WebSocket middleware error: {str(e)}")
             return await self.close_connection_safe(send, f"Authentication failed: {str(e)}")
 
     async def get_token_from_cookies(self, scope):

@@ -30,24 +30,38 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         
         self.is_connected = False
 
+    async def user_joined(self, event):
+        """Handler for user_joined message type"""
+        await self.send(json.dumps({
+            'type': 'user_joined',
+            'user_id': event['user_id']
+        }))
+
     async def connect(self):
-        """
-        Enhanced connection handler with reconnection support and presence tracking.
-        Validates user authentication and chat membership before establishing connection.
-        """
         try:
+            print("Attempting WebSocket connection...")
+            
             try:
                 self.redis_connection = await self.get_redis_connection()
+                print("Redis connection established")
             except redis.RedisError as e:
+                print(f"Redis connection failed: {str(e)}")
                 await self.close(code=4002)
                 return
-            
-            user_data = self.scope['user']
-            self.user_id = str(user_data['id'])
-            
+
+            user_data = self.scope.get('user')
+            if not user_data:
+                print("No user data in scope")
+                await self.close(code=4001)
+                return
+
+            self.user_id = str(user_data.get('id'))
             self.chat_id = self.scope['url_route']['kwargs'].get('chat_id')
-            
+
+            print(f"Processing connection for user {self.user_id} in chat {self.chat_id}")
+
             if not all([self.chat_id, self.user_id]):
+                print("Missing chat_id or user_id")
                 await self.close(code=4001)
                 return
             
@@ -130,48 +144,77 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
         """
         try:
             data = json.loads(text_data)
-            message_content = data.get('message')
-            
-            if not message_content or not isinstance(message_content, str):
-                await self.send_error("Invalid message format")
-                return
-            
-            if not await self.check_rate_limit():
-                await self.send_error("Rate limit exceeded")
-                return
-            
-            message_id = str(uuid.uuid4())
-            timestamp = datetime.now().isoformat()
-            
-            message_payload = {
-                'id': message_id,
-                'chat_id': self.chat_id,
-                'sender_id': self.user_id,
-                'content': message_content,
-                'timestamp': timestamp,
-                'status': 'sent'
-            }
-            
-            await self.store_message(message_payload)
-            
-            await self.channel_layer.group_send(
-                self.chat_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': message_payload
+
+            if data['type'] == 'typing_start':
+                await self.channel_layer.group_send(
+                    self.chat_group_name,
+                    {
+                        'type': 'typing_status',
+                        'user_id': self.user_id,
+                        'status': 'typing_start'
+                    }
+                )
+            elif data['type'] == 'typing_stop':
+                await self.channel_layer.group_send(
+                    self.chat_group_name,
+                    {
+                        'type': 'typing_status',
+                        'user_id': self.user_id,
+                        'status': 'typing_stop'
+                    }
+                )
+            elif data['type'] == 'chat_message':
+                message_content = data.get('message')
+                
+                if not message_content or not isinstance(message_content, str):
+                    await self.send_error("Invalid message format")
+                    return
+                
+                if not await self.check_rate_limit():
+                    await self.send_error("Rate limit exceeded")
+                    return
+                
+                message_id = str(uuid.uuid4())
+                timestamp = datetime.now().isoformat()
+                
+                message_payload = {
+                    'id': message_id,
+                    'chat_id': self.chat_id,
+                    'sender_id': self.user_id,
+                    'content': message_content,
+                    'timestamp': timestamp,
+                    'status': 'sent'
                 }
-            )
-            
-            await self.send(json.dumps({
-                'type': 'message_ack',
-                'message_id': message_id,
-                'timestamp': timestamp
-            }))
+                
+                await self.store_message(message_payload)
+                
+                await self.channel_layer.group_send(
+                    self.chat_group_name,
+                    {
+                        'type': 'chat_message',
+                        'message': message_payload
+                    }
+                )
+                
+                await self.send(json.dumps({
+                    'type': 'message_ack',
+                    'message_id': message_id,
+                    'timestamp': timestamp
+                }))
+
+                pass
             
         except json.JSONDecodeError:
             await self.send_error("Invalid message format")
         except Exception as e:
             await self.send_error(f"Error processing message: {str(e)}")
+
+    async def typing_status(self, event):
+        """Handle typing status updates"""
+        await self.send(json.dumps({
+            'type': event['status'],
+            'user_id': event['user_id']
+        }))
 
     async def chat_message(self, event):
         """

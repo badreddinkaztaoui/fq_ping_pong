@@ -333,6 +333,63 @@
   color: rgba(236, 232, 225, 0.4);
 }
 
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--header-bg);
+}
+
+.friend-chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.friend-name-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.friend-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.friend-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--status-offline);
+}
+
+.friend-status.online {
+  background-color: var(--status-online);
+}
+
+.friend-activity {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+@keyframes ellipsis {
+  0% { content: '.'; }
+  33% { content: '..'; }
+  66% { content: '...'; }
+  100% { content: '.'; }
+}
+
+.friend-activity:contains('typing') {
+  position: relative;
+}
+
+.friend-activity:contains('typing')::after {
+  content: '.';
+  display: inline-block;
+  width: 1em;
+  animation: ellipsis 1.5s infinite;
+}
+
 @keyframes pulse {
   0% {
       transform: scale(1);

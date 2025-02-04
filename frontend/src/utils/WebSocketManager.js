@@ -65,20 +65,39 @@ export class WebSocketManager {
         }
 
         try {
+            console.log(`Initiating WebSocket connection for chat ${chatId}`);
             const token = await this.authenticateWebSocket(chatId);
+            
+            if (!token) {
+                console.error('Failed to obtain WebSocket token');
+                this.notifyStatusChange(chatId, 'authentication_failed');
+                return;
+            }
+
             const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
+            console.log('Connecting to WebSocket URL:', wsUrl);
+            
             const ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => this.handleOpen(chatId, ws);
-            ws.onclose = (event) => this.handleClose(chatId, event);
-            ws.onerror = (error) => this.handleError(chatId, error);
-            ws.onmessage = (event) => this.handleMessage(chatId, event);
+            ws.onopen = () => {
+                console.log(`WebSocket connection opened for chat ${chatId}`);
+                this.handleOpen(chatId, ws);
+            };
+
+            ws.onclose = (event) => {
+                console.log(`WebSocket connection closed for chat ${chatId}:`, event);
+                this.handleClose(chatId, event);
+            };
+
+            ws.onerror = (error) => {
+                console.error(`WebSocket error in chat ${chatId}:`, error);
+                this.handleError(chatId, error);
+            };
 
             this.connections.set(chatId, {
                 socket: ws,
                 reconnectAttempts: 0,
-                status: 'connecting',
-                lastMessageId: null
+                status: 'connecting'
             });
 
         } catch (error) {
@@ -97,13 +116,21 @@ export class WebSocketManager {
 
     async handleOpen(chatId, socket) {
         const connection = this.connections.get(chatId);
-        console.log({connection})
         if (connection) {
             connection.reconnectAttempts = 0;
             connection.status = 'connected';
-            this.notifyStatusChange(chatId, 'connected');
+            
+            try {
+                this.notifyStatusChange(chatId, 'connected');
+            } catch (error) {
+                console.error('Error notifying status change:', error);
+            }
 
-            await this.messageQueue.sendQueuedMessages(chatId, socket);
+            try {
+                await this.messageQueue.sendQueuedMessages(chatId, socket);
+            } catch (error) {
+                console.error('Error sending queued messages:', error);
+            }
         }
     }
 
@@ -245,7 +272,13 @@ export class WebSocketManager {
     }
 
     notifyStatusChange(chatId, status) {
-        this.statusCallbacks.forEach(callback => callback(chatId, status));
+        this.statusCallbacks.forEach(callback => {
+            try {
+                callback(chatId, status);
+            } catch (error) {
+                console.error('Error in status callback:', error);
+            }
+        });
     }
 
     getConnectionStatus(chatId) {
