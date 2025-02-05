@@ -298,7 +298,7 @@ export class FlapyBirdGameView extends View {
   }
 
   playSound(sound) {
-    if (!sound) return;
+    if (!sound || !this.container || !this.container.isConnected) return;
     try {
       sound.currentTime = 0;
       const playPromise = sound.play();
@@ -330,7 +330,7 @@ export class FlapyBirdGameView extends View {
   }
 
   moveBird(e) {
-    if (e.code === "Space" || e.code === "ArrowUp" || e.code === "KeyX") {
+    if (e.code === "Space" || e.code === "ArrowUp") {
       e.preventDefault();
       if (!this.hasStarted || this.gameOver) {
         this.startGame();
