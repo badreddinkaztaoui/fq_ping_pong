@@ -7,6 +7,7 @@ from django.conf import settings
 from django.db.models import Q
 import redis.asyncio as redis
 from typing import Optional, Dict, Any
+import aiohttp
 
 class PersonalChatConsumer(AsyncWebsocketConsumer):
     """
@@ -80,15 +81,14 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             self.last_seen_message_id = last_seen
             
             await self.accept()
-            await self.mark_user_online()
             
+            await self.mark_user_online()
+            await self.notify_user_presence('user_joined')
             
             await self.send(json.dumps({
                 'type': 'connection_established',
                 'chat_id': self.chat_id
             }))
-            
-            await self.notify_user_presence('user_joined')
             
             if last_seen:
                 await self.send_messages_since(last_seen)
@@ -99,24 +99,78 @@ class PersonalChatConsumer(AsyncWebsocketConsumer):
             
         except Exception as e:
             await self.handle_connection_error(e)
+    
+    async def mark_user_online(self):
+        """
+        Marks user as online both in Redis and Auth service
+        """
+        try:
+            await self.redis_connection.sadd(
+                f'{self.ONLINE_USERS_PREFIX}{self.chat_id}',
+                self.user_id
+            )
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{settings.AUTH_SERVICE_URL}/api/auth/internal/update-status/",
+                    json={
+                        'user_id': self.user_id,
+                        'is_online': True
+                    },
+                    headers={
+                        'X-Internal-Service-Token': settings.INTERNAL_SERVICE_TOKEN
+                    }
+                ) as response:
+                    if response.status != 200:
+                        print(f"Failed to update online status in auth service: {await response.text()}")
+                        
+        except Exception as e:
+            print(f"Error marking user online: {e}")
+
+    async def mark_user_offline(self):
+        """
+        Marks user as offline both in Redis and Auth service
+        """
+        try:
+            await self.redis_connection.srem(
+                f'{self.ONLINE_USERS_PREFIX}{self.chat_id}',
+                self.user_id
+            )
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{settings.AUTH_SERVICE_URL}/api/auth/internal/update-status/",
+                    json={
+                        'user_id': self.user_id,
+                        'is_online': False
+                    },
+                    headers={
+                        'X-Internal-Service-Token': settings.INTERNAL_SERVICE_TOKEN
+                    }
+                ) as response:
+                    if response.status != 200:
+                        print(f"Failed to update offline status in auth service: {await response.text()}")
+                        
+        except Exception as e:
+            print(f"Error marking user offline: {e}")
 
     async def disconnect(self, close_code):
-        """
-        Enhanced disconnection handler with more robust cleanup.
-        """
         cleanup_successful = False
         try:
             if self.is_connected:
                 await self.update_last_seen()
+                
                 if hasattr(self, 'chat_group_name'):
                     await self.channel_layer.group_discard(
                         self.chat_group_name,
                         self.channel_name
                     )
-                await self.mark_user_offline()
                 
                 if not close_code or close_code < 4000:
                     await self.notify_user_presence('user_left')
+                
+                await self.mark_user_offline()
+                
                 cleanup_successful = True
             
         except Exception as e:

@@ -8,6 +8,9 @@ export class Http {
     this.get = this.get.bind(this);
     this.post = this.post.bind(this);
     this.put = this.put.bind(this);
+    this.delete = this.delete.bind(this);
+    this.patch = this.patch.bind(this);
+  
     this.getCsrfToken = this.getCsrfToken.bind(this);
     this.setCsrfToken = this.setCsrfToken.bind(this);
     this.getAccessToken = this.getAccessToken.bind(this);
@@ -149,6 +152,21 @@ export class Http {
     return this.request(url, {
       ...options,
       method: 'PUT',
+      body: body
+    });
+  }
+
+  async delete(url, options = {}) {
+    return this.request(url, {
+      ...options,
+      method: 'DELETE'
+    });
+  }
+  
+  async patch(url, body = null, options = {}) {
+    return this.request(url, {
+      ...options,
+      method: 'PATCH',
       body: body
     });
   }

@@ -23,12 +23,12 @@ from .views import (
     send_friend_request,
     accept_friend_request,
     reject_friend_request,
-    remove_friend,
     get_blocked_users,
     get_access_token,
     block_user,
     unblock_user,
-    search_users
+    search_users,
+    update_online_status
 )
 
 urlpatterns = [
@@ -58,13 +58,15 @@ urlpatterns = [
             path('request/', send_friend_request, name='send_friend_request'),
             path('accept/<uuid:friendship_id>/', accept_friend_request, name='accept_friend_request'),
             path('reject/<uuid:friendship_id>/', reject_friend_request, name='reject_friend_request'),
-            path('remove/<uuid:friendship_id>/', remove_friend, name='remove_friend'),
             path('status/<uuid:user_id>/', get_friendship_status, name='get_friendship_status'),
         ])),
         path('blocks/', include([
             path('', get_blocked_users, name='get_blocked_users'),
             path('block/', block_user, name='block_user'),
             path('unblock/<uuid:user_id>/', unblock_user, name='unblock_user'),
+        ])),
+        path('internal/', include([
+            path('update-status/', update_online_status, name='update_online_status'),
         ])),
     ])),
 ]

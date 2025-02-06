@@ -27,6 +27,9 @@ class User(AbstractUser):
     otp_secret = models.CharField(max_length=32, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_42_user = models.BooleanField(default=False)
+    is_online = models.BooleanField(default=False)
+    last_active = models.DateTimeField(auto_now=True)
+    blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by_users', blank=True)
 
     REQUIRED_FIELDS = ['email']
     objects = CustomUserManager()

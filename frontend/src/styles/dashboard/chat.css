@@ -1,15 +1,17 @@
+/* Base chat layout */
 .chat-layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 300px 1fr; /* Creates a 2-column layout */
   height: 100%;
-  background-color: #0F1923;
-  color: #ECE8E1;
-  font-family: 'Inter', sans-serif;
-  overflow: hidden;
+  background-color: #0F1923; /* Dark background color */
+  color: #ECE8E1; /* Light text color */
+  font-family: 'Inter', sans-serif; /* Clean, readable font */
+  overflow: hidden; /* Hides scrollbars */
   position: relative;
   z-index: 10;
 }
 
+/* Friends sidebar */
 .friends-sidebar {
   background: rgba(255, 70, 85, 0.1);
   border-right: 1px solid rgba(255, 70, 85, 0.2);
@@ -39,6 +41,7 @@
   padding: 10px;
 }
 
+/* Custom scrollbar */
 .friends-list::-webkit-scrollbar {
   width: 6px;
 }
@@ -56,6 +59,7 @@
   background: rgba(255, 70, 85, 0.3);
 }
 
+/* Friend list item */
 .friend-item {
   padding: 15px;
   margin: 5px 0;
@@ -72,7 +76,7 @@
 .friend-item:hover {
   background: rgba(255, 70, 85, 0.15);
   border-color: rgba(255, 70, 85, 0.3);
-  transform: translateX(2px);
+  transform: translateX(2px); /* Slight shift on hover */
 }
 
 .friend-item.active {
@@ -92,6 +96,7 @@
   font-size: 0.95rem;
 }
 
+/* Friend online status indicator */
 .friend-status {
   width: 8px;
   height: 8px;
@@ -110,13 +115,14 @@
   position: absolute;
   top: -2px;
   left: -2px;
-  right: -2px;
+  right: -2px;  
   bottom: -2px;
   border-radius: 50%;
   border: 2px solid #00FF9C;
-  animation: pulse 2s infinite;
+  animation: pulse 2s infinite; /* Pulsing border */
 }
 
+/* Chat main area */  
 .chat-main {
   display: flex;
   flex-direction: column;
@@ -129,16 +135,17 @@
       rgba(255, 70, 85, 0.1) 0px,
       rgba(255, 70, 85, 0.1) 2px,
       transparent 2px,
-      transparent 10px
+      transparent 10px  
   );
   position: relative;
 }
 
+/* Message when no chat selected */
 .no-chat-message {
-  display: flex;
+  display: flex; 
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: center; 
   height: 100%;
   text-align: center;
   color: rgba(236, 232, 225, 0.6);
@@ -152,6 +159,7 @@
   margin-bottom: 10px;
 }
 
+/* Chat container */
 .chat-container {
   display: flex;
   flex-direction: column;
@@ -163,13 +171,14 @@
 .chat-header {
   padding: 15px 20px;
   background: rgba(255, 70, 85, 0.1);
-  border-bottom: 1px solid rgba(255, 70, 85, 0.2);
+  border-bottom: 1px solid rgba(255, 70, 85, 0.2);  
   display: flex;
   justify-content: space-between;
   align-items: center;
   backdrop-filter: blur(5px);
 }
 
+/* Chat connection status indicator */
 .chat-status {
   padding: 5px 10px;
   border-radius: 3px;
@@ -189,9 +198,10 @@
 .chat-status.disconnected {
   background: rgba(255, 70, 85, 0.1);
   color: #FF4655;
-  border: 1px solid rgba(255, 70, 85, 0.3);
+  border: 1px solid rgba(255, 70, 85, 0.3);  
 }
 
+/* Messages list */
 .messages-list {
   flex: 1;
   overflow-y: auto;
@@ -202,11 +212,11 @@
 }
 
 .messages-list::-webkit-scrollbar {
-  width: 6px;
+  width: 6px;  
 }
 
 .messages-list::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+   background: rgba(255, 255, 255, 0.05);
 }
 
 .messages-list::-webkit-scrollbar-thumb {
@@ -214,9 +224,10 @@
   border-radius: 3px;
 }
 
+/* Chat message bubbles */
 .chat-message {
   max-width: 70%;
-  animation: fadeIn 0.3s ease;
+  animation: fadeIn 0.3s ease;  
   position: relative;
 }
 
@@ -246,9 +257,10 @@
 
 .own-message .message-content {
   background: rgba(255, 70, 85, 0.15);
-  border-left: 3px solid #FF4655;
+  border-left: 3px solid #FF4655;  
 }
 
+/* Subtle top border on own messages */
 .own-message .message-content::before {
   content: '';
   position: absolute;
@@ -257,9 +269,9 @@
   right: 0;
   height: 1px;
   background: linear-gradient(to right,
-      rgba(255, 70, 85, 0),
+      rgba(255, 70, 85, 0),  
       rgba(255, 70, 85, 0.5),
-      rgba(255, 70, 85, 0)
+      rgba(255, 70, 85, 0)  
   );
 }
 
@@ -276,6 +288,7 @@
   text-align: right;
 }
 
+/* Chat input form */  
 .chat-form {
   padding: 20px;
   background: rgba(15, 25, 35, 0.8);
@@ -285,7 +298,7 @@
   backdrop-filter: blur(10px);
 }
 
-.chat-input {
+.chat-input-text {
   flex: 1;
   padding: 12px 16px;
   background: rgba(255, 255, 255, 0.05);
@@ -296,28 +309,28 @@
   transition: all 0.3s ease;
 }
 
-.chat-input:focus {
+.chat-input-text:focus {
   outline: none;
   border-color: rgba(255, 70, 85, 0.5);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: 0 0 10px rgba(255, 70, 85, 0.1);
 }
 
-.chat-input::placeholder {
+.chat-input-text::placeholder {
   color: rgba(236, 232, 225, 0.4);
 }
 
 .chat-send-btn {
-  padding: 0 20px;
+  padding: 12px 16px;
   background: #FF4655;
   border: none;
   border-radius: 8px;
   color: #ECE8E1;
-  font-weight: 500;
+  font-weight: 500; 
   text-transform: uppercase;
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease; 
   font-family: 'VALORANT', sans-serif;
 }
 
@@ -333,10 +346,14 @@
   color: rgba(236, 232, 225, 0.4);
 }
 
+/* Chat header details */
 .chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 1rem;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--header-bg);
+  border-bottom: 1px solid rgba(255, 70, 85, 0.2);
+  background: rgba(255, 70, 85, 0.1);
 }
 
 .friend-chat-info {
@@ -360,23 +377,24 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background-color: var(--status-offline);
+  background-color: #768079;
 }
 
 .friend-status.online {
-  background-color: var(--status-online);
+  background-color: #00FF9C;
 }
 
 .friend-activity {
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: rgba(236, 232, 225, 0.6);  
 }
 
+/* Animated ellipsis on typing indicator */
 @keyframes ellipsis {
   0% { content: '.'; }
-  33% { content: '..'; }
+  33% { content: '..'; } 
   66% { content: '...'; }
-  100% { content: '.'; }
+  100% { content: '.'; }  
 }
 
 .friend-activity:contains('typing') {
@@ -390,14 +408,15 @@
   animation: ellipsis 1.5s infinite;
 }
 
+/* Pulsing online status indicator */
 @keyframes pulse {
   0% {
-      transform: scale(1);
+      transform: scale(1);  
       opacity: 0.8;
   }
   50% {
       transform: scale(1.2);
-      opacity: 0.4;
+      opacity: 0.4;  
   }
   100% {
       transform: scale(1);
@@ -405,18 +424,19 @@
   }
 }
 
+/* Friends list loading state */
 .friends-loading {
   display: flex;
-  align-items: center;
+  align-items: center;  
   justify-content: center;
-  padding: 20px;
+  padding: 20px; 
   color: rgba(236, 232, 225, 0.6);
 }
 
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 70, 85, 0.3);
+  border: 2px solid rgba(255, 70, 85, 0.3); 
   border-top-color: #FF4655;
   border-radius: 50%;
   margin-right: 10px;
@@ -426,9 +446,10 @@
 @keyframes spin {
   to {
       transform: rotate(360deg);
-  }
+  }  
 }
 
+/* Responsive layout for mobile */
 @media (max-width: 768px) {
   .chat-layout {
       grid-template-columns: 1fr;
@@ -438,13 +459,65 @@
       position: fixed;
       left: -300px;
       top: 0;
-      bottom: 0;
+      bottom: 0;   
       width: 300px;
       z-index: 1000;
       transition: left 0.3s ease;
   }
-
+  
   .friends-sidebar.active {
       left: 0;
   }
+}
+
+/* Chat message layout */
+.chat-message {
+  display: flex;
+  margin-bottom: 10px;
+  max-width: 80%;
+  align-self: flex-start;
+}
+
+.chat-message.own-message {
+  align-self: flex-end;  
+}
+
+.message-container {
+  display: flex;
+  flex-direction: column;  
+}
+
+.message-content {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  max-width: 100%;
+  word-wrap: break-word;
+}
+
+.own-message .message-content {
+  background-color: rgba(255, 70, 85, 0.2);
+}
+
+/* Message metadata */
+.message-metadata {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+  font-size: 0.8em;
+  color: rgba(236, 232, 225, 0.6);
+}
+
+.message-status {
+  margin-left: 5px;
+  color: #00FF9C;
+}
+
+.typing-indicator {
+  padding: 10px;
+  color: rgba(236, 232, 225, 0.6);
+  font-style: italic;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.05);
 }

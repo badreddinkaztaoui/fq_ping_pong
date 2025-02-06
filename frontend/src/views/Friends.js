@@ -5,109 +5,45 @@ import "../styles/dashboard/friends.css"
 export class FriendsView extends View {
     constructor() {
         super();
-        this.friends = [];
-        this.friendRequests = [];
-        this.searchQuery = '';
-        this.searchResults = [];
-        this.isSearching = false;
-        this.error = null;
-        this.loading = true;
+        this.state = {
+            friends: [],
+            friendRequests: [],
+            searchQuery: '',
+            searchResults: [],
+            activeTab: 'online',
+            error: null,
+            loading: true
+        };
+    
+        this.CONFIG = {
+            DEBOUNCE_DELAY: 300,
+            MIN_SEARCH_LENGTH: 2,
+            SEARCH_LIMIT: 10
+        };
+    
+        this.handleSearchInput = this.handleSearchInput.bind(this);
+        this.handleSearchInput = this.debounce(this.handleSearchInput, this.CONFIG.DEBOUNCE_DELAY);
+        this.handleTabChange = this.handleTabChange.bind(this);
+    }
+
+    debounce(func, wait) {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = setTimeout(() => func(...args), wait);
+        };
     }
 
     async render() {
         const container = document.createElement('div');
         container.className = 'friends-page valorant-theme';
+        
         container.innerHTML = `
             <div class="friends-container">
-                <!-- Header Section -->
-                <div class="friends-header">
-                    <div class="header-title">
-                        <span class="online-count">0 Online</span>
-                    </div>
-                    <div class="header-actions">
-                        <button class="valorant-btn add-friend-btn">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                                <circle cx="8.5" cy="7" r="4"/>
-                                <line x1="20" y1="8" x2="20" y2="14"/>
-                                <line x1="23" y1="11" x2="17" y2="11"/>
-                            </svg>
-                            ADD FRIEND
-                        </button>
-                    </div>
-                </div>
-    
-                <!-- Tabs Navigation -->
-                <div class="tabs-nav">
-                    <button class="tab-button active" data-tab="online">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="4"/>
-                        </svg>
-                        Online
-                    </button>
-                    <button class="tab-button" data-tab="offline">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <circle cx="12" cy="12" r="1"/>
-                        </svg>
-                        Offline
-                    </button>
-                    <button class="tab-button" data-tab="requests">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="8.5" cy="7" r="4"/>
-                            <path d="M22 12h-6"/>
-                            <path d="M19 15l3-3-3-3"/>
-                        </svg>
-                        Requests
-                    </button>
-                    <button class="tab-button" data-tab="blocked">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-                        </svg>
-                        Blocked
-                    </button>
-                </div>
-    
-                <!-- Tab Contents -->
-                <div class="tab-content active" data-tab="online">
-                    <div class="online-friends-list"></div>
-                </div>
-    
-                <div class="tab-content" data-tab="offline">
-                    <div class="offline-friends-list"></div>
-                </div>
-    
-                <div class="tab-content" data-tab="requests">
-                    <div class="requests-list"></div>
-                </div>
-    
-                <div class="tab-content" data-tab="blocked">
-                    <div class="blocked-users-list"></div>
-                </div>
-    
-                <!-- Add Friend Modal -->
-               <div class="modal" id="addFriendModal">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            Add Friend
-                        </div>
-                        <div class="search-container">
-                            <input type="text" 
-                                   class="search-input valorant-input" 
-                                   placeholder="Search for players..."
-                                   autocomplete="off">
-                            <div class="search-results"></div>
-                        </div>
-                        <div class="modal-actions">
-                            <button class="cancel-btn">Cancel</button>
-                        </div>
-                    </div>
-                </div>
-    
-                <!-- Loading State -->
+                ${this.renderHeader()}
+                ${this.renderTabs()}
+                ${this.renderContent()}
+                ${this.renderModal()}
                 <div class="loading-overlay">
                     <div class="loading-spinner"></div>
                 </div>
@@ -117,64 +53,199 @@ export class FriendsView extends View {
         return container;
     }
 
+    renderHeader() {
+        const onlineCount = this.state.friends.filter(f => f.friend.is_online).length;
+        return `
+            <div class="friends-header">
+                <div class="header-title">
+                    <span class="online-count">${onlineCount} Online</span>
+                </div>
+                <div class="header-actions">
+                    <button class="valorant-btn add-friend-btn" data-action="openModal">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                             stroke="currentColor" stroke-width="2" 
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="8.5" cy="7" r="4"/>
+                            <line x1="20" y1="8" x2="20" y2="14"/>
+                            <line x1="23" y1="11" x2="17" y2="11"/>
+                        </svg>
+                        ADD FRIEND
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 
-    async afterMount() {
-        this.setupEventListeners();
-        await this.loadFriends();
+    renderTabs() {
+        const tabs = [
+            { id: 'online', icon: 'circle', label: 'Online' },
+            { id: 'offline', icon: 'circle-dot', label: 'Offline' },
+            { id: 'requests', icon: 'user-plus', label: 'Requests' },
+            { id: 'blocked', icon: 'slash', label: 'Blocked' }
+        ];
+
+        return `
+            <div class="tabs-nav">
+                ${tabs.map(tab => `
+                    <button class="tab-button ${this.state.activeTab === tab.id ? 'active' : ''}" 
+                            data-tab="${tab.id}">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" 
+                             stroke="currentColor" stroke-width="2" 
+                             stroke-linecap="round" stroke-linejoin="round">
+                            ${this.getTabIcon(tab.icon)}
+                        </svg>
+                        ${tab.label}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    renderEmptyState(type) {
+        const states = {
+            friends: {
+                icon: 'user-plus',
+                message: 'No friends found'
+            },
+            requests: {
+                icon: 'user-plus',
+                message: 'No pending requests'
+            },
+            blocked: {
+                icon: 'slash',
+                message: 'No blocked users'
+            }
+        };
+
+        const state = states[type];
+        return `
+            <div class="no-${type}">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" 
+                     stroke="currentColor" stroke-width="1.5" 
+                     stroke-linecap="round" stroke-linejoin="round">
+                    ${this.getTabIcon(state.icon)}
+                </svg>
+                <span>${state.message}</span>
+            </div>
+        `;
+    }
+
+    updateBlockedList() {
+        const blockedList = this.$('.blocked-list');
+        if (!blockedList) return;
+
+        if (!this.state.blockedUsers?.length) {
+            blockedList.innerHTML = this.renderEmptyState('blocked');
+            return;
+        }
+
+        blockedList.innerHTML = this.state.blockedUsers
+            .map(user => this.renderBlockedCard(user))
+            .join('');
+    }
+
+    renderBlockedCard(user) {
+        return `
+            <div class="blocked-card" data-user-id="${user.id}">
+                <div class="user-info">
+                    <div class="avatar-wrapper">
+                        <img src="${user.avatar_url || '/default-avatar.png'}" 
+                             alt="${user.username}"
+                             onerror="this.src='/default-avatar.png'">
+                    </div>
+                    <div class="user-details">
+                        <span class="username">${user.username}</span>
+                    </div>
+                </div>
+                <div class="blocked-actions">
+                    <button class="valorant-btn unblock-btn" 
+                            data-action="unblockFriend" 
+                            data-user-id="${user.id}">
+                        UNBLOCK
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getTabIcon(icon) {
+        const icons = {
+            circle: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/>',
+            'circle-dot': '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="1"/>',
+            'user-plus': '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/>',
+            slash: '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'
+        };
+        return icons[icon] || icons.circle;
+    }
+
+    renderModal() {
+        return `
+            <div class="modal" id="addFriendModal">
+                <div class="modal-content">
+                    <div class="modal-header">Add Friend</div>
+                    <div class="search-container">
+                        <input type="text" 
+                               class="search-input valorant-input" 
+                               placeholder="Search for players..."
+                               autocomplete="off">
+                        <div class="search-results"></div>
+                    </div>
+                    <div class="modal-actions">
+                        <button class="cancel-btn" data-action="closeModal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `;
     }
 
     async setupEventListeners() {
-        const modal = this.$('#addFriendModal');
-        const addFriendBtn = this.$('.add-friend-btn');
-        const cancelBtn = this.$('.cancel-btn');
-        const searchInput = this.$('.search-input');
-
-        // Enhanced search handling with debounce
-        let searchTimeout;
-        this.addListener(searchInput, 'input', (e) => {
-            clearTimeout(searchTimeout);
-            const query = e.target.value.trim();
-
-            if (query.length === 0) {
-                this.clearSearchResults();
-                return;
-            }
-
-            searchTimeout = setTimeout(() => {
-                this.performSearch(query);
-            }, 300); // Reduced debounce time for better responsiveness
-        });
-
-        // Modal controls
-        this.addListener(addFriendBtn, 'click', () => {
-            modal.classList.add('active');
-            searchInput.focus(); // Auto-focus search input
-        });
-
-        this.addListener(cancelBtn, 'click', () => {
-            this.closeModal();
-        });
-
-        // Close modal on outside click
-        this.addListener(modal, 'click', (e) => {
-            if (e.target === modal) {
-                this.closeModal();
+        this.addListener(this.element, 'click', (e) => {
+            const target = e.target.closest('[data-action]');
+            if (target) {
+                const action = target.dataset.action;
+                this.handleAction(action, target);
             }
         });
 
-        // Setup tab navigation
         const tabButtons = this.$$('.tab-button');
-        const tabContents = this.$$('.tab-content');
-
         tabButtons.forEach(button => {
             this.addListener(button, 'click', () => {
-                const targetTab = button.dataset.tab;
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                tabContents.forEach(content => content.classList.remove('active'));
-                button.classList.add('active');
-                this.$(`.tab-content[data-tab="${targetTab}"]`).classList.add('active');
+                this.handleTabChange(button.dataset.tab);
             });
         });
+
+        const searchInput = this.$('.search-input');
+        if (searchInput) {
+            this.addListener(searchInput, 'input', this.handleSearchInput);
+        }
+    }
+
+    async handleAction(action, target) {
+        const actions = {
+            openModal: () => this.openModal(),
+            closeModal: () => this.closeModal(),
+            sendRequest: () => this.sendFriendRequest(target.dataset.userId),
+            blockUser: () => this.blockFriend(target.dataset.friendId),
+            unblockFriend: () => this.unblockFriend(target.dataset.friendId),
+            acceptRequest: () => this.acceptFriendRequest(target.dataset.requestId),
+            rejectRequest: () => this.rejectFriendRequest(target.dataset.requestId),
+            message: () => this.openChat(target.dataset.friendId)
+        };
+
+        if (actions[action]) {
+            try {
+                await actions[action]();
+            } catch (error) {
+                this.handleError(`Failed to ${action}`, error);
+            }
+        }
+    }
+
+    openModal() {
+        const modal = this.$('#addFriendModal');
+        modal.classList.add('active');
+        this.$('.search-input').focus();
     }
 
     closeModal() {
@@ -186,44 +257,56 @@ export class FriendsView extends View {
 
     clearSearchResults() {
         const resultsContainer = this.$('.search-results');
-        resultsContainer.innerHTML = '';
-        this.searchResults = [];
-    }
-
-    async performSearch(query) {
-        try {
-            if (query.length < 2) return;
-
-            this.loading = true;
-            this.$('.loading-overlay').classList.add('active');
-
-            const response = await userState.searchUsers(query, {
-                exclude_blocked: true,
-                limit: 10
-            });
-
-            this.searchResults = response.results;
-            this.renderSearchResults();
-        } catch (err) {
-            console.error('Search failed:', err);
-            this.showError('Failed to perform search');
-        } finally {
-            this.loading = false;
-            this.$('.loading-overlay').classList.remove('active');
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
         }
+        this.state.searchResults = [];
     }
-    renderSearchResults() {
-        const resultsContainer = this.$('.search-results');
 
-        if (!this.searchResults.length) {
-            resultsContainer.innerHTML = `
-                <div class="no-results" style="padding: 16px; text-align: center; color: var(--valorant-gray);">
-                    No players found
-                </div>`;
+    async handleSearchInput(event) {
+        const query = event.target.value.trim();
+        
+        if (query.length < this.CONFIG.MIN_SEARCH_LENGTH) {
+            this.clearSearchResults();
             return;
         }
 
-        resultsContainer.innerHTML = this.searchResults.map(user => `
+        try {
+            this.setState({ loading: true });
+            const response = await userState.searchUsers(query, {
+                exclude_blocked: true,
+                limit: this.CONFIG.SEARCH_LIMIT
+            });
+            
+            this.setState({ 
+                searchResults: response.results,
+                loading: false
+            });
+            
+            this.updateSearchResults();
+        } catch (error) {
+            this.handleError('Search failed', error);
+        }
+    }
+
+    updateSearchResults() {
+        const resultsContainer = this.$('.search-results');
+        if (!resultsContainer) return;
+
+        if (!this.state.searchResults.length) {
+            resultsContainer.innerHTML = `
+                <div class="no-results">No players found</div>
+            `;
+            return;
+        }
+
+        resultsContainer.innerHTML = this.state.searchResults
+            .map(user => this.renderSearchResult(user))
+            .join('');
+    }
+
+    renderSearchResult(user) {
+        return `
             <div class="search-result-card" data-user-id="${user.id}">
                 <div class="user-info">
                     <img src="${user.avatar_url || '/default-avatar.png'}" 
@@ -231,338 +314,548 @@ export class FriendsView extends View {
                          onerror="this.src='/default-avatar.png'">
                     <div class="user-details">
                         <span class="username">${user.username}</span>
-                        ${user.display_name ? `<span class="display-name">${user.display_name}</span>` : ''}
+                        ${user.display_name ? 
+                          `<span class="display-name">${user.display_name}</span>` : 
+                          ''}
                     </div>
                 </div>
                 <div class="search-result-actions">
-                    ${user.is_friend
-                ? '<span class="friend-status">Already Friends</span>'
-                : `<button class="valorant-btn send-request-btn" data-user-id="${user.id}">
-                            Add Friend
-                           </button>`
-            }
+                    ${user.is_friend ? 
+                      '<span class="friend-status">Already Friends</span>' :
+                      `<button class="valorant-btn send-request-btn" 
+                              data-action="sendRequest" 
+                              data-user-id="${user.id}">
+                           Add Friend
+                       </button>`
+                    }
                 </div>
             </div>
-        `).join('');
-
-        this.setupSearchResultActions();
-
+        `;
     }
 
-    setupSearchResultActions() {
-        const sendRequestBtns = this.$$('.search-result-actions .send-request-btn');
+    handleTabChange(tabId) {
+        this.setState({ activeTab: tabId });
+        this.updateTabs();
+        this.updateContent();
+    }
 
-        sendRequestBtns.forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                const userId = btn.dataset.userId;
-                try {
-                    await userState.sendFriendRequest(userId);
-                    this.showSuccess('Friend request sent successfully');
-                    this.performSearch(); // Refresh search results
-                } catch (err) {
-                    this.showError('Failed to send friend request');
-                }
-            });
+    updateContent() {
+        const contents = this.$$('.tab-content');
+        
+        contents.forEach(content => {
+            content.classList.remove('active');
         });
+
+        const activeContent = this.$(`.tab-content[data-tab="${this.state.activeTab}"]`);
+        if (activeContent) {
+            activeContent.classList.add('active');
+        }
+        
+        this.updateLists();
+    }
+
+    updateTabs() {
+        const tabs = this.$$('.tab-button');
+        
+        tabs.forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        const activeTab = this.$(`.tab-button[data-tab="${this.state.activeTab}"]`);
+        if (activeTab) {
+            activeTab.classList.add('active');
+        }
+    }
+
+    renderContent() {
+        return `
+            <div class="tabs-content">
+                <div class="tab-content ${this.state.activeTab === 'online' ? 'active' : ''}" data-tab="online">
+                    <div class="online-list"></div>
+                </div>
+                <div class="tab-content ${this.state.activeTab === 'offline' ? 'active' : ''}" data-tab="offline">
+                    <div class="offline-list"></div>
+                </div>
+                <div class="tab-content ${this.state.activeTab === 'requests' ? 'active' : ''}" data-tab="requests">
+                    <div class="requests-list"></div>
+                </div>
+                <div class="tab-content ${this.state.activeTab === 'blocked' ? 'active' : ''}" data-tab="blocked">
+                    <div class="blocked-list"></div>
+                </div>
+            </div>
+        `;
+    }
+
+    updateLists() {
+        switch (this.state.activeTab) {
+            case 'online':
+            case 'offline':
+                this.updateFriendsList();
+                break;
+            case 'requests':
+                this.updateRequestsList();
+                break;
+            case 'blocked':
+                this.updateBlockedList();
+                break;
+        }
+    }
+
+    updateFriendsList() {
+        const list = this.$(`.${this.state.activeTab}-list`);
+        if (!list) return;
+
+        const friends = this.state.friends.filter(f => 
+            this.state.activeTab === 'online' ? f.friend.is_online : !f.friend.is_online
+        );
+
+        if (!friends.length) {
+            list.innerHTML = this.renderEmptyState('friends');
+            return;
+        }
+
+        list.innerHTML = friends.map(friend => this.renderFriendCard(friend)).join('');
+    }
+ 
+    renderFriendCard(friend) {
+        return `
+            <div class="friend-card" data-friend-id="${friend.friend.id}">
+                <div class="friend-info">
+                    <div class="avatar-wrapper">
+                        <img src="${friend.friend.avatar_url || '/default-avatar.png'}" 
+                            alt="${friend.friend.username}"
+                            onerror="this.src='/default-avatar.png'">
+                    </div>
+                    <div class="friend-details">
+                        <span class="friend-name">${friend.friend.username}</span>
+                        <span class="friend-st"><em>${friend.friend.is_online ? "Online" : "Offline"}</em></span>
+                    </div>
+                </div>
+                <div class="friend-actions">
+                    <button class="action-btn message-btn" 
+                            data-action="message" 
+                            data-friend-id="${friend.friend.id}" 
+                            title="Send Message">
+                        ${this.getActionIcon('message')}
+                    </button>
+                    <button class="action-btn block-btn" 
+                            data-action="blockUser" 
+                            data-friend-id="${friend.friend.id}" 
+                            title="Block User">
+                        ${this.getActionIcon('block')}
+                    </button>
+                </div>
+            </div>
+        `;
+        }
+
+    
+
+    renderBlockedCard(user) {
+        return `
+            <div class="blocked-card" data-user-id="${user.id}">
+                <div class="user-info">
+                    <div class="avatar-wrapper">
+                        <img src="${user.avatar_url || '/default-avatar.png'}" 
+                             alt="${user.username}"
+                             onerror="this.src='/default-avatar.png'">
+                    </div>
+                    <div class="user-details">
+                        <span class="username">${user.username}</span>
+                    </div>
+                </div>
+                <div class="blocked-actions">
+                    <button class="valorant-btn unblock-btn" 
+                            data-action="unblockFriend"
+                            data-friend-id="${user.id}"
+                            data-user-id="${user.id}">
+                        UNBLOCK
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getActionIcon(type) {
+        const icons = {
+            message: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+            remove: '<path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="18" y1="8" x2="23" y2="13"/><line x1="23" y1="8" x2="18" y2="13"/>',
+            block: '<circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>'
+        };
+        return `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
+                     stroke="currentColor" stroke-width="2" 
+                     stroke-linecap="round" stroke-linejoin="round">
+                    ${icons[type]}
+                </svg>`;
     }
 
 
-    resetSearch() {
-        this.isSearching = false;
-        this.searchResults = [];
-        const searchResultsSection = this.$('.search-results-section');
-        searchResultsSection.style.display = 'none';
-        this.renderLists();
+    async afterMount() {
+        await this.loadFriends();
     }
 
     async loadFriends() {
         try {
-            this.loading = true;
-            this.$('.loading-overlay').classList.add('active');
-
-            const [friends, requests] = await Promise.all([
+            this.setState({ loading: true });
+            
+            const [friends, requests, blocked] = await Promise.all([
                 userState.getFriends(),
-                userState.getFriendRequests()
+                userState.getFriendRequests(),
+                userState.getBlockedUsers()
             ]);
 
-            this.friends = friends
-            this.friendRequests = requests
-            this.renderLists();
+            this.setState({
+                friends,
+                friendRequests: requests,
+                blockedUsers: blocked,
+                loading: false
+            });
 
-        } catch (err) {
-            console.error('Failed to load friends:', err);
-            this.showError('Failed to load friends');
-        } finally {
-            this.loading = false;
-            if (this.$('.loading-overlay'))
-                this.$('.loading-overlay').classList.remove('active');
+            this.updateLists();
+        } catch (error) {
+            this.handleError('Failed to load friends', error);
         }
     }
 
-
-    renderLists() {
-        // If searching, don't render standard friends list
-        if (this.isSearching) return;
-
-        this.renderFriendRequests();
-        this.renderFriends();
-        this.updateOnlineCount();
+    setState(newState) {
+        const oldState = { ...this.state };
+        this.state = { ...this.state, ...newState };
+        
+        if (oldState.loading !== this.state.loading) {
+            this.updateLoadingState();
+        }
+        if (JSON.stringify(oldState.friends) !== JSON.stringify(this.state.friends)) {
+            this.updateFriendsList();
+        }
+        if (JSON.stringify(oldState.friendRequests) !== JSON.stringify(this.state.friendRequests)) {
+            this.updateRequestsList();
+        }
+        if (JSON.stringify(oldState.blockedUsers) !== JSON.stringify(this.state.blockedUsers)) {
+            if (typeof this.updateBlockedList === 'function') {
+                this.updateBlockedList();
+            }
+        }
     }
 
-    renderFriendRequests() {
+    updateLoadingState() {
+        const loadingOverlay = this.$('.loading-overlay');
+        if (loadingOverlay) {
+            loadingOverlay.classList.toggle('active', this.state.loading);
+        }
+    }
+
+    async sendFriendRequest(userId) {
+        try {
+            const searchResultCard = this.$(`.search-result-card[data-user-id="${userId}"]`);
+            if (searchResultCard) {
+                const actionContainer = searchResultCard.querySelector('.search-result-actions');
+                actionContainer.innerHTML = `
+                    <span class="request-status sending">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" 
+                             stroke="currentColor" stroke-width="2" 
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        Request Sent
+                    </span>
+                `;
+            }
+    
+            await userState.sendFriendRequest(userId);
+            
+            if (searchResultCard) {
+                const actionContainer = searchResultCard.querySelector('.search-result-actions');
+                actionContainer.innerHTML = `
+                    <span class="request-status sent">
+                        Request Sent
+                    </span>
+                `;
+            }
+    
+            this.showToast('Friend request sent successfully', 'success');
+            this.closeModal();
+        } catch (error) {
+            const searchResultCard = this.$(`.search-result-card[data-user-id="${userId}"]`);
+            if (searchResultCard) {
+                const actionContainer = searchResultCard.querySelector('.search-result-actions');
+                actionContainer.innerHTML = `
+                    <button class="valorant-btn send-request-btn" 
+                            data-action="sendRequest" 
+                            data-user-id="${userId}">
+                         Add Friend
+                    </button>
+                `;
+            }
+    
+            this.handleError('Failed to send friend request', error);
+            this.showToast('Failed to send friend request', 'error');
+        }
+    }
+
+    updateRequestsList() {
         const requestsList = this.$('.requests-list');
         if (!requestsList) return;
 
-        try {
-            if (!this.friendRequests || !this.friendRequests.length) {
-                requestsList.innerHTML = `
-                    <div class="no-requests">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M20 8v6M23 11h-6"/>
-                        </svg>
-                        <span>No pending requests</span>
-                    </div>`;
-                return;
-            }
-
-            requestsList.innerHTML = this.friendRequests.map(request => {
-                if (!request || !request.user) return '';
-
-                const avatarUrl = request.user.avatar_url || '/default-avatar.png';
-
-
-                return `
-                    <div class="friend-request-card" data-request-id="${request.id}">
-                        <div class="user-info">
-                            <div class="avatar-wrapper">
-                                <img src="${avatarUrl}" 
-                                     alt="${request.user.username}"
-                                     onerror="this.src='/default-avatar.png'">
-                            </div>
-                            <div class="user-details">
-                                <span class="username">${request.user.username}</span>
-                                <span class="time">
-                                    <svg class="time-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <path d="M12 6v6l4 2"/>
-                                    </svg>
-                                    Sent ${this.formatTime(request.created_at)}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="request-actions">
-                            <button class="valorant-btn accept-btn" data-request-id="${request.id}">
-                                <svg class="action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M20 6L9 17l-5-5"/>
-                                </svg>
-                                ACCEPT
-                            </button>
-                            <button class="valorant-btn reject-btn" data-request-id="${request.id}">
-                                <svg class="action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"/>
-                                    <line x1="6" y1="6" x2="18" y2="18"/>
-                                </svg>
-                                REJECT
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).filter(Boolean).join('');
-
-            if (requestsList.innerHTML.trim() === '') {
-                requestsList.innerHTML = `
-                    <div class="no-requests">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M20 8v6M23 11h-6"/>
-                        </svg>
-                        <span>No valid requests found</span>
-                    </div>`;
-            }
-
-            this.setupRequestButtons();
-        } catch (err) {
-            console.error('Error rendering friend requests:', err);
-            requestsList.innerHTML = `
-                <div class="error-state">
-                    <span>Error loading friend requests</span>
-                </div>`;
-        }
-    }
-
-    renderFriends() {
-        const onlineList = this.$('.online-friends-list');
-        const offlineList = this.$('.offline-friends-list');
-        if (!onlineList || !offlineList) {
-            console.error('Required DOM elements not found');
+        if (!this.state.friendRequests.length) {
+            requestsList.innerHTML = this.renderEmptyState('requests');
             return;
         }
-        const onlineFriends = this.friends.filter(f => f.friend.online);
-        const offlineFriends = this.friends.filter(f => !f.friend.online);
 
-        // SVG icons definitions
-        const svgIcons = {
-            message: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-            </svg>`,
-            remove: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="8.5" cy="7" r="4"/>
-                <line x1="18" y1="8" x2="23" y2="13"/>
-                <line x1="23" y1="8" x2="18" y2="13"/>
-            </svg>`,
-            block: `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-            </svg>`
-        };
+        requestsList.innerHTML = this.state.friendRequests
+            .map(request => this.renderRequestCard(request))
+            .join('');
 
-        const renderList = (friends, container) => {
-            if (!friends.length) {
-                container.innerHTML = `
-                    <div class="no-friends">
-                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                            <circle cx="9" cy="7" r="4"/>
-                            <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                        </svg>
-                        <span>No friends found</span>
-                    </div>`;
-                return;
-            }
-
-            container.innerHTML = friends
-                .filter(f => f.friend.username.toLowerCase().includes(this.searchQuery.toLowerCase()))
-                .map(f => `
-                    <div class="friend-card" data-friend-id="${f.friend.id}">
-                        <div class="friend-info">
-                            <div class="avatar-wrapper">
-                                <img src="${f.friend.avatar_url || '/default-avatar.png'}" alt="${f.friend.username}">
-                                <span class="status-dot ${f.friend.online ? 'online' : 'offline'}"></span>
-                            </div>
-                            <div class="friend-details">
-                                <span class="friend-name">${f.friend.username}</span>
-                                <span class="friend-status">${f.friend.status || 'In Menu'}</span>
-                            </div>
-                        </div>
-                        <div class="friend-actions">
-                            <button class="action-btn message-btn" title="Send Message">
-                                ${svgIcons.message}
-                            </button>
-                            <button class="action-btn remove-btn" title="Remove Friend">
-                                ${svgIcons.remove}
-                            </button>
-                            <button class="action-btn block-btn" title="Block User">
-                                ${svgIcons.block}
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-        };
-
-        renderList(onlineFriends, onlineList);
-        renderList(offlineFriends, offlineList);
-
-        this.setupFriendActions();
+        this.setupRequestButtons();
     }
 
-    setupFriendActions() {
-        const messageBtns = this.$$('.message-btn');
-        const removeBtns = this.$$('.remove-btn');
-        const blockBtns = this.$$('.block-btn');
+    renderRequestCard(request) {
+        if (!request || !request.user) return '';
 
-        messageBtns.forEach(btn => {
-            this.addListener(btn, 'click', (e) => {
-                const friendId = e.target.closest('.friend-card').dataset.friendId;
-                this.router.navigate(`/dashboard/chat/${friendId}`);
-            });
-        });
+        const avatarUrl = request.user.avatar_url || '/default-avatar.png';
 
-        removeBtns.forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                const friendId = e.target.closest('.friend-card').dataset.friendId;
-                console.log(friendId)
-                await this.removeFriend(friendId);
-            });
-        });
-
-        blockBtns.forEach(btn => {
-
-            this.addListener(btn, 'click', async (e) => {
-                const friendId = e.target.closest('.friend-card').dataset.friendId;
-                await this.blockFriend(friendId);
-            });
-        });
+        return `
+            <div class="friend-request-card" data-request-id="${request.id}">
+                <div class="user-info">
+                    <div class="avatar-wrapper">
+                        <img src="${avatarUrl}" 
+                             alt="${request.user.username}"
+                             onerror="this.src='/default-avatar.png'">
+                    </div>
+                    <div class="user-details">
+                        <span class="username">${request.user.username}</span>
+                        <span class="time">
+                            <svg class="time-icon" width="12" height="12" viewBox="0 0 24 24" 
+                                 fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            Sent ${this.formatTime(request.created_at)}
+                        </span>
+                    </div>
+                </div>
+                <div class="request-actions">
+                    <button class="valorant-btn accept-btn" 
+                            data-action="acceptRequest" 
+                            data-request-id="${request.id}">
+                        <svg class="action-icon" width="16" height="16" viewBox="0 0 24 24" 
+                             fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 6L9 17l-5-5"/>
+                        </svg>
+                        ACCEPT
+                    </button>
+                    <button class="valorant-btn reject-btn" 
+                            data-action="rejectRequest" 
+                            data-request-id="${request.id}">
+                        <svg class="action-icon" width="16" height="16" viewBox="0 0 24 24" 
+                             fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                        REJECT
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     setupRequestButtons() {
-        const acceptBtns = this.$$('.accept-btn');
-        const rejectBtns = this.$$('.reject-btn');
+        const requestsList = this.$('.requests-list');
+        if (!requestsList) return;
 
-        acceptBtns.forEach(btn => {
-            this.addListener(btn, 'click', async () => {
-                const requestId = btn.dataset.requestId;
-                await userState.acceptFriendRequest(requestId);
-                await this.loadFriends();
-            });
-        });
+        this.addListener(requestsList, 'click', async (e) => {
+            const button = e.target.closest('[data-action]');
+            if (!button) return;
 
-        rejectBtns.forEach(btn => {
-            this.addListener(btn, 'click', async () => {
-                const requestId = btn.dataset.requestId;
-                await userState.rejectFriendRequest(requestId);
-                await this.loadFriends();
-            });
+            const requestId = button.dataset.requestId;
+            const action = button.dataset.action;
+
+            try {
+                if (action === 'acceptRequest') {
+                    await this.acceptFriendRequest(requestId);
+                } else if (action === 'rejectRequest') {
+                    await this.rejectFriendRequest(requestId);
+                }
+            } catch (error) {
+                this.handleError(`Failed to ${action}`, error);
+            }
         });
     }
 
-    async removeFriend(friendshipId) {
+    formatTime(timestamp) {
+        if (!timestamp) return 'Unknown date';
+        
         try {
-            await userState.removeFriend(friendshipId);
+            const date = new Date(timestamp);
+            return new Intl.DateTimeFormat('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }).format(date);
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Invalid date';
+        }
+    }
+
+    async acceptFriendRequest(requestId) {
+        try {
+            const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
+            if (requestCard) {
+                const actionButtons = requestCard.querySelectorAll('.request-actions button');
+                actionButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('loading');
+                });
+            }
+    
+            await userState.acceptFriendRequest(requestId);
+            
+            if (requestCard) {
+                requestCard.classList.add('accepted');
+                requestCard.addEventListener('transitionend', () => {
+                    requestCard.remove();
+                }, { once: true });
+            }
+    
             await this.loadFriends();
-        } catch (err) {
-            this.showError('Failed to remove friend');
+            
+            this.showToast('Friend request accepted', 'success');
+        } catch (error) {
+            const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
+            if (requestCard) {
+                const actionButtons = requestCard.querySelectorAll('.request-actions button');
+                actionButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                });
+            }
+    
+            this.handleError('Failed to accept friend request', error);
+            this.showToast('Failed to accept friend request', 'error');
+        }
+    }
+
+    async rejectFriendRequest(requestId) {
+        try {
+            const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
+            if (requestCard) {
+                const actionButtons = requestCard.querySelectorAll('.request-actions button');
+                actionButtons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('loading');
+                });
+            }
+    
+            await userState.rejectFriendRequest(requestId);
+            
+            if (requestCard) {
+                requestCard.classList.add('rejected');
+                requestCard.addEventListener('transitionend', () => {
+                    requestCard.remove();
+                }, { once: true });
+            }
+    
+            await this.loadFriends();
+            
+            this.showToast('Friend request rejected', 'success');
+        } catch (error) {
+            const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
+            if (requestCard) {
+                const actionButtons = requestCard.querySelectorAll('.request-actions button');
+                actionButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.classList.remove('loading');
+                });
+            }
+    
+            this.handleError('Failed to reject friend request', error);
+            this.showToast('Failed to reject friend request', 'error');
         }
     }
 
     async blockFriend(userId) {
         try {
+            const friendCard = this.$(`.friend-card[data-friend-id="${userId}"]`);
+            if (friendCard) {
+                friendCard.classList.add('blocking');
+            }
+    
             await userState.blockUser(userId);
+            
+            if (friendCard) {
+                friendCard.addEventListener('transitionend', () => {
+                    friendCard.remove();
+                }, { once: true });
+            }
+    
             await this.loadFriends();
-        } catch (err) {
-            this.showError('Failed to block user');
+            
+            this.showToast('User blocked', 'success');
+        } catch (error) {
+            const friendCard = this.$(`.friend-card[data-friend-id="${userId}"]`);
+            if (friendCard) {
+                friendCard.classList.remove('blocking');
+            }
+    
+            this.handleError('Failed to block user', error);
+            this.showToast('Failed to block user', 'error');
         }
     }
 
-    async sendFriendRequest(username) {
+    async unblockFriend(userId) {
         try {
-            await userState.sendFriendRequest(username);
-            this.showSuccess('Friend request sent successfully');
-        } catch (err) {
-            this.showError('Failed to send friend request');
+            await userState.unblockUser(userId);
+            await this.loadFriends();
+            this.showSuccess('User unblocked');
+        } catch (error) {
+            this.handleError('Failed to unblock user', error);
         }
     }
 
-    updateOnlineCount() {
-        const onlineCount = this.friends.filter(user => user.friend.online).length;
-        if (this.$('.online-count'))
-            this.$('.online-count').textContent = `${onlineCount} Online`;
+    showToast(message, type = 'info') {
+        let toastContainer = this.$('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container';
+            this.element.appendChild(toastContainer);
+        }
+    
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+    
+        toastContainer.appendChild(toast);
+    
+        setTimeout(() => {
+            toast.classList.add('toast-out');
+            toast.addEventListener('transitionend', () => {
+                toast.remove();
+            }, { once: true });
+        }, 3000);
     }
 
-    formatTime(timestamp) {
-        const date = new Date(timestamp);
-        return date.toLocaleDateString();
+    openChat(friendId) {
+        window.location.href = `/chat/${friendId}`;
     }
 
-    showError(message) {
-        console.error(message);
+    handleError(message, error) {
+        console.error(message, error);
+        this.setState({ 
+            error: message,
+            loading: false 
+        });
     }
 
     showSuccess(message) {
         console.log(message);
     }
+
+    async beforeUnmount() {
+        if (this.searchTimeout) {
+            clearTimeout(this.searchTimeout);
+        }
+    }
 }
+
+export default FriendsView;

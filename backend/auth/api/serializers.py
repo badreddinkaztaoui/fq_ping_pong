@@ -17,7 +17,9 @@ class UserSerializer(serializers.ModelSerializer):
             'avatar_url', 
             'is_2fa_enabled', 
             'created_at',
-            'auth_provider'
+            'auth_provider',
+            'is_online',
+            'last_active'
         )
         read_only_fields = (
             'id', 
@@ -30,7 +32,7 @@ class UserFriendSerializer(serializers.ModelSerializer):
     """Simplified user serializer for friend lists"""
     class Meta:
         model = User
-        fields = ('id', 'username', 'display_name', 'avatar_url')
+        fields = ('id', 'username', 'display_name', 'avatar_url', 'is_online', 'last_active')
 
 class FriendshipSerializer(serializers.ModelSerializer):
     user = UserFriendSerializer(read_only=True)

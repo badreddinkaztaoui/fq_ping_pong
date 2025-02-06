@@ -1,3 +1,4 @@
+from datetime import timezone
 import os
 import pyotp
 import requests
@@ -653,25 +654,6 @@ def reject_friend_request(request, friendship_id):
     friendship.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def remove_friend(request, friendship_id):
-    """Remove an existing friend"""
-    try:
-        friendship = Friendship.objects.get(
-            Q(friend=request.user) | Q(user=request.user),
-            id=friendship_id,
-            is_accepted=True
-        )
-    except Friendship.DoesNotExist:
-        return Response(
-            {'error': 'Friendship not found'},
-            status=status.HTTP_404_NOT_FOUND
-        )
-    
-    friendship.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_friendship_status(request, user_id):
@@ -873,6 +855,36 @@ def disable_2fa(request):
     request.user.otp_secret = None
     request.user.save()
     return Response({"message": "2FA disabled successfully"})
+
+@api_view(['POST'])
+@csrf_exempt
+@permission_classes([AllowAny])
+def update_online_status(request):
+    """
+    Updates a user's online status. This endpoint is meant for internal service communication
+    and should only be accessible within your Docker network.
+    """
+    user_id = request.data.get('user_id')
+    is_online = request.data.get('is_online')
+    
+    if user_id is None or is_online is None:
+        return Response(
+            {'error': 'Both user_id and is_online are required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        user = User.objects.get(id=user_id)
+        user.is_online = is_online
+        user.last_active = timezone.now()
+        user.save()
+        
+        return Response({'status': 'success'})
+    except User.DoesNotExist:
+        return Response(
+            {'error': 'User not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
