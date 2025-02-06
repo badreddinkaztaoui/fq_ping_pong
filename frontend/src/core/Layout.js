@@ -1,7 +1,6 @@
+import { userState } from "../utils/UserState";
 
-import { userState } from '../utils/UserState'
-
-import "../styles/layout.css"
+import "../styles/layout.css";
 
 export class Layout {
   constructor(view, layoutType, router) {
@@ -15,11 +14,11 @@ export class Layout {
   }
 
   async createDashboardLayout() {
-    const layout = document.createElement('div');
-    layout.className = "dashboard-layout"
+    const layout = document.createElement("div");
+    layout.className = "dashboard-layout";
 
-    const nav = document.createElement('nav')
-    nav.className = "dashboard-nav"
+    const nav = document.createElement("nav");
+    nav.className = "dashboard-nav";
     nav.innerHTML = `
           <div class="nav-left">
             <div class="logo-section">
@@ -73,7 +72,7 @@ export class Layout {
           <div class="nav-right">
             <div class="user-info">
               <div class="coins">
-                <img src="/images/icons/coin.png" alt="Coins" class="coin-icon" />
+                <img src="/images/coin.png" alt="Coins" class="coin-icon" />
                 <span>1,500</span>
               </div>
                 <div class="notifications">
@@ -126,16 +125,24 @@ export class Layout {
               
               <div class="profile-dropdown">
                 <button class="profile-btn">
-                  <img src="${userState.state.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Avatar" class="avatar" />
+                  <img src="${
+                    userState.state.user.avatar_url ||
+                    "/images/users/default-avatar.webp"
+                  }" alt="Avatar" class="avatar" />
                   <svg class="arrow-icon" viewBox="0 0 24 24">
                     <path d="M6 9l6 6 6-6"/>
                   </svg>
                 </button>
                 <div class="dropdown-menu">
                   <div class="menu-header">
-                    <img src="${userState.state.user.avatar_url || "/images/users/default-avatar.webp"}" alt="Avatar" class="menu-avatar" />
+                    <img src="${
+                      userState.state.user.avatar_url ||
+                      "/images/users/default-avatar.webp"
+                    }" alt="Avatar" class="menu-avatar" />
                     <div class="user-info">
-                      <span class="menu-username">${userState.state.user.username}</span>
+                      <span class="menu-username">${
+                        userState.state.user.username
+                      }</span>
                     </div>
                   </div>
                   <a data-link="/dashboard/profile" class="menu-item profile">
@@ -172,23 +179,23 @@ export class Layout {
               </div>
             </div>
           </div>
-    `
+    `;
 
-    layout.appendChild(nav)
+    layout.appendChild(nav);
 
     this.contentContainer = document.createElement("div");
-    this.contentContainer.className = 'dashboard-content'
-    layout.appendChild(this.contentContainer)
+    this.contentContainer.className = "dashboard-content";
+    layout.appendChild(this.contentContainer);
 
     return layout;
   }
 
   async createLandingLayout() {
-    const layout = document.createElement('div');
-    layout.className = 'landing-layout';
+    const layout = document.createElement("div");
+    layout.className = "landing-layout";
 
-    const header = document.createElement('header');
-    header.className = 'landing-header';
+    const header = document.createElement("header");
+    header.className = "landing-header";
     header.innerHTML = `
         <header>
         <div id="burger-menu">
@@ -213,25 +220,26 @@ export class Layout {
       </header>
       `;
 
-    const content = document.createElement('main');
-    content.className = 'landing-content';
+    const content = document.createElement("main");
+    content.className = "landing-content";
 
     layout.appendChild(header);
     layout.appendChild(content);
 
-    this.contentContainer = document.createElement('div');
-    this.contentContainer.className = 'content-container';
+    this.contentContainer = document.createElement("div");
+    this.contentContainer.className = "content-container";
     content.appendChild(this.contentContainer);
 
     return layout;
   }
 
   async mount(container) {
-    this.element = this.layoutType === 'dashboard'
-      ? await this.createDashboardLayout()
-      : await this.createLandingLayout();
+    this.element =
+      this.layoutType === "dashboard"
+        ? await this.createDashboardLayout()
+        : await this.createLandingLayout();
 
-    container.innerHTML = '';
+    container.innerHTML = "";
     container.appendChild(this.element);
 
     if (this.view) {
@@ -263,37 +271,37 @@ export class Layout {
   }
 
   handleDashboardRoutes() {
-    const dashBoardLinks = document.querySelectorAll('.nav-link');
+    const dashBoardLinks = document.querySelectorAll(".nav-link");
     const removeActiveClass = () => {
-      dashBoardLinks.forEach(link => link.classList.remove('active'));
+      dashBoardLinks.forEach((link) => link.classList.remove("active"));
     };
 
     const setActiveLink = (path) => {
       removeActiveClass();
-      dashBoardLinks.forEach(link => {
-        if (link.getAttribute('data-link') === path) {
-          link.classList.add('active');
+      dashBoardLinks.forEach((link) => {
+        if (link.getAttribute("data-link") === path) {
+          link.classList.add("active");
         }
       });
     };
 
     setActiveLink(window.location.pathname);
 
-    const notif = document.querySelector('.view-all')
+    const notif = document.querySelector(".view-all");
     notif.addEventListener("click", (e) => {
       e.preventDefault();
-      this.router.navigate("/dashboard/notifications")
-    })
+      this.router.navigate("/dashboard/notifications");
+    });
 
-    const logo = document.querySelector('.logo-img')
+    const logo = document.querySelector(".logo-img");
     logo.addEventListener("click", (e) => {
       e.preventDefault();
-      this.router.navigate("/dashboard")
-    })
+      this.router.navigate("/dashboard");
+    });
     dashBoardLinks.forEach((route) => {
       route.addEventListener("click", (e) => {
         e.preventDefault();
-        const path = route.getAttribute('data-link');
+        const path = route.getAttribute("data-link");
 
         if (path && this.router) {
           setActiveLink(path);
@@ -302,70 +310,65 @@ export class Layout {
       });
     });
 
-    window.addEventListener('popstate', () => {
+    window.addEventListener("popstate", () => {
       setActiveLink(window.location.pathname);
     });
   }
-  profileDropDown() {
-
-  }
+  profileDropDown() {}
   setupEventListeners() {
-    if (this.layoutType === 'dashboard') {
-      const logoutBtn = this.element.querySelector('#logoutBtn');
-      console.log(logoutBtn)
+    if (this.layoutType === "dashboard") {
+      const logoutBtn = this.element.querySelector("#logoutBtn");
       if (logoutBtn) {
-        logoutBtn.addEventListener('click', async (e) => {
-          e.preventDefault()
+        logoutBtn.addEventListener("click", async (e) => {
+          e.preventDefault();
           await userState.logout();
-          this.router.navigate("/login")
+          this.router.navigate("/login");
         });
       }
-      this.handleDashboardRoutes()
+      this.handleDashboardRoutes();
       this.setupMenu();
-      const dropdown = document.querySelector('.profile-dropdown');
-      const button = dropdown.querySelector('.profile-btn');
+      const dropdown = document.querySelector(".profile-dropdown");
+      const button = dropdown.querySelector(".profile-btn");
 
-      button.addEventListener('click', (e) => {
+      button.addEventListener("click", (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('active');
+        dropdown.classList.toggle("active");
       });
 
-      document.addEventListener('click', (e) => {
+      document.addEventListener("click", (e) => {
         if (!dropdown.contains(e.target)) {
-          dropdown.classList.remove('active');
+          dropdown.classList.remove("active");
         }
       });
 
-      const profileBtn = document.querySelector('.profile')
+      const profileBtn = document.querySelector(".profile");
       if (profileBtn) {
         profileBtn.addEventListener("click", (e) => {
           e.preventDefault();
-          this.router.navigate("/dashboard/profile")
-        })
+          this.router.navigate("/dashboard/profile");
+        });
       }
-      const friendsBtn = document.querySelector(".friends")
+      const friendsBtn = document.querySelector(".friends");
       if (friendsBtn) {
         friendsBtn.addEventListener("click", (e) => {
           e.preventDefault();
-          this.router.navigate("/dashboard/friends")
-        })
+          this.router.navigate("/dashboard/friends");
+        });
       }
-
-
     } else {
-      const burgerMenu = document.getElementById('burger-menu');
-      const overlay = document.getElementById('menu');
+      const burgerMenu = document.getElementById("burger-menu");
+      const overlay = document.getElementById("menu");
       const links = document.querySelectorAll(".navlink");
 
       if (burgerMenu && overlay) {
-        burgerMenu.addEventListener('click', () => {
-          burgerMenu.classList.toggle('close');
-          overlay.classList.toggle('overlay');
+        burgerMenu.addEventListener("click", () => {
+          burgerMenu.classList.toggle("close");
+          overlay.classList.toggle("overlay");
         });
 
-        overlay.addEventListener('click', () => {
-          burgerMenu.classList.remove('close');
-          overlay.classList.remove('overlay');
+        overlay.addEventListener("click", () => {
+          burgerMenu.classList.remove("close");
+          overlay.classList.remove("overlay");
         });
 
         links.forEach((link) => {
@@ -374,8 +377,8 @@ export class Layout {
             const path = link.getAttribute('data-link="/"');
             if (path && this.router) {
               this.router.navigate(path);
-              burgerMenu?.classList.remove('close');
-              overlay?.classList.remove('overlay');
+              burgerMenu?.classList.remove("close");
+              overlay?.classList.remove("overlay");
             }
           });
         });
@@ -385,9 +388,11 @@ export class Layout {
 
   removeEventListeners() {
     for (const [key, handler] of this.boundEventListeners) {
-      const element = this.element?.querySelector(key === 'logout' ? '#logoutBtn' : key);
+      const element = this.element?.querySelector(
+        key === "logout" ? "#logoutBtn" : key
+      );
       if (element) {
-        element.removeEventListener('click', handler);
+        element.removeEventListener("click", handler);
       }
     }
     this.boundEventListeners.clear();
@@ -419,8 +424,7 @@ export class Layout {
           }
         }, 300);
       }
-      if (topNav)
-        topNav.classList.toggle("menu-open");
+      if (topNav) topNav.classList.toggle("menu-open");
       body.style.overflow = body.style.overflow === "hidden" ? "" : "hidden";
     });
 
@@ -464,7 +468,9 @@ export class Layout {
 
     // *Notifications toggle
     const notifications = document.querySelector(".notifications");
-    const notificationIcon = document.querySelector(".notification-icon-wrapper");
+    const notificationIcon = document.querySelector(
+      ".notification-icon-wrapper"
+    );
 
     notificationIcon.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -481,7 +487,9 @@ export class Layout {
     // Mark all as read functionality
     const markAllReadBtn = document.querySelector(".mark-all-read");
     markAllReadBtn.addEventListener("click", () => {
-      const unreadItems = document.querySelectorAll(".notification-item.unread");
+      const unreadItems = document.querySelectorAll(
+        ".notification-item.unread"
+      );
       unreadItems.forEach((item) => {
         item.classList.remove("unread");
       });
@@ -494,11 +502,13 @@ export class Layout {
       item.addEventListener("click", () => {
         item.classList.remove("unread");
         // Update badge count
-        const unreadCount = document.querySelectorAll(".notification-item.unread").length;
+        const unreadCount = document.querySelectorAll(
+          ".notification-item.unread"
+        ).length;
         document.querySelector(".notification-badge").textContent = unreadCount;
       });
     });
   }
 
-  async handleLogout() { }
+  async handleLogout() {}
 }
