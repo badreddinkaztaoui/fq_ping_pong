@@ -1,42 +1,156 @@
-from datetime import timedelta
 import os
+import pyotp
 import requests
 import urllib.parse
+from functools import wraps
+
 from django.db.models import Q
 from django.conf import settings
 from django.shortcuts import redirect
 from django.db import connections
 from django.db.utils import OperationalError
-from django.contrib.auth import get_user_model, login, logout, authenticate
-from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes, renderer_classes, authentication_classes
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
-from django.middleware.csrf import get_token
-from rest_framework.authentication import SessionAuthentication
-from rest_framework_simplejwt.tokens import AccessToken
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-from django.core.exceptions import ObjectDoesNotExist
-from rest_framework.permissions import IsAuthenticated
+from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.core.mail import send_mail
+from django.core.files.storage import default_storage
+from .authentication import JWTCookieAuthentication
+from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
+
+from rest_framework import status
+from rest_framework.decorators import api_view, permission_classes, renderer_classes, authentication_classes
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.renderers import JSONRenderer
+
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+
 from .serializers import UserSerializer, FriendshipSerializer, UserFriendSerializer
 from .models import Friendship, UserBlock
-from django.core.files.storage import default_storage
-from django.core.files.base import ContentFile
-import pyotp
 
 User = get_user_model()
+
+def csrf_exempt_authentication(view_func):
+    @wraps(view_func)
+    def wrapped_view(*args, **kwargs):
+        return view_func(*args, **kwargs)
+    return authentication_classes([])(view_func)
+
+def get_tokens_for_user(user):
+    refresh = RefreshToken.for_user(user)
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+def set_jwt_cookies(response, tokens):
+    response.set_cookie(
+        settings.SIMPLE_JWT['AUTH_COOKIE'],
+        tokens['access'],
+        max_age=settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'].total_seconds(),
+        httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+        domain=settings.SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
+        path='/'
+    )
+    
+    response.set_cookie(
+        settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'],
+        tokens['refresh'],
+        max_age=settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'].total_seconds(),
+        httponly=settings.SIMPLE_JWT['AUTH_COOKIE_HTTP_ONLY'],
+        samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE'],
+        secure=settings.SIMPLE_JWT['AUTH_COOKIE_SECURE'],
+        domain=settings.SIMPLE_JWT['AUTH_COOKIE_DOMAIN'],
+        path='/'
+    )
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_access_token(request):
+    """
+    Returns the access token from cookie for frontend use
+    """
+    access_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
+    
+    if not access_token:
+        return Response({
+            'error': 'No access token found'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+    
+    return Response({
+        'access_token': access_token
+    })
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt_authentication
+def login_view(request):
+    email = request.data.get('email')
+    password = request.data.get('password')
+    
+    if not email or not password:
+        return Response({
+            'error': 'Please provide both email and password'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        user = User.objects.get(email=email)
+        authenticated_user = authenticate(request, username=user.username, password=password)
+        
+        if authenticated_user is not None:
+            tokens = get_tokens_for_user(authenticated_user)
+            csrf_token = get_token(request)
+            
+            response = Response({
+                'message': 'Login successful',
+                'user': UserSerializer(authenticated_user).data,
+                'csrf_token': csrf_token
+            })
+            
+            set_jwt_cookies(response, tokens)
+            return response
+            
+        return Response({
+            'error': 'Invalid credentials'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+        
+    except User.DoesNotExist:
+        return Response({
+            'error': 'No user found with this email'
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@csrf_exempt_authentication
+def register_view(request):
+    serializer = UserSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.save()
+        user.set_password(request.data['password'])
+        user.save()
+        
+        tokens = get_tokens_for_user(user)
+        csrf_token = get_token(request)
+        
+        response = Response({
+            'message': 'User registered successfully',
+            'user': UserSerializer(user).data,
+            'csrf_token': csrf_token
+        }, status=status.HTTP_201_CREATED)
+        
+        set_jwt_cookies(response, tokens)
+        return response
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_42_login(request):
-    """
-    Initiates the 42 OAuth flow by redirecting to 42's authorization page
-    """
+    """Initiates the 42 OAuth flow by redirecting to 42's authorization page"""
     authorization_url = (
         f"{settings.OAUTH2_AUTHORIZATION_URL}"
         f"?client_id={settings.SOCIAL_AUTH_42_KEY}"
@@ -49,9 +163,7 @@ def oauth_42_login(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def oauth_42_callback(request):
-    """
-    Handles the OAuth callback from 42's authorization server
-    """
+    """Handles the OAuth callback from 42's authorization server"""
     code = request.GET.get('code')
     error = request.GET.get('error')
 
@@ -99,113 +211,137 @@ def oauth_42_callback(request):
                 password=None 
             )
 
-        login(request, user)
+        tokens = get_tokens_for_user(user)
+        success_params = urllib.parse.urlencode({'auth_success': 'true'})
+        response = redirect(f'/auth/callback?{success_params}')
+        set_jwt_cookies(response, tokens)
         
-        success_params = urllib.parse.urlencode({
-            'auth_success': 'true',
-            'session_id': request.session.session_key
-        })
-        
-        return redirect(f'/auth/callback?{success_params}')
+        return response
 
     except requests.RequestException as e:
         error_params = urllib.parse.urlencode({'error': 'Failed to authenticate with 42'})
         return redirect(f'/login?{error_params}')
 
+
 @api_view(['POST'])
-@permission_classes([AllowAny])
-def register_view(request):
-    """Handle user registration"""
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
-        user = serializer.save()
-        user.set_password(request.data['password'])
-        user.save()
-        
-        return Response({
-            'message': 'User registered successfully',
-            'user': UserSerializer(user).data
-        }, status=status.HTTP_201_CREATED)
+@permission_classes([IsAuthenticated])
+def logout_view(request):
+    response = Response({'message': 'Logged out successfully'})
     
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE'])
+    response.delete_cookie(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
+    response.delete_cookie('csrftoken')
+    
+    request.session.flush()
+    
+    return response
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def me_view(request):
+    auth_result = JWTCookieAuthentication().authenticate(request)
+    csrf_token = get_token(request)
+    
+    if auth_result is None:
+        return Response({
+            'is_authenticated': False,
+            'user': None,
+            'csrf_token': csrf_token
+        }, status=status.HTTP_200_OK)
+    
+    user, _ = auth_result
+    return Response({
+        'is_authenticated': True,
+        'user': UserSerializer(user).data,
+        'csrf_token': csrf_token
+    }, status=status.HTTP_200_OK)
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
-def login_view(request):
-    """Handle user login and session creation with 2FA support"""
-    email = request.data.get('email')
-    password = request.data.get('password')
+def refresh_token(request):
+    """
+    Refresh access token using refresh token from cookie
+    """
+    refresh_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE_REFRESH'])
     
-    if not email or not password:
+    if not refresh_token:
         return Response({
-            'error': 'Please provide both email and password'
-        }, status=status.HTTP_400_BAD_REQUEST)
+            'error': 'No refresh token found'
+        }, status=status.HTTP_401_UNAUTHORIZED)
     
     try:
-        user = User.objects.get(email=email)
+        refresh = RefreshToken(refresh_token)
         
-        authenticated_user = authenticate(
-            request, 
-            username=user.username,
-            password=password
-        )
+        tokens = {
+            'access': str(refresh.access_token),
+            'refresh': str(refresh)
+        }
         
-        if authenticated_user is not None:
-            if authenticated_user.is_2fa_enabled:
-                secret = authenticated_user.otp_secret
-                if not secret:
-                    secret = pyotp.random_base32()
-                    authenticated_user.otp_secret = secret
-                    authenticated_user.save()
-                
-                totp = pyotp.TOTP(secret, interval=300)
-                current_otp = totp.now()
-                
-                send_mail(
-                    subject='Your Login Verification Code',
-                    message=f'Your verification code is: {current_otp}\n\nThis code will expire in 5 minutes.',
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[authenticated_user.email],
-                    fail_silently=False,
-                )
-                
-                return Response({
-                    'requires_2fa': True,
-                    'user_id': authenticated_user.id,
-                    'message': 'Please check your email for the verification code'
-                }, status=status.HTTP_200_OK)
-            
-            login(request, authenticated_user)
-            
-            response = Response({
-                'message': 'Login successful',
-                'user': UserSerializer(authenticated_user).data,
-                'csrf_token': get_token(request)
-            })
-            
-            response.set_cookie(
-                settings.SESSION_COOKIE_NAME,
-                request.session.session_key,
-                max_age=settings.SESSION_COOKIE_AGE,
-                httponly=True,
-                samesite=settings.SESSION_COOKIE_SAMESITE,
-                secure=settings.SESSION_COOKIE_SECURE
-            )
-            
-            return response
-            
+        response = Response({'message': 'Token refresh successful'})
+        set_jwt_cookies(response, tokens)
+        
+        return response
+        
+    except Exception as e:
         return Response({
-            'error': 'Invalid credentials'
+            'error': 'Invalid refresh token'
         }, status=status.HTTP_401_UNAUTHORIZED)
-        
-    except User.DoesNotExist:
-        return Response({
-            'error': 'No user found with this email'
-        }, status=status.HTTP_401_UNAUTHORIZED)
+
+@csrf_exempt
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_token(request):
+    """
+    Verifies a JWT token and returns the associated user information.
+    This endpoint is CSRF exempt because it's used for internal service-to-service
+    communication within our Docker network.
+    """
+    header_token = request.headers.get('Authorization')
+    cookie_token = request.COOKIES.get(settings.SIMPLE_JWT['AUTH_COOKIE'])
     
+    if not header_token and not cookie_token:
+        return Response(
+            {'error': 'No token provided'},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+    
+    try:
+        if header_token:
+            if not header_token.startswith('Bearer '):
+                return Response(
+                    {'error': 'Invalid Authorization header format'},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+            token = header_token.split(' ')[1]
+        else:
+            token = cookie_token
+            
+        valid_token = AccessToken(token)
+        user_id = valid_token.payload.get('user_id')
+        
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            return Response(
+                {'error': 'User not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        return Response({
+            'valid': True,
+            'user': UserSerializer(user).data
+        })
+        
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_401_UNAUTHORIZED
+        )
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def verify_2fa_login(request):
+    """Handle 2FA verification with JWT tokens"""
     user_id = request.data.get('user_id')
     otp = request.data.get('otp')
     
@@ -229,115 +365,19 @@ def verify_2fa_login(request):
     totp = pyotp.TOTP(user.otp_secret, interval=300)
     
     if totp.verify(otp, valid_window=1):
-        login(request, user)
-        return Response({
+        tokens = get_tokens_for_user(user)
+        response = Response({
             'message': 'Login successful',
             'user': UserSerializer(user).data
         })
-    else:
-        return Response({
-            'error': 'Invalid OTP'
-        }, status=status.HTTP_401_UNAUTHORIZED)
+        set_jwt_cookies(response, tokens)
+        return response
+    
+    return Response({
+        'error': 'Invalid OTP'
+    }, status=status.HTTP_401_UNAUTHORIZED)
 
-@api_view(['POST'])
-def logout_view(request):
-    """Handle user logout"""
-    logout(request)
-    
-    response = Response({'message': 'Logged out successfully'})
-    response.delete_cookie(settings.SESSION_COOKIE_NAME)
-    
-    return response
 
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def me_view(request):
-    """Get current authenticated user information"""
-    serializer = UserSerializer(request.user)
-    return Response(serializer.data)
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def verify_token(request):
-    """
-    Verifies a JWT token and returns the associated user information.
-    This endpoint is primarily used by other microservices to validate tokens
-    and get user details.
-    """
-    token = request.headers.get('Authorization')
-    
-    if not token or not token.startswith('Bearer '):
-        return Response(
-            {'error': 'Authorization header must be provided with Bearer token'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    
-    try:
-        token = token.split(' ')[1]
-        
-        access_token = AccessToken(token)
-        user_id = access_token.payload.get('user_id')
-        
-        try:
-            user = User.objects.get(id=user_id)
-        except ObjectDoesNotExist:
-            return Response(
-                {'error': 'User not found'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        return Response({
-            'valid': True,
-            'user': UserSerializer(user).data
-        })
-        
-    except TokenError as e:
-        return Response(
-            {'error': 'Token is invalid or expired'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    except InvalidToken as e:
-        return Response(
-            {'error': 'Token is invalid'},
-            status=status.HTTP_401_UNAUTHORIZED
-        )
-    except Exception as e:
-        return Response(
-            {'error': 'An error occurred while verifying the token'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    
-@api_view(['GET'])
-@authentication_classes([SessionAuthentication])
-@permission_classes([IsAuthenticated])
-def get_ws_token(request):
-    """
-    Generate a short-lived JWT token for WebSocket authentication.
-    This endpoint is called by authenticated users (with valid session)
-    to get a JWT token for WebSocket connections.
-    """
-    try:
-        # Create a token with shorter lifetime for WebSocket
-        token = AccessToken.for_user(request.user)
-        
-        # Set a shorter lifetime (e.g., 1 hour) for WebSocket tokens
-        token.set_exp(lifetime=timedelta(hours=1))
-        
-        # Include basic user info in token payload
-        token['username'] = request.user.username
-        token['display_name'] = request.user.display_name
-        
-        return Response({
-            'token': str(token),
-            'expires_in': 3600
-        })
-    except Exception as e:
-        return Response(
-            {'error': 'Failed to generate WebSocket token'},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-    
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_user(request):
@@ -838,12 +878,11 @@ def disable_2fa(request):
 @permission_classes([AllowAny])
 @renderer_classes([JSONRenderer])
 def health_check(request):
-    """
-    Basic health check endpoint that verifies database connection
-    """
+    """Basic health check endpoint that verifies database connection"""
     health_status = {
         'status': 'healthy',
         'database': 'unavailable',
+        'auth_type': 'JWT'
     }
 
     try:

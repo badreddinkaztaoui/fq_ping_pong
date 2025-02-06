@@ -1,121 +1,37 @@
 import { View } from '../core/View';
 import { wsManager } from '../utils/WebSocketManager';
 import { userState } from '../utils/UserState';
-import "../styles/dashboard/chat.css"
 import { Http } from '../utils/Http';
+import { friendsStore } from '../utils/FriendsState';
+import "../styles/dashboard/chat.css"
 
 export class ChatView extends View {
     constructor(params = {}) {
         super();
         this.friends = [];
-        this.friendRequests = [];
         this.currentChatId = params.id || null;
-        this.messages = [];
-        this.hasMoreMessages = true;
-        this.isLoadingMore = false;
-        this.page = 0;
-        this.messagesPerPage = 50;
-        this.connectionStatus = 'disconnected';
-        this.error = null;
-        this.http = new Http(userState)
-
+        this.messages = new Map();
+        this.pendingMessages = new Set();
+        this.connectionState = {
+            status: 'disconnected',
+            lastAttempt: null,
+            error: null
+        };
+        
+        this.http = new Http(userState);
+        
         this.handleMessage = this.handleMessage.bind(this);
         this.handleStatus = this.handleStatus.bind(this);
-        this.handleScroll = this.handleScroll.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
-        this.showError = this.showError.bind(this);
-        this.hideError = this.hideError.bind(this);
+        this.initializeChat = this.initializeChat.bind(this);
     }
 
-    showError(message) {
-        if (this.errorElement) {
-            this.error = message;
-            this.errorElement.textContent = message;
-            this.errorElement.style.display = 'block';
-        } else {
-            console.error('Error element not found:', message);
-        }
-    }
-
-    hideError() {
-        if (this.errorElement) {
-            this.error = null;
-            this.errorElement.style.display = 'none';
-        }
-    }
-
-    renderFriendsList() {
-        if (!this.friendsList) {
-            console.error('Friends list element not found');
-            return;
-        }
-
-        if (!this.friends?.length) {
-            this.friendsList.innerHTML = `
-                <div class="no-friends">
-                    <p>NO AGENTS FOUND</p>
-                </div>
-            `;
-            return;
-        }
-
-        this.friendsList.innerHTML = this.friends.map(friend => `
-            <div class="friend-item ${this.currentChatId === friend.friendship_id ? 'active' : ''}" 
-                 data-friend-id="${friend.friend.id}" 
-                 data-friendship-id="${friend.friendship_id}">
-                <div class="friend-avatar">
-                    <img src="${friend.friend.avatar_url || '/default-avatar.png'}" alt="${friend.friend.username}">
-                    <span class="status-indicator ${friend.friend.online ? 'online' : 'offline'}"></span>
-                </div>
-                <div class="friend-info">
-                    <div class="friend-name">${friend.friend.username}</div>
-                    <div class="friend-status">${friend.friend.online ? 'ONLINE' : 'OFFLINE'}</div>
-                </div>
-                <div class="friend-actions">
-                    <button class="action-btn remove-friend" data-friendship-id="${friend.friendship_id}">
-                        <i class="fas fa-user-minus"></i>
-                    </button>
-                    <button class="action-btn block-friend" data-user-id="${friend.friend.id}">
-                        <i class="fas fa-ban"></i>
-                    </button>
-                </div>
-            </div>
-        `).join('');
-
-        this.setupFriendHandlers();
-    }
-
-    renderFriendRequests() {
-        if (!this.friendRequests?.length) {
-            if (this.requestsElement) {
-                this.requestsElement.innerHTML = '';
-            }
-            return;
-        }
-
-        const requestsHtml = `
-            <div class="requests-header">
-                <h3 class="valorant-subheading">PENDING REQUESTS</h3>
-            </div>
-            ${this.friendRequests.map(request => `
-                <div class="friend-request-item">
-                    <div class="friend-avatar">
-                        <img src="${request.user.avatar_url || '/default-avatar.png'}" alt="${request.user.username}">
-                    </div>
-                    <div class="friend-info">
-                        <div class="friend-name">${request.user.username}</div>
-                    </div>
-                    <div class="friend-request-actions">
-                        <button class="accept-btn" data-friendship-id="${request.id}">ACCEPT</button>
-                        <button class="reject-btn" data-friendship-id="${request.id}">REJECT</button>
-                    </div>
-                </div>
-            `).join('')}
-        `;
-
-        if (this.requestsElement) {
-            this.requestsElement.innerHTML = requestsHtml;
-            this.setupRequestHandlers();
+    async afterMount() {
+        this.initializeElements();
+        await this.loadFriends();
+        
+        if (this.currentChatId) {
+            await this.initializeChat();
         }
     }
 
@@ -125,312 +41,226 @@ export class ChatView extends View {
         container.innerHTML = `
             <div class="friends-sidebar">
                 <div class="friends-header">
-                    <div class="friends-search">
-                        <input type="text" placeholder="Search friends..." class="valorant-input">
-                    </div>
+                    <h2>Friends</h2>
                 </div>
-                <div class="friends-sections">
-                    <div class="friend-requests"></div>
-                    <div class="friends-list">
-                        <div class="friends-loading">Loading agents...</div>
-                    </div>
+                <div class="friends-list">
+                    <div class="friends-loading">Loading friends...</div>
                 </div>
             </div>
             <div class="chat-main ${!this.currentChatId ? 'no-chat-selected' : ''}">
-                ${!this.currentChatId ? `
-                    <div class="no-chat-message">
-                        <div class="valorant-logo"></div>
-                        <h3>SELECT AN AGENT TO START CHATTING</h3>
-                    </div>
-                ` : `
-                    <div class="chat-container">
-                        <div class="chat-header">
-                            <div class="chat-status-bar"></div>
-                            <div class="chat-error"></div>
-                        </div>
-                        <div class="chat-messages">
-                            <div class="load-more-container">
-                                <button class="load-more-btn valorant-btn">VIEW PREVIOUS MESSAGES</button>
-                            </div>
-                            <div class="messages-list"></div>
-                        </div>
-                        <form class="chat-form">
-                            <div class="chat-input-container">
-                                <input type="text" class="chat-input valorant-input" placeholder="Type your message...">
-                                <button type="submit" class="chat-send-btn valorant-btn" disabled>
-                                    <svg class="send-icon" viewBox="0 0 24 24" width="24" height="24">
-                                        <path d="M22 2L11 13M22 2L15 22L11 13M11 13L2 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                `}
+                ${!this.currentChatId ? this.renderNoChatSelected() : this.renderChatInterface()}
             </div>
         `;
         return container;
     }
 
-    async afterMount() {
+    initializeElements() {
         this.friendsList = this.$('.friends-list');
-        this.friendRequests = this.$('.friend-requests');
         
         if (this.currentChatId) {
-            this.setupChatElements();
+            this.messagesList = this.$('.messages-list');
+            this.form = this.$('.chat-form');
+            this.input = this.$('.chat-input');
+            this.sendButton = this.$('.chat-send-btn');
+
+            this.setupChatEventListeners();
         }
-        
-        await this.loadFriends();
-        
-        if (this.currentChatId) {
+    }
+
+    async initializeChat() {
+        try {
             await this.loadInitialMessages();
-            this.connectWebSocket();
-        }
-
-        const searchInput = this.$('.friends-search input');
-        if (searchInput) {
-            this.addListener(searchInput, 'input', (e) => {
-                this.filterFriends(e.target.value);
-            });
+            this.initializeWebSocket();
+        } catch (error) {
+            console.error('Failed to initialize chat:', error);
         }
     }
 
-    filterFriends(query) {
-        const items = this.friendsList.querySelectorAll('.friend-item');
-        items.forEach(item => {
-            const name = item.querySelector('.friend-name').textContent.toLowerCase();
-            if (name.includes(query.toLowerCase())) {
-                item.style.display = '';
-            } else {
-                item.style.display = 'none';
+    initializeWebSocket() {
+        wsManager.removeMessageCallback(this.handleMessage);
+        wsManager.removeStatusCallback(this.handleStatus);
+        
+        wsManager.onMessage(this.handleMessage);
+        wsManager.onStatusChange(this.handleStatus);
+        
+        if (this.connectionState.status === 'disconnected') {
+            wsManager.connectToChat(this.currentChatId);
+        }
+    }
+
+    async loadInitialMessages() {
+        try {
+            const response = await this.http.get(`/chat/${this.currentChatId}/messages/`);
+            response.messages.reverse().forEach(message => {
+                this.messages.set(message.id, message);
+            });
+            this.renderMessages();
+        } catch (error) {
+            if (error.message?.includes('Authentication required')) {
+                window.location.href = '/login';
+                return;
             }
-        });
-    }
-
-
-    setupRequestHandlers() {
-        this.friendRequests.querySelectorAll('.accept-btn').forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                const friendshipId = e.target.dataset.friendshipId;
-                try {
-                    await userState.acceptFriendRequest(friendshipId);
-                    await this.loadFriends();
-                } catch (err) {
-                    this.showError('Failed to accept request');
-                }
-            });
-        });
-
-        this.friendRequests.querySelectorAll('.reject-btn').forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                const friendshipId = e.target.dataset.friendshipId;
-                try {
-                    await userState.rejectFriendRequest(friendshipId);
-                    await this.loadFriends();
-                } catch (err) {
-                    this.showError('Failed to reject request');
-                }
-            });
-        });
-    }
-
-    setupFriendHandlers() {
-        this.friendsList.querySelectorAll('.friend-item').forEach(item => {
-            this.addListener(item, 'click', () => {
-                const friendId = item.dataset.friendId;
-                this.startChat(friendId);
-            });
-        });
-
-        this.friendsList.querySelectorAll('.remove-friend').forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                e.stopPropagation();
-                const friendshipId = btn.dataset.friendshipId;
-                try {
-                    await userState.removeFriend(friendshipId);
-                    await this.loadFriends();
-                } catch (err) {
-                    this.showError('Failed to remove friend');
-                }
-            });
-        });
-
-        this.friendsList.querySelectorAll('.block-friend').forEach(btn => {
-            this.addListener(btn, 'click', async (e) => {
-                e.stopPropagation();
-                const userId = btn.dataset.userId;
-                try {
-                    await userState.blockUser(userId);
-                    await this.loadFriends();
-                } catch (err) {
-                    this.showError('Failed to block user');
-                }
-            });
-        });
-    }
-
-    setupChatElements() {
-        this.statusBar = this.$('.chat-status-bar');
-        this.errorElement = this.$('.chat-error');
-        this.messagesContainer = this.$('.chat-messages');
-        this.messagesList = this.$('.messages-list');
-        this.loadMoreBtn = this.$('.load-more-btn');
-        this.form = this.$('.chat-form');
-        this.input = this.$('.chat-input');
-        this.sendButton = this.$('.chat-send-btn');
-
-        this.setupChatEventListeners();
+            throw error;
+        }
     }
 
     setupChatEventListeners() {
-        this.addListener(this.form, 'submit', this.handleSubmit);
-        
-        this.addListener(this.input, 'input', () => {
-            this.sendButton.disabled = !this.input.value.trim() || 
-                this.connectionStatus !== 'connected';
-        });
-        
-        this.addListener(this.messagesContainer, 'scroll', this.handleScroll);
-        this.addListener(this.loadMoreBtn, 'click', () => this.loadMoreMessages());
+        if (this.form) {
+            this.addListener(this.form, 'submit', this.handleSubmit);
+        }
+        if (this.input) {
+            this.addListener(this.input, 'input', () => this.handleInputChange());
+        }
+    }
+
+    renderNoChatSelected() {
+        return `
+            <div class="no-chat-message">
+                <h3>Select a friend to start chatting</h3>
+            </div>
+        `;
+    }
+
+    renderChatInterface() {
+        return `
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div class="chat-status">${this.connectionState.status}</div>
+                </div>
+                <div class="messages-list"></div>
+                <form class="chat-form">
+                    <input type="text" 
+                           class="chat-input" 
+                           placeholder="Type a message..."
+                           ${this.connectionState.status === 'connected' ? '' : 'disabled'}>
+                    <button type="submit" 
+                            class="chat-send-btn" 
+                            ${this.connectionState.status === 'connected' ? '' : 'disabled'}>
+                        Send
+                    </button>
+                </form>
+            </div>
+        `;
     }
 
     async loadFriends() {
         try {
-            const friends = await userState.getFriends();
+            const friends = await friendsStore.loadFriends();
             this.friends = friends;
+            
+            this.unsubscribeFriends = friendsStore.subscribe(updatedFriends => {
+                this.friends = updatedFriends;
+                this.renderFriendsList();
+            });
+            
             this.renderFriendsList();
-        } catch (err) {
-            this.showError('Failed to load friends list');
+        } catch (error) {
+            console.error('Failed to load friends:', error);
         }
     }
 
-    connectWebSocket() {
-        if (!this.currentChatId) {
-            console.error('No chat ID available for WebSocket connection');
+    renderFriendsList() {
+        if (!this.friends?.length) {
+            this.friendsList.innerHTML = '<div class="no-friends">No friends found</div>';
             return;
         }
-
-        wsManager.disconnect(this.currentChatId);
-        wsManager.onMessage(this.handleMessage);
-        wsManager.onStatusChange(this.handleStatus);
-        wsManager.connectToChat(this.currentChatId);
+    
+        this.friendsList.innerHTML = this.friends.map(friend => `
+            <div class="friend-item ${this.currentChatId === friend.friend.id ? 'active' : ''}" 
+                 data-friendship-id="${friend.friend.id}">
+                <div class="friend-info">
+                    <div class="friend-name">${friend.friend.username}</div>
+                    <div class="friend-status ${friend.friend.status || 'offline'}"></div>
+                </div>
+            </div>
+        `).join('');
+    
+        this.setupFriendHandlers();
     }
 
-    beforeUnmount() {
+    async startChat(friendId) {
         if (this.currentChatId) {
             wsManager.removeMessageCallback(this.handleMessage);
             wsManager.removeStatusCallback(this.handleStatus);
             wsManager.disconnect(this.currentChatId);
         }
-    }
-
-    async startChat(friendId) {
+    
         try {
             const response = await this.http.post('/chat/start/', {
                 friend_id: friendId
             });
             
-            if (response.id) {
-                window.history.pushState({}, '', `/chat/${response.id}`);
-                this.currentChatId = response.id;
-                
-                const newContent = await this.render();
-                this.element.innerHTML = newContent.innerHTML;
-                
-                this.setupChatElements();
-                
-                await this.loadInitialMessages();
-                this.connectWebSocket();
+            const chatId = response.id;
+            if (!chatId) {
+                throw new Error('Failed to get chat ID from server');
             }
-        } catch (err) {
-            console.error('Failed to start chat:', err);
-            this.showError('Failed to start chat');
-        }
-    }
-
-
-    handleMessage(msgChatId, message) {
-        if (msgChatId === this.chatId) {
-            this.messages.push(message);
-            this.renderMessage(message);
-            this.scrollToBottom();
-        }
-    }
-
-    handleStatus(statusChatId, status) {
-        if (statusChatId === this.chatId) {
-            this.connectionStatus = status;
-            this.updateStatusBar();
-            this.sendButton.disabled = !this.input.value.trim() || status !== 'connected';
+    
+            window.history.pushState({}, '', `/dashboard/chat/${chatId}`);
+            this.currentChatId = chatId;
+            this.messages = new Map();
+            this.pendingMessages = new Set();
+            this.connectionState = {
+                status: 'disconnected',
+                lastAttempt: null,
+                error: null
+            };
+    
+            const newContent = await this.render();
+            this.element.innerHTML = newContent.innerHTML;
             
-            if (status === 'error') {
-                this.showError('Connection error occurred');
-            } else {
-                this.hideError();
+            this.initializeElements();
+            await this.initializeChat();
+    
+            const activeFriend = this.friendsList.querySelector('.friend-item.active');
+            if (activeFriend) {
+                activeFriend.classList.remove('active');
             }
-        }
-    }
-
-    async handleSubmit(e) {
-        e.preventDefault();
-        const message = this.input.value.trim();
-        if (!message) return;
-
-        try {
-            const success = wsManager.send(this.chatId, {
-                type: 'chat_message',
-                message: message
-            });
-
-            if (!success) {
-                this.showError('Failed to send message - not connected');
+    
+            const newActiveFriend = this.friendsList.querySelector(`[data-friendship-id="${friendId}"]`);
+            if (newActiveFriend) {
+                newActiveFriend.classList.add('active');
+            }
+    
+        } catch (error) {
+            if (error.message?.includes('Authentication required')) {
+                window.location.href = '/login';
                 return;
             }
-
-            this.input.value = '';
-            this.sendButton.disabled = true;
-        } catch (err) {
-            this.showError('Failed to send message');
+            console.error('Failed to start chat:', error);
         }
     }
-
-    async handleScroll() {
-        const { scrollTop } = this.messagesContainer;
-        if (scrollTop === 0) {
-            await this.loadMoreMessages();
-        }
+    
+    setupFriendHandlers() {
+        const friendItems = this.friendsList.querySelectorAll('.friend-item');
+        friendItems.forEach(item => {
+            const friendId = item.dataset.friendshipId;
+            this.addListener(item, 'click', () => {
+                if (this.currentChatId === friendId) return;
+                this.startChat(friendId);
+            });
+        });
     }
 
-    async loadMoreMessages() {
-        if (this.isLoadingMore || !this.hasMoreMessages) return;
-        
+    async loadInitialMessages() {
         try {
-            this.isLoadingMore = true;
-            const offset = this.messages.length;
-            
-            const response = await this.http.get(`/chat/${this.currentChatId}/messages/?offset=${offset}&limit=${this.messagesPerPage}`);
-            
-            if (response.messages.length < this.messagesPerPage) {
-                this.hasMoreMessages = false;
-                this.loadMoreBtn.style.display = 'none';
-            }
-            
-            this.messages = [...response.messages.reverse(), ...this.messages];
-            
-            const scrollHeight = this.messagesContainer.scrollHeight;
+            const response = await this.http.get(`/chat/${this.currentChatId}/messages/`);
+            response.messages.reverse().forEach(message => {
+                this.messages.set(message.id, message);
+            });
             this.renderMessages();
-            const newScrollHeight = this.messagesContainer.scrollHeight;
-            this.messagesContainer.scrollTop = newScrollHeight - scrollHeight;
-            
         } catch (error) {
-            this.showError('Failed to load messages');
-        } finally {
-            this.isLoadingMore = false;
+            if (error.message?.includes('Authentication required')) {
+                window.location.href = '/login';
+            }
         }
     }
 
     renderMessages() {
         this.messagesList.innerHTML = '';
-        this.messages.forEach(message => this.renderMessage(message));
+        Array.from(this.messages.values()).forEach(message => {
+            this.renderMessage(message);
+        });
+        this.scrollToBottom();
     }
 
     renderMessage(message) {
@@ -440,38 +270,113 @@ export class ChatView extends View {
         messageElement.className = `chat-message ${isOwnMessage ? 'own-message' : 'other-message'}`;
         messageElement.innerHTML = `
             <div class="message-content">
-                <div class="message-text">${this.escapeHtml(message.content)}</div>
-                <div class="message-time">${this.formatTimestamp(message.created_at)}</div>
+                <div class="message-text">${message.content}</div>
+                <div class="message-time">${this.formatTime(message.timestamp)}</div>
             </div>
         `;
 
         this.messagesList.appendChild(messageElement);
+        this.scrollToBottom();
     }
 
-    updateStatusBar() {
-        let statusText = '';
-        let statusClass = '';
+    formatTime(timestamp) {
+        return new Date(timestamp).toLocaleTimeString([], { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
 
-        switch (this.connectionStatus) {
-            case 'connecting':
-                statusText = 'CONNECTING...';
-                statusClass = 'status-connecting';
-                break;
-            case 'error':
-                statusText = 'CONNECTION ERROR';
-                statusClass = 'status-error';
-                break;
-            case 'disconnected':
-                statusText = 'DISCONNECTED';
-                statusClass = 'status-disconnected';
-                break;
-            default:
-                this.statusBar.style.display = 'none';
-                return;
+    scrollToBottom() {
+        this.messagesList.scrollTop = this.messagesList.scrollHeight;
+    }
+
+    async handleSubmit(e) {
+        e.preventDefault();
+        const content = this.input.value.trim();
+        if (!content) return;
+
+        const messageId = Date.now().toString();
+        const message = {
+            id: messageId,
+            content,
+            sender_id: userState.getState().user?.id,
+            timestamp: new Date().toISOString()
+        };
+
+        try {
+            this.messages.set(messageId, message);
+            this.renderMessage(message);
+            this.input.value = '';
+            
+            await wsManager.send(this.currentChatId, {
+                type: 'chat_message',
+                message: content
+            });
+        } catch (error) {
+            console.error('Failed to send message:', error);
+        }
+    }
+
+    handleMessage(chatId, data) {
+        if (chatId !== this.currentChatId) return;
+        if (data.type === 'chat_message') {
+            this.messages.set(data.message.id, data.message);
+            this.renderMessage(data.message);
+        }
+    }
+
+    handleStatus(chatId, status) {
+        if (chatId !== this.currentChatId) return;
+        this.connectionState.status = status;
+        this.updateConnectionStatus();
+    }
+
+    updateConnectionStatus() {
+        const statusElement = this.element.querySelector('.chat-status');
+        if (statusElement) {
+            statusElement.textContent = this.connectionState.status;
+            statusElement.className = `chat-status ${this.connectionState.status}`;
         }
 
-        this.statusBar.textContent = statusText;
-        this.statusBar.className = `chat-status-bar ${statusClass}`;
-        this.statusBar.style.display = 'block';
+        if (this.input) {
+            this.input.disabled = this.connectionState.status !== 'connected';
+        }
+        if (this.sendButton) {
+            this.sendButton.disabled = this.connectionState.status !== 'connected';
+        }
+    }
+
+    initializeElements() {
+        this.friendsList = this.$('.friends-list');
+        
+        if (this.currentChatId) {
+            this.messagesList = this.$('.messages-list');
+            this.form = this.$('.chat-form');
+            this.input = this.$('.chat-input');
+            this.sendButton = this.$('.chat-send-btn');
+
+            this.addListener(this.form, 'submit', this.handleSubmit);
+        }
+    }
+
+    async afterMount() {
+        this.initializeElements();
+        await this.loadFriends();
+        
+        if (this.currentChatId) {
+            await this.initializeChat();
+        }
+    }
+
+    beforeUnmount() {
+        if (this.currentChatId) {
+            wsManager.removeMessageCallback(this.handleMessage);
+            wsManager.removeStatusCallback(this.handleStatus);
+            wsManager.disconnect(this.currentChatId);
+        }
+
+        if (this.unsubscribeFriends) {
+            this.unsubscribeFriends();
+        }
     }
 }

@@ -91,11 +91,6 @@ const routes = [
     handler: AuthGuard.requireAuth,
   },
   {
-    path: "/dashboard/blocked-friends",
-    view: BlockedFriendsView,
-    handler: AuthGuard.requireAuth,
-  },
-  {
     path: "/dashboard/classment",
     view: ClassmentView,
     handler: AuthGuard.requireAuth,

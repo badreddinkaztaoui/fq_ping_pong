@@ -190,32 +190,9 @@ export class FriendsView extends View {
         this.searchResults = [];
     }
 
-    // async performSearch() {
-    //     try {
-    //         this.isSearching = true;
-    //         this.loading = true;
-    //         this.$('.loading-overlay').classList.add('active');
-
-    //         // Perform search, excluding friends and blocked users
-    //         const response = await userState.searchUsers(this.searchQuery, {
-    //             exclude_friends: false,
-    //             exclude_blocked: true,
-    //             limit: 10
-    //         });
-
-    //         this.searchResults = response.results;
-    //         this.renderSearchResults();
-    //     } catch (err) {
-    //         console.error('Search failed:', err);
-    //         this.showError('Failed to perform search');
-    //     } finally {
-    //         this.loading = false;
-    //         this.$('.loading-overlay').classList.remove('active');
-    //     }
-    // }
     async performSearch(query) {
         try {
-            if (query.length < 2) return; // Minimum 2 characters for search
+            if (query.length < 2) return;
 
             this.loading = true;
             this.$('.loading-overlay').classList.add('active');
