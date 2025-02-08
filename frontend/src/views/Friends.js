@@ -1,10 +1,12 @@
 import { View } from '../core/View';
 import { userState } from '../utils/UserState';
+import { MessageHandler } from '../utils/MessageHandler';
 import "../styles/dashboard/friends.css"
 
 export class FriendsView extends View {
     constructor() {
         super();
+        this.toast = new MessageHandler()
         this.state = {
             friends: [],
             friendRequests: [],
@@ -230,14 +232,13 @@ export class FriendsView extends View {
             unblockFriend: () => this.unblockFriend(target.dataset.friendId),
             acceptRequest: () => this.acceptFriendRequest(target.dataset.requestId),
             rejectRequest: () => this.rejectFriendRequest(target.dataset.requestId),
-            message: () => this.openChat(target.dataset.friendId)
         };
 
         if (actions[action]) {
             try {
                 await actions[action]();
             } catch (error) {
-                this.handleError(`Failed to ${action}`, error);
+                this.toast.error(error.message)
             }
         }
     }
@@ -285,7 +286,7 @@ export class FriendsView extends View {
             
             this.updateSearchResults();
         } catch (error) {
-            this.handleError('Search failed', error);
+            this.toast.error(error.message)
         }
     }
 
@@ -321,7 +322,7 @@ export class FriendsView extends View {
                 </div>
                 <div class="search-result-actions">
                     ${user.is_friend ? 
-                      '<span class="friend-status">Already Friends</span>' :
+                      '<span class="already-friend">Already Friends</span>' :
                       `<button class="valorant-btn send-request-btn" 
                               data-action="sendRequest" 
                               data-user-id="${user.id}">
@@ -513,7 +514,7 @@ export class FriendsView extends View {
 
             this.updateLists();
         } catch (error) {
-            this.handleError('Failed to load friends', error);
+            this.toast.error(error.message)
         }
     }
 
@@ -572,8 +573,7 @@ export class FriendsView extends View {
                     </span>
                 `;
             }
-    
-            this.showToast('Friend request sent successfully', 'success');
+            this.toast.success('Friend request sent successfully')
             this.closeModal();
         } catch (error) {
             const searchResultCard = this.$(`.search-result-card[data-user-id="${userId}"]`);
@@ -587,9 +587,7 @@ export class FriendsView extends View {
                     </button>
                 `;
             }
-    
-            this.handleError('Failed to send friend request', error);
-            this.showToast('Failed to send friend request', 'error');
+            this.toast.error(error.message)
         }
     }
 
@@ -677,7 +675,7 @@ export class FriendsView extends View {
                     await this.rejectFriendRequest(requestId);
                 }
             } catch (error) {
-                this.handleError(`Failed to ${action}`, error);
+                this.toast.error(error.message)
             }
         });
     }
@@ -693,7 +691,7 @@ export class FriendsView extends View {
                 day: 'numeric'
             }).format(date);
         } catch (error) {
-            console.error('Error formatting date:', error);
+            this.toast.error(error.message)
             return 'Invalid date';
         }
     }
@@ -717,10 +715,9 @@ export class FriendsView extends View {
                     requestCard.remove();
                 }, { once: true });
             }
-    
             await this.loadFriends();
             
-            this.showToast('Friend request accepted', 'success');
+            this.toast.success('Friend request accepted')
         } catch (error) {
             const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
             if (requestCard) {
@@ -730,9 +727,7 @@ export class FriendsView extends View {
                     btn.classList.remove('loading');
                 });
             }
-    
-            this.handleError('Failed to accept friend request', error);
-            this.showToast('Failed to accept friend request', 'error');
+            this.toast.error(error.message)
         }
     }
 
@@ -758,7 +753,7 @@ export class FriendsView extends View {
     
             await this.loadFriends();
             
-            this.showToast('Friend request rejected', 'success');
+            this.toast.success('Friend request rejected');
         } catch (error) {
             const requestCard = this.$(`.friend-request-card[data-request-id="${requestId}"]`);
             if (requestCard) {
@@ -768,9 +763,7 @@ export class FriendsView extends View {
                     btn.classList.remove('loading');
                 });
             }
-    
-            this.handleError('Failed to reject friend request', error);
-            this.showToast('Failed to reject friend request', 'error');
+            this.toast.error(error.message)
         }
     }
 
@@ -788,18 +781,15 @@ export class FriendsView extends View {
                     friendCard.remove();
                 }, { once: true });
             }
-    
             await this.loadFriends();
-            
-            this.showToast('User blocked', 'success');
+
+            this.toast.success('User blocked')
         } catch (error) {
             const friendCard = this.$(`.friend-card[data-friend-id="${userId}"]`);
             if (friendCard) {
                 friendCard.classList.remove('blocking');
             }
-    
-            this.handleError('Failed to block user', error);
-            this.showToast('Failed to block user', 'error');
+            this.toast.error(error.message)
         }
     }
 
@@ -807,48 +797,10 @@ export class FriendsView extends View {
         try {
             await userState.unblockUser(userId);
             await this.loadFriends();
-            this.showSuccess('User unblocked');
+            this.toast.success('User unblocked')
         } catch (error) {
-            this.handleError('Failed to unblock user', error);
+            this.toast.error(error.message);
         }
-    }
-
-    showToast(message, type = 'info') {
-        let toastContainer = this.$('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container';
-            this.element.appendChild(toastContainer);
-        }
-    
-        const toast = document.createElement('div');
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-    
-        toastContainer.appendChild(toast);
-    
-        setTimeout(() => {
-            toast.classList.add('toast-out');
-            toast.addEventListener('transitionend', () => {
-                toast.remove();
-            }, { once: true });
-        }, 3000);
-    }
-
-    openChat(friendId) {
-        window.location.href = `/chat/${friendId}`;
-    }
-
-    handleError(message, error) {
-        console.error(message, error);
-        this.setState({ 
-            error: message,
-            loading: false 
-        });
-    }
-
-    showSuccess(message) {
-        console.log(message);
     }
 
     async beforeUnmount() {

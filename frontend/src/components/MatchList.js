@@ -1,5 +1,5 @@
 import "../styles/dashboard/matches.css"
-import { matches } from '../utils/sampleData.js';
+import { matches } from '../mocks/sampleData.js';
 
 export function MatchList() {
   if (!matches || matches.length === 0) {

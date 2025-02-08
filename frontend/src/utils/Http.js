@@ -46,7 +46,7 @@ export class Http {
       this.accessToken = response.access_token;
       return this.accessToken;
     } catch (error) {
-      console.error('Failed to fetch access token:', error);
+      console.error(error.message);
       return null;
     }
   }
@@ -126,9 +126,8 @@ export class Http {
         return data;
       }
 
-      throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
+      throw new Error(data.error?.message || data.message || `HTTP error! status: ${response.status}`);
     } catch (error) {
-      console.error('Request failed:', error);
       throw error;
     }
   }

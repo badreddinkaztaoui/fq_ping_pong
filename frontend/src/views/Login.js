@@ -2,6 +2,7 @@ import { View } from '../core/View';
 import { State } from "../core/State"
 import { userState } from '../utils/UserState';
 import { Validation } from '../utils/Validation';
+import { MessageHandler } from '../utils/MessageHandler';
 import "../styles/login.css";
 
 export class LoginView extends View {
@@ -9,6 +10,7 @@ export class LoginView extends View {
     super();
     this.userState = userState;
     this.validation = new Validation();
+    this.toast = new MessageHandler()
     this.state = new State({
       loading: false,
       error: null,
@@ -99,8 +101,6 @@ export class LoginView extends View {
             </form>
           </div>
         </div>
-
-        <div id="toast" class="toast"></div>
       </div>
     `;
 
@@ -124,10 +124,8 @@ export class LoginView extends View {
           'Email address is too long (maximum 100 characters)';
     }
 
-    if (!password || password.length < 8 || password.length > 50) {
-      errors.password = !password ? 'Password is required' :
-        password.length < 8 ? 'Password must be at least 8 characters long' :
-          'Password is too long (maximum 50 characters)';
+    if (!password) {
+      errors.password = 'Password is required'
     }
 
     const hasErrors = Object.keys(errors).length > 0;
@@ -193,22 +191,18 @@ export class LoginView extends View {
     });
   }
 
-  showToast(message, type = 'error', duration = 5000) {
-    const toast = this.$('#toast');
-    if (!toast) return;
-
-    toast.textContent = message;
-    toast.className = `toast ${type} visible`;
-    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-
-    setTimeout(() => {
-      toast.classList.remove('visible');
-      setTimeout(() => {
-        toast.textContent = '';
-        toast.className = 'toast';
-        toast.removeAttribute('role');
-      }, 300);
-    }, duration);
+  showToast(message, type = 'error') {
+    switch(type) {
+      case 'success':
+        this.toast.success(message);
+        break;
+      case 'error':
+        this.toast.error(message);
+        break;
+      case 'info':
+        this.toast.warning(message);
+        break;
+    }
   }
 
   showTwoFactorInput() {
@@ -245,10 +239,9 @@ export class LoginView extends View {
       submitBtn.disabled = true;
 
       try {
-        console.log(this.state.state.tempUserId, " <--------> ", twoFactorCode)
         await this.userState.verify2FALogin(this.state.state.tempUserId, twoFactorCode);
 
-        this.showToast('Login successful! Redirecting...', 'success', 3000);
+        this.showToast('Login successful! Redirecting...', 'success');
         setTimeout(() => this.router.navigate('/dashboard'), 1000);
       } catch (error) {
         this.state.setState({ error, loading: false });
@@ -269,22 +262,23 @@ export class LoginView extends View {
           email: email.toLowerCase().trim(),
           password
         });
-
+      
         if (response.requires_2fa) {
           this.state.setState({
-            requires2FA: true,
+            requires2FA: true, 
             tempUserId: response.user_id
           });
           this.showTwoFactorInput();
           submitBtn.textContent = 'Verify Code';
         } else {
-          this.showToast('Login successful! Redirecting...', 'success', 3000);
+          this.showToast('Login successful! Redirecting...', 'success');
           setTimeout(() => this.router.navigate('/dashboard'), 1000);
         }
       } catch (error) {
         this.state.setState({ error, loading: false });
-        this.showToast(error.message);
+        this.showToast(error.error?.message || error.message);
         submitBtn.textContent = 'Sign In';
+        submitBtn.disabled = false;
       }
       submitBtn.disabled = false;
     }

@@ -183,6 +183,14 @@
   flex: 1;
 }
 
+.already-friend {
+  background-color: #f9673e2c;
+  color: #f9673edf;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 4px;
+}
+
 /* Modern avatar styling */
 .avatar-wrapper {
   position: relative;
@@ -613,13 +621,13 @@
 }
 
 /* User Information Styles */
-.user-info {
+.search-results .user-info {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.user-info img {
+.search-results .user-info img {
   width: 40px;
   height: 40px;
   border-radius: 50%;

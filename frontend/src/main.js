@@ -1,5 +1,4 @@
 import { Router } from "./core/Router.js";
-import { ErrorBoundary } from "./core/ErrorBoundary.js";
 import { AuthGuard } from "./utils/AuthGuard.js";
 
 import { HomeView } from "./views/Home.js";
@@ -24,7 +23,6 @@ import { ResetPasswordConfirmView } from "./views/ResetPasswordConfirm.js";
 import { FlapyBirdGameView } from "./views/FlapyBirdGame.js";
 import { CubeDiceGameView } from "./views/CubeDiceGame.js";
 import { TrainingView } from "./views/Training";
-const errorBoundary = new ErrorBoundary();
 
 const routes = [
   {
@@ -149,7 +147,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("unhandledrejection", (event) => {
   console.error("Unhandled promise rejection:", event.reason);
-  errorBoundary.handleError(event.reason);
 });
 
 export default router;

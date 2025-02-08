@@ -1,5 +1,7 @@
 import uuid
 from django.contrib.auth.models import AbstractUser, BaseUserManager
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 
 class CustomUserManager(BaseUserManager):
@@ -30,6 +32,7 @@ class User(AbstractUser):
     is_online = models.BooleanField(default=False)
     last_active = models.DateTimeField(auto_now=True)
     blocked_users = models.ManyToManyField('self', symmetrical=False, related_name='blocked_by_users', blank=True)
+    coins = models.IntegerField(default=500)
 
     REQUIRED_FIELDS = ['email']
     objects = CustomUserManager()
@@ -70,3 +73,53 @@ class UserBlock(models.Model):
 
     def __str__(self):
         return f"{self.user.username} blocked {self.blocked_user.username}"
+
+class Notification(models.Model):
+    TYPE_FRIEND_REQUEST = 'friend_request'
+    TYPE_FRIEND_ACCEPT = 'friend_accept'
+    TYPE_FRIEND_REJECT = 'friend_reject'
+    TYPE_USER_MENTION = 'user_mention'
+    TYPE_SYSTEM_UPDATE = 'system_update'
+    
+    NOTIFICATION_TYPES = [
+        (TYPE_FRIEND_REQUEST, 'Friend Request'),
+        (TYPE_FRIEND_ACCEPT, 'Friend Request Accepted'),
+        (TYPE_FRIEND_REJECT, 'Friend Request Rejected'),
+        (TYPE_USER_MENTION, 'User Mention'),
+        (TYPE_SYSTEM_UPDATE, 'System Update')
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    recipient = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='notifications'
+    )
+    notification_type = models.CharField(
+        max_length=50,
+        choices=NOTIFICATION_TYPES
+    )
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.UUIDField(null=True)
+    related_object = GenericForeignKey('content_type', 'object_id')
+    
+    action_url = models.CharField(max_length=255, blank=True, null=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['recipient', '-created_at']),
+            models.Index(fields=['is_read', '-created_at'])
+        ]
+
+    def __str__(self):
+        return f"{self.notification_type} for {self.recipient.username}"
+
+    def mark_as_read(self):
+        self.is_read = True
+        self.save()

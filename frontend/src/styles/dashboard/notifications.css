@@ -25,9 +25,57 @@
 
 .val-header__content {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.val-header__left {
+  display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.val-header__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.val-info__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.val-info__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.val-info__actions .val-btn {
+  background-color: #0000005e;
+  color: white;
+  font-weight: bold;
+}
+
+.val-info__actions .val-btn:hover {
+  background-color: #00000041;
+}
+
+.val-btn--icon {
+  background: transparent;
+  padding: 4px;
+  color: #8b978f;
+  border: 1px solid transparent;
+  display: grid;
+  place-items: center;
+}
+
+.val-btn--icon:hover {
+  color: #ece8e1;
+  border-color: #8b978f;
 }
 
 .val-header__title {
@@ -64,12 +112,12 @@
   overflow: hidden;
   transition: all 0.3s ease;
   border: 1px solid transparent;
+  transition: all 0.3s ease, opacity 0.3s ease, transform 0.3s ease;
 }
 
-.val-card:hover {
-  transform: translateY(-2px);
-  border-color: #ff4655;
-  box-shadow: 0 0 20px rgba(255, 70, 85, 0.2);
+.val-card.removing {
+  opacity: 0;
+  transform: translateX(100%);
 }
 
 .val-card__glow {
@@ -99,22 +147,14 @@
   height: 100%;
   border-radius: 8px;
   object-fit: cover;
+  display: grid;
+  place-items: center;
   border: 2px solid #ff4655;
 }
 
-.val-type-icon {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  background: #1f2933;
-  border-radius: 50%;
-  padding: 4px;
-  border: 2px solid #ff4655;
-}
-
-.val-icon {
-  width: 20px;
-  height: 20px;
+.val-avatar__img svg {
+  width: 70%;
+  height: 70%;
   fill: #ff4655;
 }
 

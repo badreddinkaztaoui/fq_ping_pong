@@ -2,6 +2,7 @@ import { View } from '../core/View';
 import { State } from "../core/State"
 import { Validation } from '../utils/Validation';
 import { userState } from '../utils/UserState';
+import { MessageHandler } from '../utils/MessageHandler';
 import "../styles/register.css";
 
 export class SignupView extends View {
@@ -9,6 +10,7 @@ export class SignupView extends View {
     super();
     this.userState = userState;
     this.validation = new Validation();
+    this.toast = new MessageHandler()
     this.state = new State({
       loading: false,
       error: null,
@@ -92,8 +94,6 @@ export class SignupView extends View {
                         </form>
                     </div>
                 </div>
-
-                <div id="toast" class="toast"></div>
             </div>
         `;
 
@@ -173,22 +173,18 @@ export class SignupView extends View {
     });
   }
 
-  showToast(message, type = 'error', duration = 5000) {
-    const toast = this.$('#toast');
-    if (!toast) return;
-
-    toast.textContent = message;
-    toast.className = `toast ${type} visible`;
-    toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
-
-    setTimeout(() => {
-      toast.classList.remove('visible');
-      setTimeout(() => {
-        toast.textContent = '';
-        toast.className = 'toast';
-        toast.removeAttribute('role');
-      }, 300);
-    }, duration);
+  showToast(message, type = 'error') {
+    switch(type) {
+      case 'success':
+        this.toast.success(message);
+        break;
+      case 'error':
+        this.toast.error(message);
+        break;
+      case 'info':
+        this.toast.warning(message);
+        break;
+    }
   }
 
   async handleSubmit(event) {
@@ -211,14 +207,11 @@ export class SignupView extends View {
 
     try {
       await this.userState.register(data);
-      this.showToast('Account created successfully! Redirecting...', 'success', 3000);
+      this.showToast('Account created successfully! Redirecting...', 'success');
       setTimeout(() => this.router.navigate('/dashboard'), 1000);
     } catch (error) {
-      this.state.setState({
-        error: error.message || 'Registration failed. Please try again.',
-        loading: false
-      });
-      this.showToast(error.message || 'Registration failed. Please try again.');
+      this.state.setState({ loading: false });
+      this.showToast(error.message);
     } finally {
       submitBtn.textContent = 'CREATE ACCOUNT';
       submitBtn.disabled = false;

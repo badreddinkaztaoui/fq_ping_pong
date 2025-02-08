@@ -32,7 +32,7 @@ export class UserState extends State {
         user: null,
         isAuthenticated: false,
         loading: false,
-        error: error.message
+        error: error.error?.message || error.message
       });
     }
   }
@@ -47,7 +47,6 @@ export class UserState extends State {
         this.accessToken = response.access_token;
         return this.accessToken;
     } catch (error) {
-        console.error('Failed to get WebSocket token:', error);
         throw error;
     }
   }
@@ -68,7 +67,7 @@ export class UserState extends State {
       return response;
     } catch (error) {
       this.setState({
-        error: error.message,
+        error: error.error?.message || error.message,
         loading: false
       });
       throw error;
@@ -91,7 +90,7 @@ export class UserState extends State {
       return response;
     } catch (error) {
       this.setState({
-        error: error.message,
+        error: error.error?.message || error.message,
         loading: false
       });
       throw error;
@@ -108,7 +107,6 @@ export class UserState extends State {
         error: null
       });
     } catch (error) {
-      console.error('Logout error:', error);
       throw error;
     }
   }
@@ -132,7 +130,7 @@ export class UserState extends State {
       return response;
     } catch (error) {
       this.setState({
-        error: error.message,
+        error: error.error?.message || error.message,
         loading: false
       });
       throw error;
@@ -148,7 +146,7 @@ export class UserState extends State {
       window.location.href = response.authorization_url;
     } catch (error) {
       this.setState({
-        error: error.message,
+        error: error.error?.message || error.message,
         loading: false
       });
       throw error;
@@ -169,7 +167,7 @@ export class UserState extends State {
       window.location.href = redirectUrl;
     } catch (error) {
       this.setState({
-        error: error.message,
+        error: error.error?.message || error.message,
         loading: false
       });
       throw error;
@@ -190,7 +188,7 @@ export class UserState extends State {
       return response;
     } catch (error) {
       this.setState({ 
-        error: error.message, 
+        error: error.error?.message || error.message, 
         loading: false 
       });
       throw error;
@@ -214,7 +212,7 @@ export class UserState extends State {
       return response;
     } catch (error) {
       this.setState({ 
-        error: error.message, 
+        error: error.error?.message || error.message, 
         loading: false 
       });
       throw error;
@@ -232,7 +230,6 @@ export class UserState extends State {
 
       return await this.http.get(`/auth/search/?${params.toString()}`);
     } catch (error) {
-      console.error('Search users error:', error);
       throw error;
     }
   }
@@ -241,7 +238,6 @@ export class UserState extends State {
     try {
       return await this.http.get('/auth/friends/');
     } catch (error) {
-      console.error('Get friends error:', error);
       throw error;
     }
   }
@@ -250,7 +246,6 @@ export class UserState extends State {
     try {
       return await this.http.get('/auth/friends/requests/');
     } catch (error) {
-      console.error('Get friend requests error:', error);
       throw error;
     }
   }
@@ -261,7 +256,6 @@ export class UserState extends State {
         friend_id: friendId
       });
     } catch (error) {
-      console.error('Send friend request error:', error);
       throw error;
     }
   }
@@ -270,7 +264,6 @@ export class UserState extends State {
     try {
       return await this.http.post(`/auth/friends/accept/${friendshipId}/`);
     } catch (error) {
-      console.error('Accept friend request error:', error);
       throw error;
     }
   }
@@ -279,7 +272,6 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/friends/reject/${friendshipId}/`);
     } catch (error) {
-      console.error('Reject friend request error:', error);
       throw error;
     }
   }
@@ -288,7 +280,6 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/friends/remove/${friendshipId}/`);
     } catch (error) {
-      console.error('Remove friend error:', error);
       throw error;
     }
   }
@@ -297,7 +288,6 @@ export class UserState extends State {
     try {
       await this.http.post('/auth/blocks/block/', { user_id: userId });
     } catch (error) {
-      console.error('Block user error:', error);
       throw error;
     }
   }
@@ -306,7 +296,6 @@ export class UserState extends State {
     try {
       await this.http.post(`/auth/blocks/unblock/${userId}/`);
     } catch (error) {
-      console.error('Unblock user error:', error);
       throw error;
     }
   }
@@ -315,7 +304,6 @@ export class UserState extends State {
     try {
       return await this.http.get('/auth/blocks/');
     } catch (error) {
-      console.error('Get blocked users error:', error);
       throw error;
     }
   }
@@ -324,7 +312,6 @@ export class UserState extends State {
     try {
       return await this.http.post('/auth/reset-password/', { email });
     } catch (error) {
-      console.error('Reset password request error:', error);
       throw error;
     }
   }
@@ -336,7 +323,6 @@ export class UserState extends State {
         { new_password: newPassword }
       );
     } catch (error) {
-      console.error('Reset password confirm error:', error);
       throw error;
     }
   }
@@ -346,7 +332,6 @@ export class UserState extends State {
       const response = await this.http.post('/auth/enable-2fa/');
       return response;
     } catch (error) {
-      console.error('Enable 2FA error:', error);
       throw error;
     }
   }
@@ -362,7 +347,6 @@ export class UserState extends State {
       });
       return response;
     } catch (error) {
-      console.error('Verify 2FA error:', error);
       throw error;
     }
   }
@@ -377,9 +361,41 @@ export class UserState extends State {
         } 
       });
     } catch (error) {
-      console.error('Disable 2FA error:', error);
       throw error;
     }
+  }
+
+  async getNotifications(page = 1, perPage = 10) {
+    try {
+        return await this.http.get(`/auth/notifications/?page=${page}&per_page=${perPage}`);
+    } catch (error) {
+        throw error;
+    }
+  }
+
+  async getUnreadNotificationCount() {
+      try {
+          const response = await this.http.get('/auth/notifications/unread-count/');
+          return response.unread_count;
+      } catch (error) {
+          throw error;
+      }
+  }
+
+  async markNotificationRead(notificationId) {
+      try {
+          await this.http.post(`/auth/notifications/${notificationId}/read/`);
+      } catch (error) {
+          throw error;
+      }
+  }
+
+  async markAllNotificationsRead() {
+      try {
+          await this.http.post('/auth/notifications/mark-all-read/');
+      } catch (error) {
+          throw error;
+      }
   }
 }
 
