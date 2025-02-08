@@ -13,6 +13,7 @@ import { AnalyticsView } from "./views/Analytics.js";
 import { GamblingView } from "./views/Gambling.js";
 import { ProfileView } from "./views/Profile.js";
 import { FriendsView } from "./views/Friends.js";
+import { SettingsView } from "./views/Settings.js";
 import { NotificationsView } from "./views/Notifications";
 
 import { OAuthCallbackView } from "./views/OAuthCallback.js";
@@ -122,6 +123,11 @@ const routes = [
   {
     path: "/dashboard/profile",
     view: ProfileView,
+    handler: AuthGuard.requireAuth,
+  },
+  {
+    path: "/dashboard/settings",
+    view: SettingsView,
     handler: AuthGuard.requireAuth,
   },
   {

@@ -62,7 +62,7 @@ export class Layout {
                 <li class="nav-item">
                   <a class="nav-link" data-link="/dashboard/gambling">
                     <img src="/images/icons/casino.png" alt="Gambling" class="nav-icon" />
-                    <span>Gambling</span>
+                    <span>Games</span>
                   </a>
                 </li>
               </ul>
@@ -150,9 +150,14 @@ export class Layout {
                       <path fill-rule="evenodd" clip-rule="evenodd" d="M12 13C9.23858 13 7 10.7614 7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8C17 10.7614 14.7614 13 12 13Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                       <path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C17.1429 16 20.1429 17.6667 21 21H3C3.85714 17.6667 6.85714 16 12 16Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-
-
                     Profile
+                  </a>
+                  <a data-link="/dashboard/settings" class="menu-item settings">
+                    <svg class="icon" viewBox="0 0 24 24">
+                      <path d="M12 14a4 4 0 100-8 4 4 0 000 8z"/>
+                      <path d="M19.31 14.5a10 10 0 00-1.32-2.56l1.45-1.45a1 1 0 10-1.42-1.42l-1.45 1.45a10 10 0 00-2.56-1.32l.67-1.34a1 1 0 00-1.82-.84l-.67 1.34a10 10 0 00-2.56 1.32L8.98 8.17a1 1 0 00-1.42 1.42l1.45 1.45a10 10 0 00-1.32 2.56l-1.34-.67a1 1 0 00-.84 1.82l1.34.67a10 10 0 00 1.32 2.56l-1.45 1.45a1 1 0 001.42 1.42l1.45-1.45a10 10 0 002.56 1.32l-.67 1.34a1 1 0 001.82.84l.67-1.34a10 10 0 002.56-1.32l1.45 1.45a1 1 0 001.42-1.42l-1.45-1.45a10 10 0 001.32-2.56l1.34.67a1 1 0 00.84-1.82l-1.34-.67zM12 16a4 4 0 110-8 4 4 0 010 8z"/>
+                    </svg>
+                      Settings
                   </a>
                   <a data-link="/dashboard/friends" class="menu-item friends">
                     <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -346,6 +351,13 @@ export class Layout {
         profileBtn.addEventListener("click", (e) => {
           e.preventDefault();
           this.router.navigate("/dashboard/profile");
+        });
+      }
+      const settingsBtn = document.querySelector(".settings");
+      if (settingsBtn) {
+        settingsBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          this.router.navigate("/dashboard/settings");
         });
       }
       const friendsBtn = document.querySelector(".friends");

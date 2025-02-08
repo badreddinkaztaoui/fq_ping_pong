@@ -1,5 +1,6 @@
 import { View } from "../core/View";
 import "../styles/dashboard/games/cube.css";
+import { userState } from "../utils/UserState";
 
 export class CubeDiceGameView extends View {
   constructor() {
@@ -18,6 +19,7 @@ export class CubeDiceGameView extends View {
       5: { x: -90, y: 0, z: 0 },
       6: { x: 90, y: 0, z: 0 },
     };
+    console.log(userState.state.user);
   }
 
   getSecureRandomNumber() {
