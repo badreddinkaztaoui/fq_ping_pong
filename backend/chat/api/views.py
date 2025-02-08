@@ -1,22 +1,19 @@
 import asyncio
+import datetime
 import aiohttp
 import logging
-
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
-
 from django.db.models import Q
 from django.conf import settings
 from django.db import connections
 from django.db.utils import OperationalError
-from django.utils import timezone
+from .models import Messages, BlockUsers
+from .serializers import MessageSerializer
 
-from .models import PersonalChat, PersonalMessage
-from .serializers import PersonalChatSerializer, PersonalMessageSerializer
-from .permissions import CanAccessChat
 
 logger = logging.getLogger(__name__)
 
@@ -77,129 +74,111 @@ class ChatHealthCheck(APIView):
         except Exception as e:
             return False, f'Failed to connect to auth service: {str(e)}'
 
-class StartChatView(APIView):
+
+
+class ListMessagesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, sender):
+        try:
+            receiver_id = request.user.id
+            sender_id = sender
+            
+
+            logger.info(receiver_id)
+            logger.info(sender_id)
+
+            message = Messages.objects.filter(
+            Q(sender=sender_id, receiver=receiver_id) | Q(sender=receiver_id, receiver=sender_id)).order_by('time')
+            return Response(MessageSerializer(message, many=True).data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+class ListLatestConversasions(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            user = request.user.id
+            
+            blocked_users = BlockUsers.objects.filter(blocker=user).values_list('blocked', flat=True)
+            
+            last_messages = (
+                Messages.objects.filter(
+                    (Q(sender=user) | Q(receiver=user)) & 
+                    ~Q(sender__in=blocked_users) & 
+                    ~Q(receiver__in=blocked_users)
+                )
+                .order_by('-time')
+            )
+
+            conversations = {}
+            for message in last_messages:
+
+                if message.sender == user:
+                    other_user = message.receiver
+                else:
+                    other_user = message.sender
+                
+
+                if other_user not in conversations:
+                    conversations[other_user] = {
+                        "user_id": other_user,
+                        "last_message": message.content,
+                        "last_message_time": message.time
+                    }
+
+            sorted_conversations = sorted(
+                conversations.values(), 
+                key=lambda x: x["last_message_time"], 
+                reverse=True
+            )
+
+            for convo in sorted_conversations:
+                if isinstance(convo["last_message_time"], datetime.datetime):
+                    convo["last_message_time"] = convo["last_message_time"].strftime('%Y-%m-%d %H:%M')
+
+            return Response(sorted_conversations, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class BlockUsersView(APIView):
     permission_classes = [IsAuthenticated]
     
+    def get(self, request):
+        try:
+            user = request.user.id
+            blocked_users = BlockUsers.objects.filter(blocker=user)
+            return Response(list(blocked_users), status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    
+
     def post(self, request):
-        friend_id = request.data.get('friend_id')
-        if not friend_id:
-            return Response(
-                {'error': 'friend_id is required'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        print(friend_id)
         try:
-            chat = PersonalChat.objects.filter(
-                Q(user1_id=request.user.id, user2_id=friend_id) |
-                Q(user1_id=friend_id, user2_id=request.user.id),
-                is_active=True
-            ).first()
+            blocker = request.user.id
+            blocked = request.data.get('user_id')
             
-            if not chat:
-                chat = PersonalChat.objects.create(
-                    user1_id=request.user.id,
-                    user2_id=friend_id
-                )
-            
-            serializer = PersonalChatSerializer(
-                chat, 
-                context={'request': request}
-            )
-            return Response(serializer.data)
-            
-        except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            BlockUsers.objects.filter(blocker=blocker, blocked=blocked).delete()
+            return Response({"message": f"You have unblocked {blocked}."}, status=status.HTTP_200_OK)
 
-class ChatMessagesView(APIView):
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request, chat_id):
-        try:
-            chat = PersonalChat.objects.filter(
-                id=chat_id,
-                is_active=True
-            ).filter(
-                Q(user1_id=request.user.id) | Q(user2_id=request.user.id)
-            ).first()
-            
-            if not chat:
-                return Response(
-                    {'error': 'Chat not found'}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-            
-            offset = int(request.query_params.get('offset', 0))
-            limit = min(int(request.query_params.get('limit', 50)), 100)
-            
-            messages = PersonalMessage.objects.filter(
-                chat=chat,
-                is_deleted=False
-            ).order_by('-created_at')[offset:offset + limit]
-            
-            total_count = PersonalMessage.objects.filter(
-                chat=chat,
-                is_deleted=False
-            ).count()
-            
-            if messages:
-                messages.filter(
-                    status__in=['sent', 'delivered'],
-                    sender_id__ne=request.user.id
-                ).update(status='read')
-            
-            serializer = PersonalMessageSerializer(messages, many=True)
-            
-            return Response({
-                'messages': serializer.data,
-                'total_count': total_count
-            })
-            
         except Exception as e:
-            logger.error(f"Error in ChatMessagesView: {str(e)}", exc_info=True)
-            return Response(
-                {'error': 'Internal server error'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-class SendMessageView(APIView):
-    permission_classes = [IsAuthenticated, CanAccessChat]
-    
-    def post(self, request, chat_id):
+
+    def delete(self, request):
         try:
-            chat = PersonalChat.objects.get(id=chat_id, is_active=True)
-            self.check_object_permissions(request, chat)
+            blocker = request.user.id
+            blocked = request.data.get('user_id')
             
-            content = request.data.get('content')
-            if not content:
-                return Response(
-                    {'error': 'Message content is required'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            message = PersonalMessage.objects.create(
-                chat=chat,
-                sender_id=request.user.id,
-                content=content,
-                status='sent'
-            )
-            
-            chat.last_message_at = timezone.now()
-            chat.save(update_fields=['last_message_at'])
-            
-            serializer = PersonalMessageSerializer(message)
-            return Response(serializer.data)
-            
-        except PersonalChat.DoesNotExist:
-            return Response(
-                {'error': 'Chat not found'}, 
-                status=status.HTTP_404_NOT_FOUND
-            )
+            BlockUsers.objects.filter(blocker=blocker, blocked=blocked).delete()
+            return Response({"message": f"You have unblocked {blocked}."}, status=status.HTTP_204_NO_CONTENT)
+
         except Exception as e:
-            return Response(
-                {'error': str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
