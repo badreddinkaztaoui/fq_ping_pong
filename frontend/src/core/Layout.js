@@ -73,7 +73,7 @@ export class Layout {
             <div class="user-info">
               <div class="coins">
                 <img src="/images/coin.png" alt="Coins" class="coin-icon" />
-                <span>1,500</span>
+                <span>${userState.state.user.coins}</span>
               </div>
                 <div class="notifications">
                   <div class="notification-icon-wrapper">
@@ -145,13 +145,6 @@ export class Layout {
                       }</span>
                     </div>
                   </div>
-                  <a data-link="/dashboard/profile" class="menu-item profile">
-                    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 13C9.23858 13 7 10.7614 7 8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8C17 10.7614 14.7614 13 12 13Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                      <path fill-rule="evenodd" clip-rule="evenodd" d="M12 16C17.1429 16 20.1429 17.6667 21 21H3C3.85714 17.6667 6.85714 16 12 16Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    Profile
-                  </a>
                   <a data-link="/dashboard/settings" class="menu-item settings">
                     <svg class="icon" viewBox="0 0 24 24">
                       <path d="M12 14a4 4 0 100-8 4 4 0 000 8z"/>

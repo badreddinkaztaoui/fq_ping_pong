@@ -38,9 +38,34 @@ export class WebSocketManager {
         this.reconnectTimeouts = new Map();
         this.maxReconnectAttempts = 5;
         this.messageQueue = new MessageQueue();
+        
+        userState.subscribe(this.handleAuthStateChange.bind(this));
     }
 
-    async authenticateWebSocket(chatId) {
+    handleAuthStateChange(state) {
+        if (state.isAuthenticated && state.user) {
+            this.initializeUserConnection(state.user.id);
+        } else {
+            this.disconnectAll();
+        }
+    }
+
+    async initializeUserConnection(userId) {
+        if (!userId) return;
+        
+        const userChannelId = `user_${userId}`;
+        await this.connectToChat(userChannelId);
+    }
+
+    getWebSocketURL() {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = process.env.NODE_ENV === 'production'
+            ? window.location.host
+            : 'localhost:8000';
+        return `${protocol}//${host}`;
+    }
+
+    async authenticateWebSocket() {
         try {
             const token = await userState.getWebSocketToken();
             if (!token) {
@@ -48,7 +73,7 @@ export class WebSocketManager {
             }
             return token;
         } catch (error) {
-            this.notifyStatusChange(chatId, 'authentication_failed');
+            console.error('WebSocket authentication failed:', error);
             throw error;
         }
     }
@@ -66,7 +91,7 @@ export class WebSocketManager {
 
         try {
             console.log(`Initiating WebSocket connection for chat ${chatId}`);
-            const token = await this.authenticateWebSocket(chatId);
+            const token = await this.authenticateWebSocket();
             
             if (!token) {
                 console.error('Failed to obtain WebSocket token');
@@ -75,24 +100,12 @@ export class WebSocketManager {
             }
 
             const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
-            console.log('Connecting to WebSocket URL:', wsUrl);
-            
             const ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
-                console.log(`WebSocket connection opened for chat ${chatId}`);
-                this.handleOpen(chatId, ws);
-            };
-
-            ws.onclose = (event) => {
-                console.log(`WebSocket connection closed for chat ${chatId}:`, event);
-                this.handleClose(chatId, event);
-            };
-
-            ws.onerror = (error) => {
-                console.error(`WebSocket error in chat ${chatId}:`, error);
-                this.handleError(chatId, error);
-            };
+            ws.onopen = () => this.handleOpen(chatId, ws);
+            ws.onclose = (event) => this.handleClose(chatId, event);
+            ws.onerror = (error) => this.handleError(chatId, error);
+            ws.onmessage = (event) => this.handleMessage(chatId, event);
 
             this.connections.set(chatId, {
                 socket: ws,
@@ -106,31 +119,14 @@ export class WebSocketManager {
         }
     }
 
-    getWebSocketURL() {
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8000';
-        return `${protocol}//${host}`;
-    }
-
     async handleOpen(chatId, socket) {
         const connection = this.connections.get(chatId);
         if (connection) {
             connection.reconnectAttempts = 0;
             connection.status = 'connected';
             
-            try {
-                this.notifyStatusChange(chatId, 'connected');
-            } catch (error) {
-                console.error('Error notifying status change:', error);
-            }
-
-            try {
-                await this.messageQueue.sendQueuedMessages(chatId, socket);
-            } catch (error) {
-                console.error('Error sending queued messages:', error);
-            }
+            this.notifyStatusChange(chatId, 'connected');
+            await this.messageQueue.sendQueuedMessages(chatId, socket);
         }
     }
 
@@ -172,11 +168,6 @@ export class WebSocketManager {
         try {
             const data = JSON.parse(event.data);
             
-            const connection = this.connections.get(chatId);
-            if (connection && data.id) {
-                connection.lastMessageId = data.id;
-            }
-
             if (data.type === 'read_receipt') {
                 this.handleReadReceipt(chatId, data);
                 return;
@@ -221,6 +212,14 @@ export class WebSocketManager {
         return false;
     }
 
+    sendMessage(chatId, content, receiverId) {
+        return this.send(chatId, {
+            type: 'message',
+            content,
+            receiver_id: receiverId
+        });
+    }
+
     sendReadReceipt(chatId, messageId) {
         return this.send(chatId, {
             type: 'read_receipt',
@@ -253,18 +252,12 @@ export class WebSocketManager {
 
     onMessage(callback) {
         this.messageCallbacks.add(callback);
+        return () => this.messageCallbacks.delete(callback);
     }
 
     onStatusChange(callback) {
         this.statusCallbacks.add(callback);
-    }
-
-    removeMessageCallback(callback) {
-        this.messageCallbacks.delete(callback);
-    }
-
-    removeStatusCallback(callback) {
-        this.statusCallbacks.delete(callback);
+        return () => this.statusCallbacks.delete(callback);
     }
 
     notifyMessageReceived(chatId, message) {
@@ -283,10 +276,6 @@ export class WebSocketManager {
 
     getConnectionStatus(chatId) {
         return this.connections.get(chatId)?.status || 'disconnected';
-    }
-
-    getLastMessageId(chatId) {
-        return this.connections.get(chatId)?.lastMessageId || null;
     }
 }
 

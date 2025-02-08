@@ -5,7 +5,7 @@ import { State } from "../core/State";
 import { userState } from "../utils/UserState";
 
 export class ProfileView extends View {
-  constructor() {
+  constructor(params = {}) {
     super();
     this.user = userState.state.user;
     this.state = new State({
@@ -21,7 +21,6 @@ export class ProfileView extends View {
       loading: false,
       error: null,
     });
-    console.log({ State });
   }
 
   async render() {

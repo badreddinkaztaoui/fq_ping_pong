@@ -24,6 +24,9 @@ import { FlapyBirdGameView } from "./views/FlapyBirdGame.js";
 import { CubeDiceGameView } from "./views/CubeDiceGame.js";
 import { TrainingView } from "./views/Training";
 
+import { wsManager } from "./utils/WebSocketManager.js";
+
+
 const routes = [
   {
     path: "/login",
@@ -119,7 +122,7 @@ const routes = [
     handler: AuthGuard.requireAuth,
   },
   {
-    path: "/dashboard/profile",
+    path: "/dashboard/profile/:id",
     view: ProfileView,
     handler: AuthGuard.requireAuth,
   },
@@ -142,6 +145,14 @@ const routes = [
 const router = new Router(routes);
 
 window.addEventListener("DOMContentLoaded", () => {
+  wsManager.onStatusChange((chatId, status) => {
+    console.log(`WebSocket ${chatId} status:`, status);
+  });
+
+  wsManager.onMessage((chatId, message) => {
+    console.log(`Received message in ${chatId}:`, message);
+  });
+
   router.handleRoute();
 });
 
