@@ -13,16 +13,16 @@ class WebSocketAuthMiddleware(BaseMiddleware):
             token = await self.get_token_from_cookies(scope)
             if not token:
                 token = await self.get_token_from_query(scope)
-                print(f"Using token from query parameters: {bool(token)}")
+                logger.info(f"Using token from query parameters: {bool(token)}")
             
             if not token:
-                print("No token found in cookies or query parameters")
+                logger.info("No token found in cookies or query parameters")
                 return await self.close_connection_safe(send, "Authentication required")
 
         
             user_data = await verify_token_with_auth_service(token)
     
-            print(f"Token verification result: {bool(user_data)}")
+            logger.info(f"Token verification result: {bool(user_data)}")
 
             if not user_data:
                 return await self.close_connection_safe(send, "Invalid token")
@@ -33,7 +33,7 @@ class WebSocketAuthMiddleware(BaseMiddleware):
             return await super().__call__(scope, receive, send)
 
         except Exception as e:
-            logger.info(f"Error in middleware ---> {str(e)}")
+            logger.info(f"Error in middleware ---> TTTTT {str(e)}")
             return await self.close_connection_safe(send, f"Authentication failed: {str(e)}")
 
     async def get_token_from_cookies(self, scope):

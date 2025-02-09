@@ -1,274 +1,214 @@
 import { userState } from './UserState';
 
+const MessageTypes = {
+    MESSAGE: 'message',
+    READ_RECEIPT: 'read_receipt',
+    ERROR: 'error',
+    STATUS: 'status'
+};
+
 class MessageQueue {
     constructor() {
-        this.queues = new Map();
+        this.messages = [];
     }
 
-    addMessage(chatId, message) {
-        console.log('Adding message to queue for chat:', chatId);
-        if (!this.queues.has(chatId)) {
-            this.queues.set(chatId, []);
-        }
-        this.queues.get(chatId).push(message);
+    addMessage(message) {
+        this.messages.push(message);
     }
 
-    async sendQueuedMessages(chatId, socket) {
-        console.log('Attempting to send queued messages for chat:', chatId);
-        const messages = this.queues.get(chatId) || [];
-        while (messages.length > 0) {
-            const message = messages.shift();
-            if (socket.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify(message));
-            } else {
-                messages.unshift(message);
+    async sendQueuedMessages(socket) {
+        const messages = [...this.messages];
+        for (const message of messages) {
+            try {
+                if (socket.readyState === WebSocket.OPEN) {
+                    await new Promise((resolve) => {
+                        socket.send(JSON.stringify(message));
+                        resolve();
+                    });
+                    this.messages.shift();
+                } else {
+                    break;
+                }
+            } catch (error) {
+                console.error('Failed to send queued message:', error);
                 break;
             }
         }
     }
 
-    clearQueue(chatId) {
-        this.queues.delete(chatId);
+    clearQueue() {
+        this.messages = [];
     }
 }
 
 export class WebSocketManager {
     constructor() {
-        this.connections = new Map();
+        this.connection = null;
         this.messageCallbacks = new Set();
         this.statusCallbacks = new Set();
-        this.reconnectTimeouts = new Map();
+        this.reconnectTimeout = null;
         this.maxReconnectAttempts = 5;
+        this.reconnectAttempts = 0;
         this.messageQueue = new MessageQueue();
-        
-        userState.subscribe(this.handleAuthStateChange.bind(this));
-    }
-
-    handleAuthStateChange(state) {
-        if (state.isAuthenticated && state.user) {
-            this.initializeUserConnection(state.user.id);
-        } else {
-            this.disconnectAll();
-        }
-    }
-
-    async initializeUserConnection(userId) {
-        if (!userId) return;
-        
-        const userChannelId = `user_${userId}`;
-        // await this.connectToChat(userChannelId);
     }
 
     getWebSocketURL() {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = process.env.NODE_ENV === 'production'
-            ? window.location.host
-            : 'localhost:8000';
-        return `${protocol}//${host}`;
+        const host = process.env.NODE_ENV === 'production' ? window.location.host : 'localhost:8000';
+        return `${protocol}//${host}/ws/chat/`;
     }
 
-    async authenticateWebSocket() {
+    async connect() {
+        if (this.connection) return;
+
         try {
             const token = await userState.getWebSocketToken();
             if (!token) {
-                throw new Error('Failed to obtain WebSocket token');
-            }
-            return token;
-        } catch (error) {
-            console.error('WebSocket authentication failed:', error);
-            throw error;
-        }
-    }
-
-    async connectToChat(chatId) {
-        if (!chatId || typeof chatId !== 'string') {
-            console.error('Invalid chat ID:', chatId);
-            this.notifyStatusChange(chatId, 'error');
-            return;
-        }
-
-        if (this.connections.has(chatId)) {
-            return;
-        }
-
-        try {
-            console.log(`Initiating WebSocket connection for chat ${chatId}`);
-            const token = await this.authenticateWebSocket();
-            
-            if (!token) {
-                console.error('Failed to obtain WebSocket token');
-                this.notifyStatusChange(chatId, 'authentication_failed');
+                this.notifyStatusChange('authentication_failed');
                 return;
             }
 
-            const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
+            const wsUrl = `${this.getWebSocketURL()}?token=${encodeURIComponent(token)}`;
             const ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => {
-                this.handleOpen(chatId, ws);
-            };
-            ws.onclose = (event) => {
-                this.handleClose(chatId, event);
-            };
-            ws.onerror = (error) => this.handleError(chatId, error);
-            ws.onmessage = (event) => this.handleMessage(chatId, event);
+            ws.onopen = () => this.handleOpen(ws);
+            ws.onclose = (event) => this.handleClose(event);
+            ws.onerror = (error) => this.handleError(error);
+            ws.onmessage = (event) => this.handleMessage(event);
 
-            this.connections.set(chatId, {
+            this.connection = {
                 socket: ws,
-                reconnectAttempts: 0,
                 status: 'connecting'
-            });
+            };
 
         } catch (error) {
-            console.error(`Failed to connect to chat ${chatId}:`, error);
-            this.notifyStatusChange(chatId, 'error');
+            console.error('Failed to connect:', error);
+            this.notifyStatusChange('error');
         }
     }
 
-    async handleOpen(chatId, socket) {
-        const connection = this.connections.get(chatId);
-        if (connection) {
-            connection.reconnectAttempts = 0;
-            connection.status = 'connected';
+    async handleOpen(socket) {
+        if (this.connection) {
+            this.reconnectAttempts = 0;
+            this.connection.status = 'connected';
             
-            this.notifyStatusChange(chatId, 'connected');
-            await this.messageQueue.sendQueuedMessages(chatId, socket);
+            socket.send(JSON.stringify({
+                type: MessageTypes.STATUS,
+                status: 'online'
+            }));
+            
+            this.notifyStatusChange('connected');
+            await this.messageQueue.sendQueuedMessages(socket);
         }
     }
 
-    handleClose(chatId, event) {
-        console.log('WebSocket closed for chat:', chatId, 'Event:', event);
-        const connection = this.connections.get(chatId);
-        if (connection) {
-            connection.status = 'disconnected';
-            this.notifyStatusChange(chatId, 'disconnected');
-    
-            if (this.reconnectTimeouts.has(chatId)) {
-                clearTimeout(this.reconnectTimeouts.get(chatId));
-            }
-    
-            const skipReconnectCodes = [4001, 4002, 4003];
-            if (skipReconnectCodes.includes(event.code)) {
-                console.log(`WebSocket closed with code ${event.code}, skipping reconnection`);
-                this.notifyStatusChange(chatId, 'auth_error');
-                return;
-            }
-    
-            if (connection.reconnectAttempts < this.maxReconnectAttempts) {
-                const timeout = setTimeout(() => {
-                    this.reconnect(chatId);
-                }, this.getBackoffTime(connection.reconnectAttempts));
-    
-                this.reconnectTimeouts.set(chatId, timeout);
-            } else {
-                this.notifyStatusChange(chatId, 'max_retries_exceeded');
-            }
+    handleClose(event) {
+        const skipReconnectCodes = [4001, 4002, 4003];
+        
+        if (skipReconnectCodes.includes(event.code)) {
+            this.notifyStatusChange('auth_error');
+            return;
+        }
+
+        this.connection.status = 'disconnected';
+        this.notifyStatusChange('disconnected');
+
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+        }
+
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectTimeout = setTimeout(() => {
+                this.reconnect();
+            }, this.getBackoffTime());
+        } else {
+            this.notifyStatusChange('max_retries_exceeded');
         }
     }
 
-    handleError(chatId, error) {
-        console.error(`WebSocket error in chat ${chatId}:`, error);
-        this.notifyStatusChange(chatId, 'error');
+    handleError(error) {
+        console.error('WebSocket error:', error);
+        this.notifyStatusChange('error');
     }
 
-    handleMessage(chatId, event) {
+    handleMessage(event) {
         try {
             const data = JSON.parse(event.data);
             
-            if (data.type === 'read_receipt') {
-                this.handleReadReceipt(chatId, data);
+            if (data.type === MessageTypes.ERROR) {
+                console.error(`Server error: ${data.message}`);
+                this.notifyStatusChange('server_error');
+                return;
+            }
+            
+            if (data.type === MessageTypes.READ_RECEIPT) {
+                this.notifyReadReceipt(data);
                 return;
             }
 
-            this.notifyMessageReceived(chatId, data);
+            this.notifyMessageReceived(data);
         } catch (error) {
-            console.error('Failed to parse WebSocket message:', error);
+            console.error('Failed to parse message:', error);
+            this.notifyStatusChange('parse_error');
         }
     }
 
-    handleReadReceipt(chatId, data) {
-        this.messageCallbacks.forEach(callback => {
-            if (callback.onReadReceipt) {
-                callback.onReadReceipt(chatId, data.message_id, data.user_id);
-            }
-        });
+    async reconnect() {
+        this.reconnectAttempts++;
+        this.connection.status = 'connecting';
+        this.notifyStatusChange('connecting');
+        await this.connect();
     }
 
-    async reconnect(chatId) {
-        console.log('Attempting to reconnect for chat:', chatId);
-        const connection = this.connections.get(chatId);
-        if (connection) {
-            connection.reconnectAttempts++;
-            connection.status = 'connecting';
-            this.notifyStatusChange(chatId, 'connecting');
-
-            await this.connectToChat(chatId);
-        }
+    getBackoffTime() {
+        const baseDelay = 1000;
+        const maxDelay = 30000;
+        const jitter = Math.random() * 1000;
+        return Math.min(maxDelay, baseDelay * Math.pow(2, this.reconnectAttempts) + jitter);
     }
 
-    getBackoffTime(attempt) {
-        return Math.min(30000, 2000 * Math.pow(2, attempt));
-    }
-
-    send(chatId, message) {
-        const connection = this.connections.get(chatId);
-        if (connection?.socket?.readyState === WebSocket.OPEN) {
-            connection.socket.send(JSON.stringify(message));
-            return true;
-        }
-        this.messageQueue.addMessage(chatId, message);
-        return false;
-    }
-
-    sendMessage(chatId, content, receiverId) {
-        console.log('WebSocketManager attempting to send message');
-        const connection = this.connections.get(chatId);
-        if (connection?.socket?.readyState === WebSocket.OPEN) {
-            console.log('WebSocket connection is open, sending message');
-            connection.socket.send(JSON.stringify({
-                type: 'message',
-                content,
-                receiver_id: receiverId
-            }));
-            return true;
-        }
-        console.log('WebSocket not ready, queueing message');
-        this.messageQueue.addMessage(chatId, {
-            type: 'message',
+    sendMessage(receiverId, content) {
+        const message = {
+            type: MessageTypes.MESSAGE,
             content,
             receiver_id: receiverId
-        });
+        };
+
+        if (this.connection?.socket?.readyState === WebSocket.OPEN) {
+            this.connection.socket.send(JSON.stringify(message));
+            return true;
+        }
+
+        this.messageQueue.addMessage(message);
         return false;
     }
 
-    sendReadReceipt(chatId, messageId) {
-        return this.send(chatId, {
-            type: 'read_receipt',
+    sendReadReceipt(messageId) {
+        const message = {
+            type: MessageTypes.READ_RECEIPT,
             message_id: messageId
-        });
+        };
+
+        if (this.connection?.socket?.readyState === WebSocket.OPEN) {
+            this.connection.socket.send(JSON.stringify(message));
+            return true;
+        }
+        return false;
     }
 
-    disconnect(chatId) {
-        const connection = this.connections.get(chatId);
-        if (connection) {
-            if (this.reconnectTimeouts.has(chatId)) {
-                clearTimeout(this.reconnectTimeouts.get(chatId));
-                this.reconnectTimeouts.delete(chatId);
-            }
-
-            if (connection.socket) {
-                connection.socket.close();
-            }
-
-            this.messageQueue.clearQueue(chatId);
-            this.connections.delete(chatId);
+    disconnect() {
+        if (this.reconnectTimeout) {
+            clearTimeout(this.reconnectTimeout);
+            this.reconnectTimeout = null;
         }
-    }
 
-    disconnectAll() {
-        for (const chatId of this.connections.keys()) {
-            this.disconnect(chatId);
+        if (this.connection?.socket) {
+            this.connection.socket.close();
         }
+
+        this.messageQueue.clearQueue();
+        this.connection = null;
+        this.reconnectAttempts = 0;
     }
 
     onMessage(callback) {
@@ -281,22 +221,30 @@ export class WebSocketManager {
         return () => this.statusCallbacks.delete(callback);
     }
 
-    notifyMessageReceived(chatId, message) {
-        this.messageCallbacks.forEach(callback => callback(chatId, message));
+    notifyMessageReceived(message) {
+        this.messageCallbacks.forEach(callback => callback(message));
     }
 
-    notifyStatusChange(chatId, status) {
+    notifyReadReceipt(data) {
+        this.messageCallbacks.forEach(callback => {
+            if (callback.onReadReceipt) {
+                callback.onReadReceipt(data.message_id, data.user_id);
+            }
+        });
+    }
+
+    notifyStatusChange(status) {
         this.statusCallbacks.forEach(callback => {
             try {
-                callback(chatId, status);
+                callback(status);
             } catch (error) {
                 console.error('Error in status callback:', error);
             }
         });
     }
 
-    getConnectionStatus(chatId) {
-        return this.connections.get(chatId)?.status || 'disconnected';
+    getConnectionStatus() {
+        return this.connection?.status || 'disconnected';
     }
 }
 

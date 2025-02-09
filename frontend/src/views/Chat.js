@@ -9,11 +9,7 @@ export class ChatView extends View {
     constructor(params = {}) {
         super();
         this.params = params;
-        this.activeChatInfo = {
-            chatId: params.id || null,
-            senderId: null,
-            receiverId: null
-        };
+        this.friendId = params.id || null;
         
         this.chatState = new State({
             conversations: [],
@@ -46,6 +42,7 @@ export class ChatView extends View {
     }
 
     renderConversationsSidebar() {
+        console.log(this.chatState.getState())
         return `
             <div class="conversations-sidebar">
                 <div class="conversations-header">
@@ -69,11 +66,11 @@ export class ChatView extends View {
     renderConversationItem(conversation) {
         const unreadCount = conversation.unread_count || 0;
         return `
-            <div class="conversation-item ${this.activeChatInfo.chatId === conversation.user_id ? 'active' : ''}" 
+            <div class="conversation-item" 
                  data-user-id="${conversation.user_id}">
-                <div class="user-avatar">${this.getInitials(conversation.username)}</div>
+                <div class="user-avatar"></div>
                 <div class="conversation-info">
-                    <div class="user-name">${this.sanitizeHTML(conversation.username)}</div>
+                    <div class="user-name">${this.sanitizeHTML(conversation?.username)}</div>
                     <div class="last-message">${this.sanitizeHTML(conversation.last_message)}</div>
                 </div>
                 <div class="conversation-meta">
@@ -174,10 +171,6 @@ export class ChatView extends View {
                 </div>
             </div>
         `).join('');
-    }
-
-    getInitials(name) {
-        return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
 
     formatDate(dateString) {
@@ -344,7 +337,7 @@ export class ChatView extends View {
                 const conversationItem = e.target.closest('.conversation-item');
                 if (conversationItem) {
                     const userId = conversationItem.dataset.userId;
-                    this.loadChatHistory(userId);
+                    this.router.navigate(`/dashboard/chat/${userId}`);
                 }
             });
         }
@@ -389,23 +382,25 @@ export class ChatView extends View {
     async initialize() {
         try {
             this.chatState.setState({ isLoading: true });
+            
             const state = userState.getState();
             const currentUserId = state.user?.id;
             this.chatState.setState({ currentUserId });
     
-            await wsManager.connectToChat(`user_${currentUserId}`);
-    
-            const userId = this.params.id;
-
-            if (userId) {
-                await this.loadChatHistory(userId);
-            }
+            await wsManager.connect();
     
             wsManager.onMessage(this.handleMessage);
             wsManager.onStatusChange(this.handleStatusChange);
     
+            await this.updateConversations();
+            
+            if (this.friendId) {
+                await this.loadChatHistory(this.friendId);
+            }
+    
             this.messageHandler.success('Chat initialized successfully');
         } catch (error) {
+            console.error('Chat initialization error:', error);
             this.messageHandler.error('Failed to initialize chat. Please refresh the page.');
         } finally {
             this.chatState.setState({ isLoading: false });
@@ -427,23 +422,16 @@ export class ChatView extends View {
         try {
             this.chatState.setState({ isLoading: true });
             
-            const conversation = this.chatState.getState().conversations
-                .find(conv => conv.user_id === userId);
+            this.friendId = userId;
             
-            if (conversation) {
-                this.activeChatInfo = {
-                    chatId: userId,
-                    senderId: this.chatState.getState().currentUserId,
-                    receiverId: userId
-                };
-            }
-
             const response = await userState.http.get(`/chat/${userId}/messages/`);
             
             if (response) {
                 this.chatState.setState({ messages: response });
                 this.scrollToBottom();
             }
+
+            // this.router.navigate(`/dashboard/chat/${userId}`);
         } catch (error) {
             this.messageHandler.error('Could not load chat history');
         } finally {
@@ -459,19 +447,19 @@ export class ChatView extends View {
         }));
     }
     
-    async sendMessage(content) {
-        if (!this.activeChatInfo.chatId) {
-            console.error('No active chat selected');
+    sendMessage(content) {
+        if (!this.friendId) {
+            console.error('No friend selected');
             return;
         }
     
-        if (!content.trim() || !this.activeChatInfo.chatId) return;
+        if (!content.trim()) return;
     
         try {
             const message = {
                 content,
                 sender: this.chatState.getState().currentUserId,
-                receiver: this.activeChatInfo.receiverId,
+                receiver: this.friendId,
                 time: new Date().toISOString(),
                 status: 'sending'
             };
@@ -480,61 +468,76 @@ export class ChatView extends View {
                 messages: [...prevState.messages, message]
             }));
     
-            const sent = wsManager.sendMessage(this.activeChatInfo.chatId, content, this.activeChatInfo.receiverId);
+            const sent = wsManager.sendMessage(this.friendId, content);
     
-            if (sent) {
-                this.updateMessageStatus(message.time, 'sent');
-            } else {
-                this.updateMessageStatus(message.time, 'failed');
-            }
-    
+            this.updateMessageStatus(message.time, sent ? 'sent' : 'failed');
             this.scrollToBottom();
         } catch (error) {
             this.messageHandler.error('Failed to send message. Please try again.');
         }
     }
     
-    handleMessage(chatId, message) {
-        if (chatId === this.activeChatInfo.chatId) {
+    handleMessage(message) {
+        switch (message.type) {
+            case 'message':
+                this.handleChatMessage(message);
+                break;
+            case 'read_receipt':
+                this.handleReadReceipt(message);
+                break;
+            case 'status':
+                this.handleUserStatus(message);
+                break;
+        }
+    }
+
+    handleChatMessage(message) {
+        if (message.sender === this.friendId || message.receiver === this.friendId) {
             this.chatState.setState(prevState => ({
                 messages: [...prevState.messages, message]
             }));
             this.scrollToBottom();
             
-            wsManager.sendReadReceipt(chatId, message.id);
-        } else {
-            this.updateUnreadCount(chatId);
+            wsManager.sendReadReceipt(message.id);
         }
-    
-        this.updateConversationLastMessage(chatId, message);
+        
+        this.updateConversations();
     }
-    
-    handleStatusChange(chatId, status) {
+
+    handleReadReceipt(data) {
+        this.updateMessageStatus(data.message_id, 'read');
+    }
+
+    handleUserStatus(data) {
+        this.chatState.setState(prevState => ({
+            conversations: prevState.conversations.map(conv => 
+                conv.user_id === data.user_id 
+                    ? { ...conv, is_online: data.status === 'online' }
+                    : conv
+            )
+        }));
+    }
+
+    handleStatusChange(status) {
         const statusElement = this.$('.chat-header .connection-status');
         if (statusElement) {
             statusElement.textContent = status;
             statusElement.className = `connection-status ${status}`;
         }
+
+        if (status === 'disconnected') {
+            wsManager.connect();
+        }
     }
-    
+
     async afterMount() {
         await this.initialize();
-        this.setupEventListeners();
-        this.refreshInterval = setInterval(() => {
-            this.updateConversations();
-        }, 30000);
+        this.setupEventListeners(); 
     }
     
     cleanup() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-        }
-        if (this.chatState.getState().currentUserId) {
-            wsManager.disconnect(`user_${this.chatState.getState().currentUserId}`);
-        }
-        if (this.activeChatInfo.chatId) {
-            wsManager.disconnect(this.activeChatInfo.chatId);
-        }
+        wsManager.disconnect();
+        
         if (this.unsubscribe) {
             this.unsubscribe();
         }

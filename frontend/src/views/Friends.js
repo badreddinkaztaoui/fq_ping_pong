@@ -707,7 +707,9 @@ export class FriendsView extends View {
                 });
             }
     
-            await userState.acceptFriendRequest(requestId);
+            if (requestId) {
+                await userState.acceptFriendRequest(requestId);
+            }
             
             if (requestCard) {
                 requestCard.classList.add('accepted');
@@ -742,7 +744,9 @@ export class FriendsView extends View {
                 });
             }
     
-            await userState.rejectFriendRequest(requestId);
+            if (requestId) {
+                await userState.rejectFriendRequest(requestId);
+            }
             
             if (requestCard) {
                 requestCard.classList.add('rejected');
@@ -774,7 +778,9 @@ export class FriendsView extends View {
                 friendCard.classList.add('blocking');
             }
     
-            await userState.blockUser(userId);
+            if (userId) {
+                await userState.blockUser(userId);
+            }
             
             if (friendCard) {
                 friendCard.addEventListener('transitionend', () => {
@@ -795,7 +801,9 @@ export class FriendsView extends View {
 
     async unblockFriend(userId) {
         try {
-            await userState.unblockUser(userId);
+            if (userId) {
+                await userState.unblockUser(userId);
+            }
             await this.loadFriends();
             this.toast.success('User unblocked')
         } catch (error) {

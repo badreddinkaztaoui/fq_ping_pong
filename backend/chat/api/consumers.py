@@ -19,9 +19,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         try:
             user_id = self.scope.get('user_id')
-            logger.info(f"The user id is {user_id}")
             if not user_id:
-                logger.error("user_id not found")
                 await self.close(code=401)
                 return
 
@@ -32,41 +30,37 @@ class ChatConsumer(AsyncWebsocketConsumer):
             await self.mark_user_online()
             await self.accept()
         except Exception as e:
-            logger.info(f"Error in consumers ---> {str(e)}")
-            return await self.close(401, f"Authentication failed: {str(e)}")
+            logger.error(f"Connection error: {str(e)}")
+            await self.close(code=401)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        receiver_id = data.get('receiver_id')
+        content = data.get('content')
+
+        if not (content and receiver_id):
+            await self.send_error("Message could not be sent. content and receiver_id are required.")
+            return
+
+        block_status = await self.check_blocked_users(receiver_id)
+        if block_status:
+            await self.send_error("Message could not be sent. User is blocked.")
+            return
+
+        await self.save_message(content, receiver_id)
+        
+        await self.channel_layer.group_send(
+            f"user_{receiver_id}",
+            {
+                "type": "chat.message",
+                "sender": self.user_id,
+                "content": content
+            }
+        )
 
     async def disconnect(self):
         await self.channel_layer.group_discard(self.room_name, self.channel_name)
         await self.mark_user_offline()
-
-
-    async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        content = text_data_json['content']
-        receiver_id = text_data_json['receiver_id']
-
-        try:
-            if not (content and receiver_id):
-                await self.send_error("Message could not be sent. content and receiver_id are required.")
-                return
-
-            block_status = await self.check_blocked_users(receiver_id)
-            if block_status:
-                await self.send_error("Message could not be sent. You are blocked by this user or you have blocked them.")
-                return
-
-            await self.save_message(content, receiver_id)
-
-            await self.channel_layer.group_send(
-                f"user_{receiver_id}",
-                {
-                    "type": "send.message",
-                    "sender": self.user_id,
-                    "content": content,
-                },
-            )
-        except Exception as e:
-            await self.send_error(str(e))
 
 
     async def mark_user_online(self):

@@ -24,13 +24,13 @@
   border-bottom: 1px solid rgba(255, 70, 85, 0.2);
 }
 
-.search-container {
+.chat-layout .search-container {
   position: relative;
   padding: 10px;
   border-bottom: 1px solid rgba(255, 70, 85, 0.2);
 }
 
-.search-input {
+.chat-layout .search-input {
   width: 100%;
   padding: 10px;
   background: rgba(255, 255, 255, 0.05);
@@ -40,13 +40,13 @@
   font-size: 0.9rem;
 }
 
-.search-input:focus {
+.chat-layout .search-input:focus {
   outline: none;
   border-color: rgba(255, 70, 85, 0.5);
   background: rgba(255, 255, 255, 0.08);
 }
 
-.search-results {
+.chat-layout .search-results {
   display: none;
   position: absolute;
   top: 100%;
@@ -63,7 +63,7 @@
   margin: 0 auto;
 }
 
-.search-result-item {
+.chat-layout .search-result-item {
   display: flex;
   align-items: center;
   padding: 10px;
@@ -71,11 +71,11 @@
   transition: background-color 0.2s;
 }
 
-.search-result-item:hover {
+.chat-layout .search-result-item:hover {
   background-color: rgba(255, 70, 85, 0.2);
 }
 
-.search-result-item .user-avatar {
+.chat-layout .search-result-item .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -88,43 +88,43 @@
   margin-right: 10px;
 }
 
-.search-result-item .user-avatar img {
+.chat-layout .search-result-item .user-avatar img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
 }
 
-.search-result-item .user-info {
+.chat-layout .search-result-item .user-info {
   flex: 1;
 }
 
-.search-result-item .user-name {
+.chat-layout .search-result-item .user-name {
   font-weight: bold;
   margin-bottom: 3px;
 }
 
-.search-result-item .user-status {
+.chat-layout .search-result-item .user-status {
   font-size: 0.8em;
   opacity: 0.7;
 }
 
-.search-result-item .user-status.online {
+.chat-layout .search-result-item .user-status.online {
   color: #4CAF50;
 }
 
-.search-result-item .user-status.offline {
+.chat-layout .search-result-item .user-status.offline {
   color: #9E9E9E;
 }
 
-.no-results {
+.chat-layout .no-results {
   padding: 10px;
   text-align: center;
   color: rgba(236, 232, 225, 0.7);
   font-style: italic;
 }
 
-.searching-indicator {
+.chat-layout .searching-indicator {
   position: absolute;
   right: 15px;
   top: 50%;
@@ -136,7 +136,7 @@
 .conversations-list {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 8px;
 }
 
 .conversation-item {
@@ -147,6 +147,7 @@
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
+  border-bottom: 1px solid #ff46563d;
 }
 
 .conversation-item:hover, .conversation-item.active {
