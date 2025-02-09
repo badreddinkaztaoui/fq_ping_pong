@@ -101,47 +101,37 @@ class ListLatestConversasions(APIView):
 
     def get(self, request):
         try:
-            user = request.user.id
-            
-            blocked_users = BlockUsers.objects.filter(blocker=user).values_list('blocked', flat=True)
+            user_id = request.user.id
+            blocked_users = BlockUsers.objects.filter(blocker=user_id).values_list('blocked', flat=True)
             
             last_messages = (
                 Messages.objects.filter(
-                    (Q(sender=user) | Q(receiver=user)) & 
-                    ~Q(sender__in=blocked_users) & 
+                    (Q(sender=user_id) | Q(receiver=user_id)) &
+                    ~Q(sender__in=blocked_users) &
                     ~Q(receiver__in=blocked_users)
                 )
                 .order_by('-time')
             )
 
             conversations = {}
-            for message in last_messages:
-
-                if message.sender == user:
-                    other_user = message.receiver
-                else:
-                    other_user = message.sender
-                
-
+            for msg in last_messages:
+                other_user = msg.receiver if str(msg.sender) == user_id else msg.sender
                 if other_user not in conversations:
                     conversations[other_user] = {
-                        "user_id": other_user,
-                        "last_message": message.content,
-                        "last_message_time": message.time
+                        "user_id": str(other_user),
+                        "last_message": msg.content,
+                        "last_message_time": msg.time.strftime('%Y-%m-%d %H:%M')
                     }
 
+            # Already in descending order due to .order_by('-time'), but if needed:
             sorted_conversations = sorted(
-                conversations.values(), 
-                key=lambda x: x["last_message_time"], 
+                conversations.values(),
+                key=lambda x: x["last_message_time"],
                 reverse=True
             )
-
-            for convo in sorted_conversations:
-                if isinstance(convo["last_message_time"], datetime.datetime):
-                    convo["last_message_time"] = convo["last_message_time"].strftime('%Y-%m-%d %H:%M')
-
+            
             return Response(sorted_conversations, status=status.HTTP_200_OK)
-
+        
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
