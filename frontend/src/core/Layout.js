@@ -232,20 +232,38 @@ export class Layout {
   }
 
   async mount(container) {
-    this.element =
-      this.layoutType === "dashboard"
+    try {
+      this.element = this.layoutType === "dashboard"
         ? await this.createDashboardLayout()
         : await this.createLandingLayout();
 
-    container.innerHTML = "";
-    container.appendChild(this.element);
+      if (!this.element || !this.contentContainer) {
+        throw new Error('Failed to create layout elements');
+      }
 
-    if (this.view) {
-      await this.view.mount(this.contentContainer);
+      if (container) {
+        container.innerHTML = '';
+        container.appendChild(this.element);
+      } else {
+        throw new Error('Invalid container element');
+      }
+
+      await this.setupEventListeners();
+
+      if (this.view) {
+        const mounted = await this.view.mount(this.contentContainer);
+        if (!mounted) {
+          return;
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error mounting layout:', error);
+      return false;
     }
-
-    this.setupEventListeners();
   }
+
 
   async unmount() {
     if (this.view) {

@@ -92,6 +92,62 @@ def get_access_token(request):
         'access_token': access_token
     })
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_user_by_id(request, user_id):
+    """
+    Get user information by their ID. This endpoint considers privacy and friendship status 
+    when determining what information to return.
+    
+    A user can see:
+    - Basic public information for any user
+    - Additional information if they are friends
+    - Full information if viewing their own profile
+    """
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response(
+            {'error': {
+                'message': 'User not found'
+            }},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    is_friend = Friendship.objects.filter(
+        (Q(user=request.user, friend=user) | Q(user=user, friend=request.user)),
+        is_accepted=True
+    ).exists()
+    
+    is_blocked = UserBlock.objects.filter(
+        Q(user=request.user, blocked_user=user) |
+        Q(user=user, blocked_user=request.user)
+    ).exists()
+    
+    if is_blocked:
+        return Response(
+            {'error': {
+                'message': 'User not accessible'
+            }},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if request.user == user:
+        serializer = UserSerializer(user)
+    elif is_friend:
+        serializer = UserFriendSerializer(user)
+    else:
+        serializer = UserFriendSerializer(user)
+    
+    response_data = serializer.data
+    response_data.update({
+        'is_friend': is_friend,
+        'is_self': request.user == user,
+        'is_blocked': is_blocked
+    })
+    
+    return Response(response_data)
+
 @api_view(['POST'])
 @permission_classes([AllowAny])
 @csrf_exempt_authentication

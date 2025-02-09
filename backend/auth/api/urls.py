@@ -34,7 +34,8 @@ from .views import (
     mark_all_read,
     get_unread_count,
     clear_notification,
-    clear_all_notifications
+    clear_all_notifications,
+    get_user_by_id
 )
 
 urlpatterns = [
@@ -45,6 +46,7 @@ urlpatterns = [
         path('login/', login_view, name='login'),
         path('logout/', logout_view, name='logout'),
         path('me/', me_view, name='me'),
+        path('users/<uuid:user_id>/', get_user_by_id, name='get_user_by_id'),
         path('verify/', verify_token, name='verify_token'),
         path('token/', get_access_token, name='get_access_token'),
         path('refresh-token/', refresh_token, name='refresh_token'),

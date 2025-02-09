@@ -29,34 +29,42 @@ export class NotificationsView extends View {
     async fetchNotifications(page = 1) {
         try {
             const response = await this.http.get(`/auth/notifications/?page=${page}&per_page=10`);
+            
+            if (!response || typeof response !== 'object') {
+                throw new Error('Invalid response format');
+            }
+
             return {
-                notifications: response.notifications,
-                hasMore: page < response.pages
+                notifications: Array.isArray(response.notifications) ? response.notifications : [],
+                hasMore: page < (response.pages || 1)
             };
         } catch (error) {
-            throw error;
+            console.error('Error fetching notifications:', error);
+            throw new Error(error.message || 'Failed to fetch notifications');
         }
     }
 
     getNotificationActions(notification) {
+        if (!notification) return '';
+
         switch (notification.notification_type) {
             case 'friend_request':
-                return `
-                    <button class="val-btn val-btn--primary" data-action="acceptFriend" data-id="${notification?.friendship_id}">
+                return notification.friendship_id ? `
+                    <button class="val-btn val-btn--primary" data-action="acceptFriend" data-id="${notification.friendship_id}">
                         <span class="val-btn__text">ACCEPT</span>
                         <div class="val-btn__glow"></div>
                     </button>
-                    <button class="val-btn val-btn--secondary" data-action="rejectFriend" data-id="${notification?.friendship_id}">
+                    <button class="val-btn val-btn--secondary" data-action="rejectFriend" data-id="${notification.friendship_id}">
                         <span class="val-btn__text">REJECT</span>
                     </button>
-                `;
+                ` : '';
             case 'friend_accept':
-                return `
-                    <button class="val-btn val-btn--primary" data-action="viewProfile" data-id="${notification?.friendship_id}">
+                return notification.related_user?.id ? `
+                    <button class="val-btn val-btn--primary" data-action="viewProfile" data-id="${notification.related_user.id}">
                         <span class="val-btn__text">VIEW PROFILE</span>
                         <div class="val-btn__glow"></div>
                     </button>
-                `;
+                ` : '';
             default:
                 return '';
         }
@@ -96,6 +104,10 @@ export class NotificationsView extends View {
     }
 
     renderNotificationItem(notification) {
+        if (!notification || !notification.id) {
+            return '';
+        }
+
         const actions = this.getNotificationActions(notification);
         const typeIcon = this.getNotificationIcon(notification.notification_type);
     
@@ -110,7 +122,7 @@ export class NotificationsView extends View {
                     </div>
                     <div class="val-info">
                         <div class="val-info__header">
-                            <h3 class="val-info__name">${notification.title}</h3>
+                            <h3 class="val-info__name">${notification.title || 'No Title'}</h3>
                             <div class="val-info__actions">
                                 ${!notification.is_read ? `
                                     <button class="val-btn val-btn--icon" data-action="markRead" data-id="${notification.id}" title="Mark as read">
@@ -126,9 +138,9 @@ export class NotificationsView extends View {
                                     </svg>
                                 </button>
                             </div>
-                            <span class="val-info__time">${this.formatTimeAgo(notification.created_at)}</span>
+                            <span class="val-info__time">${this.formatTimeAgo(notification.created_at || new Date())}</span>
                         </div>
-                        <p class="val-info__msg">${notification.message.toUpperCase()}</p>
+                        <p class="val-info__msg">${(notification.message || 'No message').toUpperCase()}</p>
                         ${actions ? `
                             <div class="val-actions">
                                 ${actions}
@@ -150,6 +162,9 @@ export class NotificationsView extends View {
                 case 'rejectFriend':
                     await userState.rejectFriendRequest(id);
                     this.messageHandler.success('Friend request rejected');
+                    break;
+                case 'viewProfile':
+                    this.router.navigate(`/dashboard/profile/${id}`)
                     break;
             }
             await this.loadNotifications();
@@ -174,23 +189,29 @@ export class NotificationsView extends View {
     async loadNotifications() {
         try {
             this.setState({ loading: true });
-
+            
             const { notifications, hasMore } = await this.fetchNotifications(this.state.page);
+            
+            if (!Array.isArray(notifications)) {
+                throw new Error('Invalid notifications data received');
+            }
             
             this.setState({
                 notifications: this.state.page === 1 ? notifications : [...this.state.notifications, ...notifications],
                 hasMore,
-                loading: false
+                loading: false,
+                error: null
             });
     
-            await this.updateNotificationsList(this.state); 
+            await this.updateNotificationsList(this.state);
             this.updateNotificationBadge(this.state);
         } catch (error) {
+            console.error('Notification loading error:', error);
             this.setState({
                 error: 'Failed to load notifications',
                 loading: false
             });
-            this.messageHandler.error('Failed to load notifications');
+            this.messageHandler.error(error.message || 'Failed to load notifications');
         }
     }
 
@@ -198,13 +219,21 @@ export class NotificationsView extends View {
         const notificationsGrid = this.$('.val-notif-grid');
         if (!notificationsGrid) return;
     
-        const notificationsHtml = state.loading ? 
-            '<div class="loading-spinner"></div>' :
-            state.notifications.length > 0 ?
-                state.notifications.map(notification => 
-                    this.renderNotificationItem(notification)  
-                ).join('') :
-                '<div class="no-notifications">No notifications yet</div>';
+        let notificationsHtml = '';
+        
+        if (state.loading && state.page === 1) {
+            notificationsHtml = '<div class="loading-spinner"></div>';
+        } else if (state.notifications.length > 0) {
+            notificationsHtml = state.notifications
+                .map(notification => this.renderNotificationItem(notification))
+                .join('');
+            
+            if (state.hasMore) {
+                notificationsHtml += '<div class="scroll-sentinel"></div>';
+            }
+        } else {
+            notificationsHtml = '<div class="no-notifications">No notifications yet</div>';
+        }
     
         notificationsGrid.innerHTML = notificationsHtml;
     }
@@ -375,6 +404,7 @@ export class NotificationsView extends View {
     }
 
     async afterMount() {
+        await this.loadNotifications()
         this.setupInfiniteScroll();
         this.startPolling();
         this.setupEventListeners();

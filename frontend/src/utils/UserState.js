@@ -51,6 +51,14 @@ export class UserState extends State {
     }
   }
 
+  async getUserById(userId) {
+    try {
+      return await this.http.get(`/auth/users/${userId}/`);
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async login(credentials) {
     this.setState({ loading: true, error: null });
     
