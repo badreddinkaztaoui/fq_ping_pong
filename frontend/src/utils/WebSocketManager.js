@@ -6,6 +6,7 @@ class MessageQueue {
     }
 
     addMessage(chatId, message) {
+        console.log('Adding message to queue for chat:', chatId);
         if (!this.queues.has(chatId)) {
             this.queues.set(chatId, []);
         }
@@ -13,6 +14,7 @@ class MessageQueue {
     }
 
     async sendQueuedMessages(chatId, socket) {
+        console.log('Attempting to send queued messages for chat:', chatId);
         const messages = this.queues.get(chatId) || [];
         while (messages.length > 0) {
             const message = messages.shift();
@@ -54,7 +56,7 @@ export class WebSocketManager {
         if (!userId) return;
         
         const userChannelId = `user_${userId}`;
-        await this.connectToChat(userChannelId);
+        // await this.connectToChat(userChannelId);
     }
 
     getWebSocketURL() {
@@ -102,8 +104,12 @@ export class WebSocketManager {
             const wsUrl = `${this.getWebSocketURL()}/ws/chat/${encodeURIComponent(chatId)}/?token=${encodeURIComponent(token)}`;
             const ws = new WebSocket(wsUrl);
 
-            ws.onopen = () => this.handleOpen(chatId, ws);
-            ws.onclose = (event) => this.handleClose(chatId, event);
+            ws.onopen = () => {
+                this.handleOpen(chatId, ws);
+            };
+            ws.onclose = (event) => {
+                this.handleClose(chatId, event);
+            };
             ws.onerror = (error) => this.handleError(chatId, error);
             ws.onmessage = (event) => this.handleMessage(chatId, event);
 
@@ -131,6 +137,7 @@ export class WebSocketManager {
     }
 
     handleClose(chatId, event) {
+        console.log('WebSocket closed for chat:', chatId, 'Event:', event);
         const connection = this.connections.get(chatId);
         if (connection) {
             connection.status = 'disconnected';
@@ -188,6 +195,7 @@ export class WebSocketManager {
     }
 
     async reconnect(chatId) {
+        console.log('Attempting to reconnect for chat:', chatId);
         const connection = this.connections.get(chatId);
         if (connection) {
             connection.reconnectAttempts++;
@@ -213,11 +221,24 @@ export class WebSocketManager {
     }
 
     sendMessage(chatId, content, receiverId) {
-        return this.send(chatId, {
+        console.log('WebSocketManager attempting to send message');
+        const connection = this.connections.get(chatId);
+        if (connection?.socket?.readyState === WebSocket.OPEN) {
+            console.log('WebSocket connection is open, sending message');
+            connection.socket.send(JSON.stringify({
+                type: 'message',
+                content,
+                receiver_id: receiverId
+            }));
+            return true;
+        }
+        console.log('WebSocket not ready, queueing message');
+        this.messageQueue.addMessage(chatId, {
             type: 'message',
             content,
             receiver_id: receiverId
         });
+        return false;
     }
 
     sendReadReceipt(chatId, messageId) {

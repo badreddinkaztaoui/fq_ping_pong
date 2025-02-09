@@ -3,7 +3,7 @@ import { wsManager } from '../utils/WebSocketManager';
 import { userState } from '../utils/UserState';
 import { State } from '../core/State';
 import { MessageHandler } from '../utils/MessageHandler';
-import "../styles/dashboard/chat.css";
+import "../styles/dashboard/chat.css"
 
 export class ChatView extends View {
     constructor(params = {}) {
@@ -24,9 +24,7 @@ export class ChatView extends View {
             isSearching: false
         });
 
-        this.messageHandler = new MessageHandler({
-            duration: 4000
-        });
+        this.messageHandler = new MessageHandler({ duration: 4000 });
         
         this.handleMessage = this.handleMessage.bind(this);
         this.handleStatusChange = this.handleStatusChange.bind(this);
@@ -34,138 +32,6 @@ export class ChatView extends View {
         this.handleStateChange = this.handleStateChange.bind(this);
         
         this.unsubscribe = this.chatState.subscribe(this.handleStateChange);
-    }
-
-    handleStateChange(newState) {
-        const conversationsList = this.$('.conversations-list');
-        if (conversationsList && newState.conversations !== this.conversations) {
-            conversationsList.innerHTML = newState.conversations.length > 0 
-                ? newState.conversations.map(conv => this.renderConversationItem(conv)).join('')
-                : this.renderEmptyState();
-        }
-
-        const messagesList = this.$('.messages-list');
-        if (messagesList && newState.messages !== this.messages) {
-            messagesList.innerHTML = newState.messages.map(msg => this.renderMessage(msg)).join('');
-            this.scrollToBottom();
-        }
-
-        this.updateLoadingState(newState.isLoading);
-    }
-
-    updateLoadingState(isLoading) {
-        const loadingIndicator = this.$('.loading-indicator');
-        if (loadingIndicator) {
-            loadingIndicator.style.display = isLoading ? 'block' : 'none';
-        }
-    }
-
-    async initialize() {
-        try {
-            this.chatState.setState({ isLoading: true });
-            const state = userState.getState();
-            this.chatState.setState({ currentUserId: state.user?.id });
-            await this.updateConversations();
-
-            if (this.activeChatId) {
-                await this.loadChatHistory(this.activeChatId);
-            }
-
-            wsManager.onMessage(this.handleMessage);
-            wsManager.onStatusChange(this.handleStatusChange);
-
-            if (this.chatState.getState().currentUserId) {
-                await wsManager.connectToChat(`user_${this.chatState.getState().currentUserId}`);
-            }
-            
-            this.messageHandler.success('Chat initialized successfully');
-        } catch (error) {
-            console.error('Failed to initialize chat:', error);
-            this.messageHandler.error('Failed to initialize chat. Please refresh the page.');
-        } finally {
-            this.chatState.setState({ isLoading: false });
-        }
-    }
-
-    async updateConversations() {
-        try {
-            const response = await userState.http.get('/chat/list/');
-            if (response && Array.isArray(response)) {
-                this.chatState.setState({ conversations: response });
-            }
-        } catch (error) {
-            console.error('Failed to update conversations:', error);
-            this.messageHandler.error('Could not load conversations');
-        }
-    }
-
-    async loadChatHistory(userId) {
-        try {
-            this.chatState.setState({ isLoading: true });
-            
-            const conversation = this.chatState.getState().conversations
-                .find(conv => conv.user_id === userId);
-            
-            if (conversation) {
-                this.activeChatInfo = {
-                    chatId: userId,
-                    senderId: this.chatState.getState().currentUserId,
-                    receiverId: userId
-                };
-            }
-
-            const response = await userState.http.get(`/chat/${userId}/messages/`);
-            
-            if (response) {
-                this.chatState.setState({ messages: response });
-                this.scrollToBottom();
-            }
-        } catch (error) {
-            console.error('Failed to load chat history:', error);
-            this.messageHandler.error('Could not load chat history');
-        } finally {
-            this.chatState.setState({ isLoading: false });
-        }
-    }
-
-    async sendMessage(content) {}
-
-    handleMessage(chatId, message) {}
-
-    handleStatusChange(chatId, status) {
-        const statusElement = this.$('.chat-header .connection-status');
-        if (statusElement) {
-            statusElement.textContent = status;
-            statusElement.className = `connection-status ${status}`;
-        }
-    }
-
-    async startNewConversation(userId) {}
-
-    async searchUsers(query) {
-        if (query.length < 2) return;
-        
-        try {
-            this.chatState.setState({ isSearching: true });
-            const response = await userState.searchUsers(query, {
-                exclude_friends: false,
-                exclude_blocked: true
-            });
-            
-            this.chatState.setState({ 
-                searchResults: response.results || [],
-                isSearching: false
-            });
-            
-            const searchResultsContainer = this.$('.search-results');
-            if (searchResultsContainer) {
-                searchResultsContainer.innerHTML = this.renderSearchResults();
-            }
-        } catch (error) {
-            console.error('Failed to search users:', error);
-            this.messageHandler.error('Failed to search users');
-            this.chatState.setState({ isSearching: false });
-        }
     }
 
     render() {
@@ -179,27 +45,15 @@ export class ChatView extends View {
         return container;
     }
 
-    renderConversationItem(conversation) {
-        return `
-            <div class="conversation-item ${this.activeChatId === conversation.user_id ? 'active' : ''}" 
-                 data-user-id="${conversation.user_id}">
-                <div class="conversation-info">
-                    <div class="user-name">${this.sanitizeHTML(conversation.username)}</div>
-                    <div class="last-message">${this.sanitizeHTML(conversation.last_message)}</div>
-                    <div class="last-time">${this.formatDate(conversation.last_message_time)}</div>
-                </div>
-            </div>
-        `;
-    }
-
     renderConversationsSidebar() {
         return `
             <div class="conversations-sidebar">
                 <div class="conversations-header">
                     <h2>Conversations</h2>
                 </div>
-                <div class="search-container" style="display: none;">
+                <div class="search-container">
                     <input type="text" class="search-input" placeholder="Search users..." autocomplete="off">
+                    ${this.chatState.getState().isSearching ? '<div class="searching-indicator">Searching...</div>' : ''}
                     <div class="search-results"></div>
                 </div>
                 <div class="conversations-list">
@@ -212,9 +66,27 @@ export class ChatView extends View {
         `;
     }
 
+    renderConversationItem(conversation) {
+        const unreadCount = conversation.unread_count || 0;
+        return `
+            <div class="conversation-item ${this.activeChatInfo.chatId === conversation.user_id ? 'active' : ''}" 
+                 data-user-id="${conversation.user_id}">
+                <div class="user-avatar">${this.getInitials(conversation.username)}</div>
+                <div class="conversation-info">
+                    <div class="user-name">${this.sanitizeHTML(conversation.username)}</div>
+                    <div class="last-message">${this.sanitizeHTML(conversation.last_message)}</div>
+                </div>
+                <div class="conversation-meta">
+                    <div class="last-time">${this.formatDate(conversation.last_message_time)}</div>
+                    ${unreadCount > 0 ? `<div class="unread-count">${unreadCount}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
     renderChatMain() {
         const { conversations } = this.chatState.getState();
-        const currentChat = conversations.find(c => c.user_id === this.activeChatId);
+        const currentChat = conversations.find(c => c.user_id === this.activeChatInfo.chatId);
         return `
             <div class="chat-main">
                 ${currentChat ? this.renderChatHeader(currentChat) : ''}
@@ -229,13 +101,17 @@ export class ChatView extends View {
             <div class="chat-header">
                 <div class="chat-info">
                     <div class="user-name">${this.sanitizeHTML(chat.username)}</div>
-                    <div class="connection-status">connected</div>
+                    <div class="user-status">
+                        <span class="status-indicator ${chat.is_online ? 'online' : 'offline'}"></span>
+                        ${chat.is_online ? 'Online' : `Last seen ${this.formatLastSeen(chat.last_seen)}`}
+                    </div>
                 </div>
             </div>
         `;
     }
 
     renderMessagesList() {
+        console.log(this.chatState.getState())
         return `
             <div class="messages-list">
                 ${this.chatState.getState().messages.map(msg => this.renderMessage(msg)).join('')}
@@ -244,7 +120,7 @@ export class ChatView extends View {
     }
 
     renderMessage(message) {
-        const isOwnMessage = message.senderId === this.chatState.getState().currentUserId;
+        const isOwnMessage = message.sender === this.params.id;
         return `
             <div class="chat-message ${isOwnMessage ? 'own-message' : ''}" data-message-id="${message.id}">
                 <div class="message-container">
@@ -252,7 +128,7 @@ export class ChatView extends View {
                         <div class="message-text">${this.sanitizeHTML(message.content)}</div>
                         <div class="message-metadata">
                             <span class="message-time">${this.formatDate(message.timestamp)}</span>
-                            ${this.getMessageStatusIcon(message.status, isOwnMessage)}
+                            ${this.getMessageStatusIcon("delivered", isOwnMessage)}
                         </div>
                     </div>
                 </div>
@@ -281,15 +157,27 @@ export class ChatView extends View {
 
     renderSearchResults() {
         const { searchResults } = this.chatState.getState();
-        return searchResults.length > 0 
-            ? searchResults.map(user => `
-                <div class="search-result-item" data-user-id="${user.id}">
-                    <div class="user-info">
-                        <div class="user-name">${this.sanitizeHTML(user.username)}</div>
+        if (searchResults.length === 0) {
+            return '<div class="no-results">No users found</div>';
+        }
+        
+        return searchResults.map(user => `
+            <div class="search-result-item" data-user-id="${user.id}">
+                <div class="user-avatar">
+                    <img src="${user.avatar_url}" alt="User avatar" />
+                </div>
+                <div class="user-info">
+                    <div class="user-name">${this.sanitizeHTML(user.username)}</div>
+                    <div class="user-status ${user.is_online ? 'online' : 'offline'}">
+                        ${user.is_online ? 'Online' : 'Offline'}
                     </div>
                 </div>
-            `).join('')
-            : '<div class="no-results">No users found</div>';
+            </div>
+        `).join('');
+    }
+
+    getInitials(name) {
+        return name.split(' ').map(n => n[0]).join('').toUpperCase();
     }
 
     formatDate(dateString) {
@@ -299,9 +187,33 @@ export class ChatView extends View {
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    formatLastSeen(lastSeen) {
+        if (!lastSeen) return 'Never';
+    
+        const now = new Date();
+        const lastSeenDate = new Date(lastSeen);
+        const diffInSeconds = Math.floor((now - lastSeenDate) / 1000);
+    
+        if (diffInSeconds < 60) {
+            return 'Just now';
+        } else if (diffInSeconds < 3600) {
+            const minutes = Math.floor(diffInSeconds / 60);
+            return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+        } else if (diffInSeconds < 86400) {
+            const hours = Math.floor(diffInSeconds / 3600);
+            return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+        } else if (diffInSeconds < 604800) {
+            const days = Math.floor(diffInSeconds / 86400);
+            return `${days} day${days > 1 ? 's' : ''} ago`;
+        } else {
+            return lastSeenDate.toLocaleDateString();
+        }
+    }
+
     getMessageStatusIcon(status, isOwnMessage) {
         if (!isOwnMessage) return '';
         const icons = {
+            sending: '🕒',
             sent: '✓',
             delivered: '✓✓',
             read: '✓✓'
@@ -322,6 +234,289 @@ export class ChatView extends View {
         }
     }
 
+    searchUsers(query) {
+        if (query.length < 2) {
+            this.chatState.setState({ searchResults: [], isSearching: false });
+            return;
+        }
+        
+        this.chatState.setState({ isSearching: true });
+        
+        setTimeout(() => {
+            userState.searchUsers(query, {
+                exclude_friends: false,
+                exclude_blocked: true
+            }).then(response => {
+                this.chatState.setState({ 
+                    searchResults: response.results || [],
+                    isSearching: false
+                });
+                this.updateSearchResultsUI();
+            }).catch(error => {
+                this.messageHandler.error('Failed to search users');
+                this.chatState.setState({ isSearching: false });
+            });
+        }, 300);
+    }
+    
+    updateSearchResultsUI() {
+        const searchResultsContainer = this.$('.search-results');
+        if (searchResultsContainer) {
+            searchResultsContainer.innerHTML = this.renderSearchResults();
+        }
+    }
+
+    debounce(func, delay) {
+        let timeoutId;
+        return (...args) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => func.apply(this, args), delay);
+        };
+    }
+    
+    setupEventListeners() {
+        const searchInput = this.$('.search-input');
+        const searchResultsContainer = this.$('.search-results');
+        
+        if (searchInput) {
+            const debouncedSearch = this.debounce((value) => {
+                this.searchUsers(value);
+            }, 300);
+
+            searchInput.addEventListener('input', (e) => {
+                const value = e.target.value.trim();
+                if (value.length >= 2) {
+                    debouncedSearch(value);
+                    searchResultsContainer.style.display = 'block';
+                } else {
+                    searchResultsContainer.style.display = 'none';
+                    this.chatState.setState({ searchResults: [], isSearching: false });
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !searchResultsContainer.contains(e.target)) {
+                    searchResultsContainer.style.display = 'none';
+                }
+            });
+        }
+
+        if (searchResultsContainer) {
+            searchResultsContainer.addEventListener('click', (e) => {
+                const searchResultItem = e.target.closest('.search-result-item');
+                if (searchResultItem) {
+                    const userId = searchResultItem.dataset.userId;
+                    this.startNewConversation(userId);
+                    searchResultsContainer.style.display = 'none';
+                    if (searchInput) {
+                        searchInput.value = '';
+                    }
+                }
+            });
+        }
+
+        const newChatBtn = this.$('.new-chat-btn');
+        if (newChatBtn) {
+            newChatBtn.addEventListener('click', () => {
+                this.chatState.setState({ searchResults: [], isSearching: true });
+                const searchInput = this.$('.search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            });
+        }
+
+        const chatForm = this.$('.chat-form');
+        if (chatForm) {
+            chatForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const input = this.$('.chat-input-text');
+                if (input && input.value.trim()) {
+                    this.sendMessage(input.value.trim());
+                    input.value = '';
+                }
+            });
+        }
+
+        const conversationsList = this.$('.conversations-list');
+        if (conversationsList) {
+            conversationsList.addEventListener('click', (e) => {
+                const conversationItem = e.target.closest('.conversation-item');
+                if (conversationItem) {
+                    const userId = conversationItem.dataset.userId;
+                    this.loadChatHistory(userId);
+                }
+            });
+        }
+    }
+    
+    async startNewConversation(userId) {
+        this.chatState.setState({ searchResults: [], isSearching: false });
+        
+         const searchInput = this.$('.search-input');
+        if (searchInput) {
+            searchInput.value = '';
+        }
+        
+        this.router.navigate(`/dashboard/chat/${userId}`);
+    }
+
+    handleStateChange(newState) {
+        const conversationsList = this.$('.conversations-list');
+        if (conversationsList && newState.conversations !== this.conversations) {
+            conversationsList.innerHTML = newState.conversations.length > 0 
+                ? newState.conversations.map(conv => this.renderConversationItem(conv)).join('')
+                : this.renderEmptyState();
+        }
+    
+        const messagesList = this.$('.messages-list');
+        if (messagesList && newState.messages !== this.messages) {
+            messagesList.innerHTML = newState.messages.map(msg => this.renderMessage(msg)).join('');
+            this.scrollToBottom();
+        }
+    
+        this.updateLoadingState(newState.isLoading);
+        this.updateSearchResultsUI();
+    }
+    
+    updateLoadingState(isLoading) {
+        const loadingIndicator = this.$('.loading-indicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = isLoading ? 'block' : 'none';
+        }
+    }
+    
+    async initialize() {
+        try {
+            this.chatState.setState({ isLoading: true });
+            const state = userState.getState();
+            const currentUserId = state.user?.id;
+            this.chatState.setState({ currentUserId });
+    
+            await wsManager.connectToChat(`user_${currentUserId}`);
+    
+            const userId = this.params.id;
+
+            if (userId) {
+                await this.loadChatHistory(userId);
+            }
+    
+            wsManager.onMessage(this.handleMessage);
+            wsManager.onStatusChange(this.handleStatusChange);
+    
+            this.messageHandler.success('Chat initialized successfully');
+        } catch (error) {
+            this.messageHandler.error('Failed to initialize chat. Please refresh the page.');
+        } finally {
+            this.chatState.setState({ isLoading: false });
+        }
+    }
+    
+    async updateConversations() {
+        try {
+            const response = await userState.http.get('/chat/list/');
+            if (response && Array.isArray(response)) {
+                this.chatState.setState({ conversations: response });
+            }
+        } catch (error) {
+            this.messageHandler.error('Could not load conversations');
+        }
+    }
+
+    async loadChatHistory(userId) {
+        try {
+            this.chatState.setState({ isLoading: true });
+            
+            const conversation = this.chatState.getState().conversations
+                .find(conv => conv.user_id === userId);
+            
+            if (conversation) {
+                this.activeChatInfo = {
+                    chatId: userId,
+                    senderId: this.chatState.getState().currentUserId,
+                    receiverId: userId
+                };
+            }
+
+            const response = await userState.http.get(`/chat/${userId}/messages/`);
+            
+            if (response) {
+                this.chatState.setState({ messages: response });
+                this.scrollToBottom();
+            }
+        } catch (error) {
+            this.messageHandler.error('Could not load chat history');
+        } finally {
+            this.chatState.setState({ isLoading: false });
+        }
+    }
+
+    updateMessageStatus(timestamp, status) {
+        this.chatState.setState(prevState => ({
+            messages: prevState.messages.map(msg => 
+                msg.time === timestamp ? { ...msg, status: status } : msg
+            )
+        }));
+    }
+    
+    async sendMessage(content) {
+        if (!this.activeChatInfo.chatId) {
+            console.error('No active chat selected');
+            return;
+        }
+    
+        if (!content.trim() || !this.activeChatInfo.chatId) return;
+    
+        try {
+            const message = {
+                content,
+                sender: this.chatState.getState().currentUserId,
+                receiver: this.activeChatInfo.receiverId,
+                time: new Date().toISOString(),
+                status: 'sending'
+            };
+    
+            this.chatState.setState(prevState => ({
+                messages: [...prevState.messages, message]
+            }));
+    
+            const sent = wsManager.sendMessage(this.activeChatInfo.chatId, content, this.activeChatInfo.receiverId);
+    
+            if (sent) {
+                this.updateMessageStatus(message.time, 'sent');
+            } else {
+                this.updateMessageStatus(message.time, 'failed');
+            }
+    
+            this.scrollToBottom();
+        } catch (error) {
+            this.messageHandler.error('Failed to send message. Please try again.');
+        }
+    }
+    
+    handleMessage(chatId, message) {
+        if (chatId === this.activeChatInfo.chatId) {
+            this.chatState.setState(prevState => ({
+                messages: [...prevState.messages, message]
+            }));
+            this.scrollToBottom();
+            
+            wsManager.sendReadReceipt(chatId, message.id);
+        } else {
+            this.updateUnreadCount(chatId);
+        }
+    
+        this.updateConversationLastMessage(chatId, message);
+    }
+    
+    handleStatusChange(chatId, status) {
+        const statusElement = this.$('.chat-header .connection-status');
+        if (statusElement) {
+            statusElement.textContent = status;
+            statusElement.className = `connection-status ${status}`;
+        }
+    }
+    
     async afterMount() {
         await this.initialize();
         this.setupEventListeners();
@@ -329,12 +524,19 @@ export class ChatView extends View {
             this.updateConversations();
         }, 30000);
     }
-
-    setupEventListeners() {}
-
+    
     cleanup() {
-        if (this.currentUserId) {
-            wsManager.disconnect(`user_${this.currentUserId}`);
+        if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+        }
+        if (this.chatState.getState().currentUserId) {
+            wsManager.disconnect(`user_${this.chatState.getState().currentUserId}`);
+        }
+        if (this.activeChatInfo.chatId) {
+            wsManager.disconnect(this.activeChatInfo.chatId);
+        }
+        if (this.unsubscribe) {
+            this.unsubscribe();
         }
     }
 }
