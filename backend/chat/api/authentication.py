@@ -33,6 +33,7 @@ class ChatJWTAuthentication(JWTAuthentication):
             
             if user_data:
                 user = SimpleUser(user_data)
+                request.token = token
                 return (user, None)
             return None
             

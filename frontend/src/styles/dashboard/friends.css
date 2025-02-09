@@ -570,7 +570,6 @@
 /* Search Container Styles */
 .search-container {
   position: relative;
-  margin-bottom: 32px; /* Replaced --spacing-xxl */
 }
 
 /* Search Input Field */

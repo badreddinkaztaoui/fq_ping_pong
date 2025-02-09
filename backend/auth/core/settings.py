@@ -135,7 +135,7 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'rest_framework.views.exception_handler',
     'DEFAULT_THROTTLE_RATES': {
         'anon': '20/minute',
-        'user': '100/minute'
+        'user': '100/minute' # You had to increase number of max requests per minutes
     }
 }
 

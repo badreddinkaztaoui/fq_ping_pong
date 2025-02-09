@@ -48,12 +48,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return
 
         await self.save_message(content, receiver_id)
-        
+
+        await self.channel_layer.group_send(
+            f"user_{self.user_id}",
+            {
+                "type": "send.message",
+                "sender": self.user_id,
+                "receiver": receiver_id,
+                "content": content
+            }
+        )
+
         await self.channel_layer.group_send(
             f"user_{receiver_id}",
             {
                 "type": "send.message",
                 "sender": self.user_id,
+                "receiver": receiver_id,
                 "content": content
             }
         )
@@ -104,9 +115,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.send(json.dumps({
             "type": "message",
             "sender": event["sender"],
+            "receiver": event["receiver"],
             "content": event["content"],
         }))
-    
+
     async def send_error(self, message: str):
         """
         Sends error message to the client.

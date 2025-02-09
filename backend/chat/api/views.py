@@ -1,5 +1,4 @@
 import asyncio
-import datetime
 import aiohttp
 import logging
 from rest_framework import status
@@ -8,11 +7,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.renderers import JSONRenderer
 from django.db.models import Q
+from asgiref.sync import async_to_sync
 from django.conf import settings
 from django.db import connections
 from django.db.utils import OperationalError
 from .models import Messages, BlockUsers
 from .serializers import MessageSerializer
+from .utils import get_user_from_id
 
 
 logger = logging.getLogger(__name__)
@@ -118,7 +119,8 @@ class ListLatestConversasions(APIView):
                 other_user = msg.receiver if str(msg.sender) == user_id else msg.sender
                 if other_user not in conversations:
                     conversations[other_user] = {
-                        "user_id": str(other_user),
+                        "user_id": other_user,
+                        "user": async_to_sync(get_user_from_id)(other_user, request.token),
                         "last_message": msg.content,
                         "last_message_time": msg.time.strftime('%Y-%m-%d %H:%M')
                     }

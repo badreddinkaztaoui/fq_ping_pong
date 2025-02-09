@@ -68,9 +68,11 @@ export class ChatView extends View {
         return `
             <div class="conversation-item" 
                  data-user-id="${conversation.user_id}">
-                <div class="user-avatar"></div>
+                <div class="user-avatar-conv">
+                    <img src="${conversation.user.avatar_url}" alt="User avatar" />
+                </div>
                 <div class="conversation-info">
-                    <div class="user-name">${this.sanitizeHTML(conversation?.username)}</div>
+                    <div class="user-name">${this.sanitizeHTML(conversation?.user.username)}</div>
                     <div class="last-message">${this.sanitizeHTML(conversation.last_message)}</div>
                 </div>
                 <div class="conversation-meta">
@@ -108,7 +110,6 @@ export class ChatView extends View {
     }
 
     renderMessagesList() {
-        console.log(this.chatState.getState())
         return `
             <div class="messages-list">
                 ${this.chatState.getState().messages.map(msg => this.renderMessage(msg)).join('')}
@@ -117,7 +118,7 @@ export class ChatView extends View {
     }
 
     renderMessage(message) {
-        const isOwnMessage = message.sender === this.params.id;
+        const isOwnMessage = message.receiver === this.params.id;
         return `
             <div class="chat-message ${isOwnMessage ? 'own-message' : ''}" data-message-id="${message.id}">
                 <div class="message-container">
@@ -326,6 +327,7 @@ export class ChatView extends View {
                 const input = this.$('.chat-input-text');
                 if (input && input.value.trim()) {
                     this.sendMessage(input.value.trim());
+
                     input.value = '';
                 }
             });
@@ -361,7 +363,7 @@ export class ChatView extends View {
                 ? newState.conversations.map(conv => this.renderConversationItem(conv)).join('')
                 : this.renderEmptyState();
         }
-    
+        
         const messagesList = this.$('.messages-list');
         if (messagesList && newState.messages !== this.messages) {
             messagesList.innerHTML = newState.messages.map(msg => this.renderMessage(msg)).join('');
@@ -452,7 +454,7 @@ export class ChatView extends View {
             console.error('No friend selected');
             return;
         }
-    
+
         if (!content.trim()) return;
     
         try {
@@ -463,13 +465,8 @@ export class ChatView extends View {
                 time: new Date().toISOString(),
                 status: 'sending'
             };
-    
-            this.chatState.setState(prevState => ({
-                messages: [...prevState.messages, message]
-            }));
-    
             const sent = wsManager.sendMessage(this.friendId, content);
-    
+
             this.updateMessageStatus(message.time, sent ? 'sent' : 'failed');
             this.scrollToBottom();
         } catch (error) {
@@ -493,9 +490,8 @@ export class ChatView extends View {
 
     handleChatMessage(message) {
         if (message.sender === this.friendId || message.receiver === this.friendId) {
-            this.chatState.setState(prevState => ({
-                messages: [...prevState.messages, message]
-            }));
+            this.chatState.setState( {messages: [...this.chatState.getState().messages, message]} );
+    
             this.scrollToBottom();
             
             wsManager.sendReadReceipt(message.id);
