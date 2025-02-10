@@ -111,7 +111,6 @@ export class ChatView extends View {
     const currentChat = conversations.find(
       (c) => c.user_id === this.activeChatInfo.chatId
     );
-    console.log(currentChat);
     return `
             <div class="chat-main">
                 ${currentChat ? this.renderChatHeader(currentChat) : ""}
