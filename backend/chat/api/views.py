@@ -145,7 +145,8 @@ class BlockUsersView(APIView):
     def get(self, request):
         try:
             user = request.user.id
-            blocked_users = BlockUsers.objects.filter(blocker=user)
+            blocked_users = BlockUsers.objects.filter(blocker=user).values("blocker", "blocked", "blocked_at")
+
             return Response(list(blocked_users), status=status.HTTP_200_OK)
 
         except Exception as e:
@@ -157,9 +158,14 @@ class BlockUsersView(APIView):
             blocker = request.user.id
             blocked = request.data.get('user_id')
             
-            BlockUsers.objects.filter(blocker=blocker, blocked=blocked).delete()
-            return Response({"message": f"You have unblocked {blocked}."}, status=status.HTTP_200_OK)
-
+            logger.info(blocker)
+            logger.info(blocked)
+            if not blocker or not blocked:
+                return Response({"error": "Blocker or blocked is required"}, status=status.HTTP_404_NOT_FOUND)
+            if blocker == blocked:
+                return Response({"error": "you cannot block yourself"}, status=status.HTTP_400_BAD_REQUEST)
+            BlockUsers.objects.create(blocker=blocker, blocked=blocked)
+            return Response({"message": f"You have blocked {blocked}."}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
