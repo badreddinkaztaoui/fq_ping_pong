@@ -2,35 +2,57 @@
   position: relative;
   width: 100%;
   height: 360px;
-  background: linear-gradient(145deg, #0f141b 0%, #1a1f25 100%);
+  background: transparent;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 20px;
-  border-radius: 16px;
 }
 
+/* Main edge container with gradient background */
 .vx-banner::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(
-      circle at 20% 50%,
-      rgba(255, 70, 85, 0.15) 0%,
-      transparent 50%
-    ),
-    radial-gradient(
-      circle at 80% 50%,
-      rgba(255, 70, 85, 0.1) 0%,
-      transparent 50%
-    );
+  background: linear-gradient(145deg, #0f141b 0%, #1a1f25 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 65%, 85% 100%, 60% 85%, 40% 100%, 0 80%);
+}
+
+/* Colorized edge overlay with animation */
+.vx-banner::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(90deg, #ff4655, #ff2300, #000000, #000000, #ff4655);
+  clip-path: polygon(0 0, 100% 0, 100% 65%, 85% 100%, 60% 85%, 40% 100%, 0 80%);
+  z-index: 1;
+  animation: borderGlow 4s linear infinite;
+}
+
+/* Inner container */
+.vx-banner__inner {
+  position: absolute;
+  inset: 2px;
+  background: linear-gradient(145deg, #0f141b 0%, #1a1f25 100%);
+  clip-path: polygon(0 0, 100% 0, 100% 65%, 85% 100%, 60% 85%, 40% 100%, 0 80%);
+  z-index: 2;
+}
+
+/* Geometric accents */
+.vx-banner__inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 20% 50%, rgba(255, 70, 85, 0.15) 0%, transparent 50%),
+    radial-gradient(circle at 80% 50%, rgba(0, 191, 255, 0.1) 0%, transparent 50%);
   animation: vxGradientPulse 4s infinite;
 }
 
 .vx-banner__content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -89,12 +111,7 @@
   top: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 70, 85, 0.2),
-    transparent
-  );
+  background: linear-gradient(90deg, transparent, rgba(255, 70, 85, 0.2), transparent);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -113,16 +130,11 @@
 .vx-banner__tag-container {
   position: relative;
   padding: 2px;
-  background: linear-gradient(90deg, transparent, #ff4655, transparent);
-  clip-path: polygon(
-    15px 0%,
-    calc(100% - 15px) 0%,
-    100% 50%,
-    calc(100% - 15px) 100%,
-    15px 100%,
-    0% 50%
-  );
+  background: linear-gradient(90deg, transparent, #ff4655, #00bfff, #ff4655, transparent);
+  background-size: 200% 100%;
+  clip-path: polygon(20px 0%, calc(100% - 20px) 0%, 100% 50%, calc(100% - 20px) 100%, 20px 100%, 0% 50%);
   transition: transform 0.3s ease;
+  animation: gradientFlow 3s linear infinite;
 }
 
 .vx-banner__tag {
@@ -148,11 +160,34 @@
   background: rgba(255, 70, 85, 0.1);
 }
 
+/* Animations */
+@keyframes borderGlow {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+@keyframes gradientFlow {
+  0% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: -100% 50%;
+  }
+}
+
 @keyframes vxGradientPulse {
+
   0%,
   100% {
     opacity: 0.5;
   }
+
   50% {
     opacity: 1;
   }
@@ -173,11 +208,13 @@
 }
 
 @keyframes vxLinePulse {
+
   0%,
   100% {
     opacity: 0.5;
     transform: scaleX(1);
   }
+
   50% {
     opacity: 1;
     transform: scaleX(1.2);
@@ -198,9 +235,16 @@
   }
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .vx-banner {
     height: 300px;
+  }
+
+  .vx-banner::before,
+  .vx-banner::after,
+  .vx-banner__inner {
+    clip-path: polygon(0 0, 100% 0, 100% 80%, 70% 100%, 0 85%);
   }
 
   .vx-banner__welcome {
