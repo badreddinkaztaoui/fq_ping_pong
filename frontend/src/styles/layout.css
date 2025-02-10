@@ -815,7 +815,7 @@ header {
   overflow-y: auto;
 }
 
-.notification-item {
+.notification-item-lay {
   display: flex;
   align-items: flex-start;
   gap: 12px;
@@ -825,7 +825,7 @@ header {
   cursor: pointer;
 }
 
-.notification-item.unread {
+.notification-item-lay.unread {
   background: rgba(255, 70, 85, 0.05);
 }
 
@@ -922,4 +922,35 @@ header {
     max-height: none;
     height: calc(100% - 120px);
   }
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: #fff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.notification-item-lay.empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.notification-item-lay.empty p {
+  margin: 0;
 }

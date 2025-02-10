@@ -1,6 +1,7 @@
 import { userState } from "../utils/UserState";
-
 import "../styles/layout.css";
+import { Http } from "../utils/Http";
+import { MessageHandler } from "../utils/MessageHandler";
 
 export class Layout {
   constructor(view, layoutType, router) {
@@ -11,6 +12,12 @@ export class Layout {
     this.userState = userState;
     this.router = router;
     this.boundEventListeners = new Map();
+
+    // Add these new properties
+    this.http = new Http();
+    this.messageHandler = new MessageHandler();
+    this.pollInterval = null;
+    this.POLL_INTERVAL = 20000;
   }
 
   async createDashboardLayout() {
@@ -75,52 +82,26 @@ export class Layout {
                 <img src="/images/coin.png" alt="Coins" class="coin-icon" />
                 <span>${userState.state.user.coins}</span>
               </div>
-                <div class="notifications">
-                  <div class="notification-icon-wrapper">
-                    <img src="/images/icons/notification.svg" alt="Notifications" class="notification-icon" />
-                    <span class="notification-badge">3</span>
+               <div class="notifications">
+                <div class="notification-icon-wrapper">
+                  <img src="/images/icons/notification.svg" alt="Notifications" class="notification-icon" />
+                  <span class="notification-badge">0</span>
+                </div>
+                <div class="notifications-dropdown">
+                  <div class="dropdown-header">
+                    <h3>Notifications</h3>
+                    <button class="mark-all-read">Mark all as read</button>
                   </div>
-                  <div class="notifications-dropdown">
-                    <div class="dropdown-header">
-                      <h3>Notifications</h3>
-                      <button class="mark-all-read">Mark all as read</button>
-                    </div>
-                    <div class="notifications-list">
-                      <div class="notification-item unread">
-                        <div class="notification-avatar">
-                          <img src="/images/users/player-2.jpeg" alt="Player" />
-                        </div>
-                        <div class="notification-content">
-                          <p class="notification-text"><strong>John Doe</strong> challenged you to a match!</p>
-                          <span class="notification-time">2 minutes ago</span>
-                        </div>
-                        <div class="notification-status"></div>
-                      </div>
-                      <div class="notification-item unread">
-                        <div class="notification-avatar">
-                          <img src="/images/trophy.png" alt="Trophy" />
-                        </div>
-                        <div class="notification-content">
-                          <p class="notification-text">You won the tournament! Collect your rewards.</p>
-                          <span class="notification-time">1 hour ago</span>
-                        </div>
-                        <div class="notification-status"></div>
-                      </div>
-                      <div class="notification-item">
-                        <div class="notification-avatar">
-                          <img src="/images/coin.png" alt="Coins" />
-                        </div>
-                        <div class="notification-content">
-                          <p class="notification-text">You received 500 coins from daily login!</p>
-                          <span class="notification-time">1 day ago</span>
-                        </div>
-                        <div class="notification-status"></div>
-                      </div>
-                    </div>
-                    <div class="dropdown-footer">
-                      <a class="view-all" data-link="/dashboard/notifications" >View All Notifications</a>
+                  <div class="notifications-list">
+                    <!-- Will be populated dynamically -->
+                    <div class="notification-item-lay empty">
+                      <p class="notification-text">No notifications yet</p>
                     </div>
                   </div>
+                  <div class="dropdown-footer">
+                    <a class="view-all" data-link="/dashboard/notifications">View All Notifications</a>
+                  </div>
+                </div>
               </div>
               
               <div class="profile-dropdown">
@@ -232,38 +213,20 @@ export class Layout {
   }
 
   async mount(container) {
-    try {
-      this.element = this.layoutType === "dashboard"
+    this.element =
+      this.layoutType === "dashboard"
         ? await this.createDashboardLayout()
         : await this.createLandingLayout();
 
-      if (!this.element || !this.contentContainer) {
-        throw new Error('Failed to create layout elements');
-      }
+    container.innerHTML = "";
+    container.appendChild(this.element);
 
-      if (container) {
-        container.innerHTML = '';
-        container.appendChild(this.element);
-      } else {
-        throw new Error('Invalid container element');
-      }
-
-      await this.setupEventListeners();
-
-      if (this.view) {
-        const mounted = await this.view.mount(this.contentContainer);
-        if (!mounted) {
-          return;
-        }
-      }
-
-      return true;
-    } catch (error) {
-      console.error('Error mounting layout:', error);
-      return false;
+    if (this.view) {
+      await this.view.mount(this.contentContainer);
     }
-  }
 
+    this.setupEventListeners();
+  }
 
   async unmount() {
     if (this.view) {
@@ -284,6 +247,10 @@ export class Layout {
       this.element.parentNode.removeChild(this.element);
     }
     this.element = null;
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
   }
 
   handleDashboardRoutes() {
@@ -330,7 +297,7 @@ export class Layout {
       setActiveLink(window.location.pathname);
     });
   }
-  profileDropDown() {}
+
   setupEventListeners() {
     if (this.layoutType === "dashboard") {
       const logoutBtn = this.element.querySelector("#logoutBtn");
@@ -455,7 +422,7 @@ export class Layout {
     window.addEventListener("resize", () => {
       clearTimeout(resizeTimeout);
       resizeTimeout = setTimeout(() => {
-        if (window.innerWidth > 992) {
+        if (window.innerWidth > 992 && topNav !== null) {
           menuToggle.classList.remove("active");
           navContainer.classList.remove("active");
           navContainer.style.display = "flex";
@@ -490,48 +457,168 @@ export class Layout {
     });
 
     // *Notifications toggle
-    const notifications = document.querySelector(".notifications");
-    const notificationIcon = document.querySelector(
+    const notifications = this.element.querySelector(".notifications");
+    const notificationIcon = this.element.querySelector(
       ".notification-icon-wrapper"
     );
+    const markAllReadBtn = this.element.querySelector(".mark-all-read");
+    const notificationsList = this.element.querySelector(".notifications-list");
+    const viewAllLink = this.element.querySelector(".view-all");
 
-    notificationIcon.addEventListener("click", (e) => {
-      e.stopPropagation();
-      notifications.classList.toggle("active");
-    });
+    if (notificationIcon) {
+      notificationIcon.addEventListener("click", (e) => {
+        e.stopPropagation();
+        notifications.classList.toggle("active");
+      });
+    }
 
-    // Close notifications when clicking outside
     document.addEventListener("click", (e) => {
-      if (!notifications.contains(e.target)) {
+      if (notifications && !notifications.contains(e.target)) {
         notifications.classList.remove("active");
       }
     });
 
-    // Mark all as read functionality
-    const markAllReadBtn = document.querySelector(".mark-all-read");
-    markAllReadBtn.addEventListener("click", () => {
-      const unreadItems = document.querySelectorAll(
-        ".notification-item.unread"
-      );
-      unreadItems.forEach((item) => {
-        item.classList.remove("unread");
+    if (markAllReadBtn) {
+      markAllReadBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.markAllAsRead();
       });
-      document.querySelector(".notification-badge").textContent = "0";
-    });
+    }
 
-    // Individual notification click
-    const notificationItems = document.querySelectorAll(".notification-item");
-    notificationItems.forEach((item) => {
-      item.addEventListener("click", () => {
-        item.classList.remove("unread");
-        // Update badge count
-        const unreadCount = document.querySelectorAll(
-          ".notification-item.unread"
-        ).length;
-        document.querySelector(".notification-badge").textContent = unreadCount;
+    if (notificationsList) {
+      notificationsList.addEventListener("click", (e) => {
+        const notificationItem = e.target.closest(".notification-item-lay");
+        if (notificationItem && !notificationItem.classList.contains("empty")) {
+          const id = notificationItem.dataset.id;
+          if (id) {
+            this.markAsRead(id);
+          }
+        }
       });
-    });
+    }
+
+    if (viewAllLink) {
+      viewAllLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.router.navigate("/dashboard/notifications");
+        notifications.classList.remove("active");
+      });
+    }
+
+    // Start notifications polling
+    this.startNotificationsPolling();
   }
 
   async handleLogout() {}
+
+  async fetchNotifications() {
+    try {
+      const response = await this.http.get(
+        "/auth/notifications/?page=1&per_page=3"
+      );
+      return response.notifications;
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+      return [];
+    }
+  }
+
+  formatTimeAgo(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+
+    const intervals = {
+      year: 31536000,
+      month: 2592000,
+      week: 604800,
+      day: 86400,
+      hour: 3600,
+      minute: 60,
+    };
+
+    for (const [unit, secondsInUnit] of Object.entries(intervals)) {
+      const interval = Math.floor(seconds / secondsInUnit);
+      if (interval >= 1) {
+        return interval === 1 ? `1 ${unit} ago` : `${interval} ${unit}s ago`;
+      }
+    }
+
+    return "Just now";
+  }
+
+  async updateNotificationsList() {
+    if (!this.element) return;
+    const notifications = await this.fetchNotifications();
+    const notificationsList = this.element.querySelector(".notifications-list");
+    const badge = this.element.querySelector(".notification-badge");
+
+    if (!notificationsList || !badge) return;
+
+    const unreadCount = notifications.filter((n) => !n.is_read).length;
+    badge.textContent = unreadCount;
+    badge.style.display = unreadCount > 0 ? "flex" : "none";
+
+    if (notifications.length === 0) {
+      notificationsList.innerHTML = `
+        <div class="notification-item-lay empty">
+          <p class="notification-text">No notifications yet</p>
+        </div>
+      `;
+    } else {
+      notificationsList.innerHTML = notifications
+        .map(
+          (notification) => `
+        <div class="notification-item-lay ${
+          notification.is_read ? "" : "unread"
+        }" data-id="${notification.id}">
+          <div class="notification-avatar">
+            <img src="${
+              notification.avatar_url || "/images/users/default-avatar.webp"
+            }" alt="Notification" />
+          </div>
+          <div class="notification-content">
+            <p class="notification-text">${notification.message}</p>
+            <span class="notification-time">${this.formatTimeAgo(
+              notification.created_at
+            )}</span>
+          </div>
+          <div class="notification-status"></div>
+        </div>
+      `
+        )
+        .join("");
+    }
+  }
+
+  async markAsRead(notificationId) {
+    try {
+      await this.http.post(`/auth/notifications/${notificationId}/read/`);
+      await this.updateNotificationsList();
+    } catch (error) {
+      this.messageHandler.error("Failed to mark notification as read");
+    }
+  }
+
+  async markAllAsRead() {
+    try {
+      await this.http.post("/auth/notifications/mark-all-read/");
+      await this.updateNotificationsList();
+      this.messageHandler.success("All notifications marked as read");
+    } catch (error) {
+      this.messageHandler.error("Failed to mark all notifications as read");
+    }
+  }
+
+  startNotificationsPolling() {
+    this.updateNotificationsList();
+
+    this.pollInterval = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        this.updateNotificationsList();
+      }
+    }, this.POLL_INTERVAL);
+  }
 }

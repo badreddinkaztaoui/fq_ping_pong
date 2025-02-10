@@ -518,12 +518,15 @@
   z-index: 1000;
 }
 
+
+
+
 .modal.active {
   display: flex;
 }
 
 .modal-content {
-  background: var(--valorant-dark);
+  background: #0f1923;
   border-radius: var(--radius-lg);
   padding: var(--spacing-xxl);
   width: 500px;
@@ -534,9 +537,10 @@
 
 .modal-header {
   margin-bottom: 40px;
-  color: var(--valorant-red);
-  font-size: 1.6em;
-  font-weight: 600;
+  color: #E63E4C;
+  font-family: "VALORANT";
+  font-size: 1.8rem;
+  font-weight: 900;
   text-align: center;
 }
 
@@ -570,6 +574,7 @@
 /* Search Container Styles */
 .search-container {
   position: relative;
+  margin-bottom: 32px; /* Replaced --spacing-xxl */
 }
 
 /* Search Input Field */
@@ -683,6 +688,39 @@
   background: #E63E4C;
   transform: translateY(0);
 }
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+.modal-actions button.cancel-btn {
+  font-family: "VALORANT";
+  letter-spacing: 1px;
+  background: transparent;
+  color: #FF4655;
+  border: 1px solid #FF4655;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-actions button.cancel-btn:hover {
+  background: rgba(255, 70, 85, 0.1);
+  transform: translateY(-1px);
+}
+
+.modal-actions button.cancel-btn:active {
+  background: rgba(255, 70, 85, 0.2);
+  transform: translateY(0);
+}
+
+
+
 
 /* Loading State */
 .loading-overlay {
