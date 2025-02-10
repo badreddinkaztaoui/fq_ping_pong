@@ -56,12 +56,9 @@ export class FriendsView extends View {
     }
 
     renderHeader() {
-        const onlineCount = this.state.friends.filter(f => f.friend.is_online).length;
         return `
             <div class="friends-header">
-                <div class="header-title">
-                    <span class="online-count">${onlineCount} Online</span>
-                </div>
+                <div class="header-title"></div>
                 <div class="header-actions">
                     <button class="valorant-btn add-friend-btn" data-action="openModal">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" 
@@ -390,6 +387,7 @@ export class FriendsView extends View {
     updateLists() {
         switch (this.state.activeTab) {
             case 'online':
+                this.updateFriendsList();
             case 'offline':
                 this.updateFriendsList();
                 break;

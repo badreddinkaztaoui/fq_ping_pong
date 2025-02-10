@@ -136,7 +136,6 @@ export class WebSocketManager {
             const data = JSON.parse(event.data);
             
             if (data.type === MessageTypes.ERROR) {
-                console.error(`Server error: ${data.message}`);
                 this.notifyStatusChange('server_error');
                 return;
             }
