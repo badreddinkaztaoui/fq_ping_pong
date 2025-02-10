@@ -13,7 +13,6 @@ export class Layout {
     this.router = router;
     this.boundEventListeners = new Map();
 
-    // Add these new properties
     this.http = new Http();
     this.messageHandler = new MessageHandler();
     this.pollInterval = null;
@@ -243,8 +242,8 @@ export class Layout {
       this.contentContainer = null;
     }
 
-    if (this.element && this.element.parentNode) {
-      this.element.parentNode.removeChild(this.element);
+    if (this.element && this.element?.parentNode) {
+      this.element?.parentNode.removeChild(this.element);
     }
     this.element = null;
     if (this.pollInterval) {
@@ -300,7 +299,7 @@ export class Layout {
 
   setupEventListeners() {
     if (this.layoutType === "dashboard") {
-      const logoutBtn = this.element.querySelector("#logoutBtn");
+      const logoutBtn = this.element?.querySelector("#logoutBtn");
       if (logoutBtn) {
         logoutBtn.addEventListener("click", async (e) => {
           e.preventDefault();
@@ -457,13 +456,13 @@ export class Layout {
     });
 
     // *Notifications toggle
-    const notifications = this.element.querySelector(".notifications");
-    const notificationIcon = this.element.querySelector(
+    const notifications = this.element?.querySelector(".notifications");
+    const notificationIcon = this.element?.querySelector(
       ".notification-icon-wrapper"
     );
-    const markAllReadBtn = this.element.querySelector(".mark-all-read");
-    const notificationsList = this.element.querySelector(".notifications-list");
-    const viewAllLink = this.element.querySelector(".view-all");
+    const markAllReadBtn = this.element?.querySelector(".mark-all-read");
+    const notificationsList = this.element?.querySelector(".notifications-list");
+    const viewAllLink = this.element?.querySelector(".view-all");
 
     if (notificationIcon) {
       notificationIcon.addEventListener("click", (e) => {
@@ -552,8 +551,8 @@ export class Layout {
   async updateNotificationsList() {
     if (!this.element) return;
     const notifications = await this.fetchNotifications();
-    const notificationsList = this.element.querySelector(".notifications-list");
-    const badge = this.element.querySelector(".notification-badge");
+    const notificationsList = this.element?.querySelector(".notifications-list");
+    const badge = this.element?.querySelector(".notification-badge");
 
     if (!notificationsList || !badge) return;
 

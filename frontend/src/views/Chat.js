@@ -8,9 +8,6 @@ import "../styles/dashboard/chat.css";
 export class ChatView extends View {
   constructor(params = {}) {
     super();
-    this.params = params;
-    this.friendId = params.id || null;
-
     this.chatState = new State({
       conversations: [],
       messages: [],
@@ -18,6 +15,7 @@ export class ChatView extends View {
       isLoading: false,
       searchResults: [],
       isSearching: false,
+      selectedConversation: null,
     });
 
     this.messageHandler = new MessageHandler({ duration: 4000 });
@@ -34,62 +32,57 @@ export class ChatView extends View {
     const container = document.createElement("div");
     container.className = "chat-layout";
     container.innerHTML = `
-            ${this.renderConversationsSidebar()}
-            ${this.renderChatMain()}
-            <div class="loading-indicator" style="display: none;">Loading...</div>
-        `;
+      ${this.renderConversationsSidebar()}
+      ${this.renderChatMain()}
+      <div class="loading-indicator" style="display: none;">Loading...</div>
+    `;
     return container;
   }
 
   renderConversationsSidebar() {
-    console.log(this.chatState.getState());
     return `
-            <div class="conversations-sidebar">
-                <div class="conversations-header">
-                    <h2>Conversations</h2>
-                </div>
-                <div class="search-container">
-                    <input type="text" class="search-input" placeholder="Search users..." autocomplete="off">
-                    ${
-                      this.chatState.getState().isSearching
-                        ? '<div class="searching-indicator">Searching...</div>'
-                        : ""
-                    }
-                    <div class="search-results"></div>
-                </div>
-                <div class="conversations-list">
-                    ${
-                      this.chatState.getState().conversations.length > 0
-                        ? this.chatState
-                            .getState()
-                            .conversations.map((conv) =>
-                              this.renderConversationItem(conv)
-                            )
-                            .join("")
-                        : this.renderEmptyState()
-                    }
-                </div>
-                <button class="new-chat-btn">New Chat</button>
-            </div>
-        `;
+      <div class="conversations-sidebar">
+        <div class="conversations-header">
+          <h2>Conversations</h2>
+        </div>
+        <div class="search-container">
+          <input type="text" class="search-input" placeholder="Search users..." autocomplete="off">
+          ${this.chatState.getState().isSearching ? '<div class="searching-indicator">Searching...</div>' : ''}
+          <div class="search-results"></div>
+        </div>
+        <div class="conversations-list"></div>
+        <button class="new-chat-btn">New Chat</button>
+      </div>
+    `;
+  }
+
+  renderConversationsList() {
+    const { conversations } = this.chatState.getState();
+    const conversationsList = this.$(".conversations-list");
+    if (conversationsList) {
+      conversationsList.innerHTML = conversations.length > 0
+        ? conversations.map(conv => this.renderConversationItem(conv)).join("")
+        : this.renderEmptyState();
+    }
   }
 
   renderConversationItem(conversation) {
-    const unreadCount = conversation.unread_count || 0;
+    if (!conversation) return "";
+    const unreadCount = conversation?.unread_count || 0;
     return `
             <div class="conversation-item" 
                  data-user-id="${conversation.user_id}">
                 <div class="user-avatar-conv">
                     <img src="${
-                      conversation.user.avatar_url
+                      conversation.user?.avatar_url
                     }" alt="User avatar" />
                 </div>
                 <div class="conversation-info">
                     <div class="user-name">${this.sanitizeHTML(
-                      conversation?.user.username
+                      conversation.user?.username
                     )}</div>
                     <div class="last-message">${this.sanitizeHTML(
-                      conversation.last_message
+                      this.truncate(conversation.last_message)
                     )}</div>
                 </div>
                 <div class="conversation-meta">
@@ -106,55 +99,123 @@ export class ChatView extends View {
         `;
   }
 
-  renderChatMain() {
-    const { conversations } = this.chatState.getState();
-    const currentChat = conversations.find(
-      (c) => c.user_id === this.activeChatInfo.chatId
-    );
+  renderNoConversationSelected() {
     return `
-            <div class="chat-main">
-                ${currentChat ? this.renderChatHeader(currentChat) : ""}
-                ${this.renderMessagesList()}
-                ${this.renderChatForm()}
-            </div>
-        `;
+      <div class="no-conversation-selected">
+        Select a conversation to start chat
+      </div>
+    `;
   }
 
-  renderChatHeader(chat) {
+  renderChatMain() {
     return `
-            <div class="chat-header">
-                <div class="chat-info">
-                    <div class="user-name">${this.sanitizeHTML(
-                      chat.username
-                    )}</div>
-                    <div class="user-status">
-                        <span class="status-indicator ${
-                          chat.is_online ? "online" : "offline"
-                        }"></span>
-                        ${
-                          chat.is_online
-                            ? "Online"
-                            : `Last seen ${this.formatLastSeen(chat.last_seen)}`
-                        }
-                    </div>
-                </div>
+      <div class="chat-main">
+        <div class="chat-header"></div>
+        ${this.renderMessagesList()}
+        <form class="chat-form"></form>
+      </div>
+    `;
+  }
+
+  renderChatForm(conversation) {
+    const chatForm = this.$(".chat-form");
+    if (chatForm && conversation) {
+      chatForm.innerHTML = `
+        <input type="text" class="chat-input-text" placeholder="Type a message...">
+        <button type="submit" class="chat-send-btn">Send</button>
+      `
+    } 
+  }
+
+  renderChatHeader(conversation) {
+    const chatHeader = this.$(".chat-header");
+    if (chatHeader && conversation) {
+      chatHeader.innerHTML = `
+        <div class="chat-info">
+          <div>
+            <div class="user-name">${this.sanitizeHTML(conversation.user?.username)}</div>
+            <div class="user-status">
+              <span class="status-indicator ${conversation.user?.is_online ? "online" : "offline"}"></span>
+              ${conversation.user?.is_online ? "Online" : `Last seen ${this.formatLastSeen(conversation.user?.last_seen)}`}
             </div>
-        `;
+          </div>
+          <div class="chat-actions">
+            <button class="chat-menu-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="1"></circle>
+                <circle cx="12" cy="5" r="1"></circle>
+                <circle cx="12" cy="19" r="1"></circle>
+              </svg>
+            </button>
+            <div class="chat-menu">
+              <div class="chat-menu-item" data-action="block">Block User</div>
+            </div>
+          </div>
+        </div>
+      `;
+  
+      this.setupMenuEventListeners();
+    }
+  }
+
+  setupMenuEventListeners() {
+    const menuButton = this.$(".chat-menu-btn");
+    const menu = this.$(".chat-menu");
+    
+    if (menuButton && menu) {
+      menuButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        menu.classList.toggle("active");
+      });
+  
+      menu.addEventListener("click", (e) => {
+        const menuItem = e.target.closest(".chat-menu-item");
+        if (menuItem) {
+          const action = menuItem.dataset.action;
+          this.handleMenuAction(action);
+          menu.classList.remove("active");
+        }
+      });
+  
+      document.addEventListener("click", (e) => {
+        if (!menuButton.contains(e.target) && !menu.contains(e.target)) {
+          menu.classList.remove("active");
+        }
+      });
+    }
+  }
+
+  async handleMenuAction(action) {
+    const selectedConversation = this.chatState.getState().selectedConversation;
+    if (!selectedConversation) return;
+  
+    switch (action) {
+      case "block":
+        try {
+          await userState.http.post(`/chat/block/`);
+          this.messageHandler.success("User blocked successfully");
+          await this.updateConversations();
+        } catch (error) {
+          this.messageHandler.error("Failed to block user");
+        }
+        break;
+    }
   }
 
   renderMessagesList() {
     return `
-            <div class="messages-list">
-                ${this.chatState
-                  .getState()
-                  .messages.map((msg) => this.renderMessage(msg))
-                  .join("")}
-            </div>
-        `;
+      <div class="messages-list">
+        ${this.chatState.getState().messages.map(msg => this.renderMessage(msg)).join("")}
+      </div>
+    `;
+  }
+
+  truncate(message) {
+    return message.substring(0, 12) + "...";
   }
 
   renderMessage(message) {
-    const isOwnMessage = message.receiver === this.params.id;
+    const isOwnMessage = message.receiver === userState.state.user.id
     return `
             <div class="chat-message ${
               isOwnMessage ? "own-message" : ""
@@ -179,14 +240,7 @@ export class ChatView extends View {
         `;
   }
 
-  renderChatForm() {
-    return `
-            <form class="chat-form">
-                <input type="text" class="chat-input-text" placeholder="Type a message...">
-                <button type="submit" class="chat-send-btn">Send</button>
-            </form>
-        `;
-  }
+  
 
   renderEmptyState() {
     return `
@@ -359,7 +413,11 @@ export class ChatView extends View {
         const searchResultItem = e.target.closest(".search-result-item");
         if (searchResultItem) {
           const userId = searchResultItem.dataset.userId;
-          this.startNewConversation(userId);
+
+          const results = this.chatState.getState().searchResults;
+          const user = results.find((user) => user.id === userId);
+
+          this.startNewConversation(user);
           searchResultsContainer.style.display = "none";
           if (searchInput) {
             searchInput.value = "";
@@ -398,45 +456,44 @@ export class ChatView extends View {
         const conversationItem = e.target.closest(".conversation-item");
         if (conversationItem) {
           const userId = conversationItem.dataset.userId;
-          this.router.navigate(`/dashboard/chat/${userId}`);
+          const selectedConversation = this.chatState.getState().conversations.find(conv => conv.user_id === userId);
+          if (selectedConversation) {
+            this.chatState.setState({ selectedConversation });
+            this.loadChatHistory(selectedConversation);
+          }
         }
       });
     }
   }
 
-  async startNewConversation(userId) {
-    this.chatState.setState({ searchResults: [], isSearching: false });
+  async startNewConversation(user) {
+
+    if (!user) return ;
+
+    const prevConversations = this.chatState.getState().conversations
+    
+    const formattedDateTime = new Date().toISOString().slice(0, 16).replace('T', ' ');
+    
+    const newConversation = {
+      user_id: user?.id,
+      user,
+      last_message: '',
+      last_message_time: formattedDateTime,
+    }
+    
+    this.chatState.setState({
+      selectedConversation: newConversation,
+      conversations: [...prevConversations, newConversation],
+      searchResults: [],
+      isSearching: false 
+    });
 
     const searchInput = this.$(".search-input");
     if (searchInput) {
       searchInput.value = "";
     }
-
-    this.router.navigate(`/dashboard/chat/${userId}`);
   }
 
-  handleStateChange(newState) {
-    const conversationsList = this.$(".conversations-list");
-    if (conversationsList && newState.conversations !== this.conversations) {
-      conversationsList.innerHTML =
-        newState.conversations.length > 0
-          ? newState.conversations
-              .map((conv) => this.renderConversationItem(conv))
-              .join("")
-          : this.renderEmptyState();
-    }
-
-    const messagesList = this.$(".messages-list");
-    if (messagesList && newState.messages !== this.messages) {
-      messagesList.innerHTML = newState.messages
-        .map((msg) => this.renderMessage(msg))
-        .join("");
-      this.scrollToBottom();
-    }
-
-    this.updateLoadingState(newState.isLoading);
-    this.updateSearchResultsUI();
-  }
 
   updateLoadingState(isLoading) {
     const loadingIndicator = this.$(".loading-indicator");
@@ -447,64 +504,80 @@ export class ChatView extends View {
 
   async initialize() {
     try {
-      this.chatState.setState({ isLoading: true });
+        this.chatState.setState({ isLoading: true });
 
-      const state = userState.getState();
-      const currentUserId = state.user?.id;
-      this.chatState.setState({ currentUserId });
+        const state = userState.getState();
+        const currentUserId = state.user?.id;
+        this.chatState.setState({ currentUserId });
 
-      await wsManager.connect();
+        await wsManager.connect();
+        
+        wsManager.onMessage(this.handleMessage);
+        wsManager.onStatusChange(this.handleStatusChange);
 
-      wsManager.onMessage(this.handleMessage);
-      wsManager.onStatusChange(this.handleStatusChange);
+        await this.updateConversations();
+        this.renderConversationsList();
 
-      await this.updateConversations();
-
-      if (this.friendId) {
-        await this.loadChatHistory(this.friendId);
-      }
-
-      this.messageHandler.success("Chat initialized successfully");
+        this.messageHandler.success("Chat initialized successfully");
     } catch (error) {
-      console.error("Chat initialization error:", error);
-      this.messageHandler.error(
-        "Failed to initialize chat. Please refresh the page."
-      );
+        console.error("Chat initialization error:", error);
+        this.messageHandler.error("Failed to initialize chat. Please refresh the page.");
     } finally {
-      this.chatState.setState({ isLoading: false });
+        this.chatState.setState({ isLoading: false });
     }
-  }
+}
 
   async updateConversations() {
     try {
       const response = await userState.http.get("/chat/list/");
       if (response && Array.isArray(response)) {
         this.chatState.setState({ conversations: response });
+        this.renderConversationsList();
       }
     } catch (error) {
       this.messageHandler.error("Could not load conversations");
     }
   }
 
-  async loadChatHistory(userId) {
+  async loadChatHistory(selectedConversation) {
     try {
-      this.chatState.setState({ isLoading: true });
-
-      this.friendId = userId;
-
-      const response = await userState.http.get(`/chat/${userId}/messages/`);
-
+      this.chatState.setState({ isLoading: true, selectedConversation });
+  
+      const response = await userState.http.get(`/chat/${selectedConversation.user_id}/messages/`);
+  
       if (response) {
         this.chatState.setState({ messages: response });
         this.scrollToBottom();
       }
-
-      // this.router.navigate(`/dashboard/chat/${userId}`);
+  
+      this.renderChatHeader(selectedConversation);
+      this.renderChatForm(selectedConversation)
+  
     } catch (error) {
       this.messageHandler.error("Could not load chat history");
     } finally {
       this.chatState.setState({ isLoading: false });
     }
+  }
+
+  handleStateChange(newState) {
+    const messagesList = this.$(".messages-list");
+    if (messagesList && newState.messages !== this.messages) {
+      messagesList.innerHTML = newState.messages
+        .map(msg => this.renderMessage(msg))
+        .join("");
+      this.scrollToBottom();
+    }
+  
+    if (newState.selectedConversation !== this.selectedConversation) {
+      this.renderChatHeader(newState.selectedConversation);
+      this.renderChatForm(newState.selectedConversation)
+    }
+  
+    this.renderConversationsList();
+    
+    this.updateLoadingState(newState.isLoading);
+    this.updateSearchResultsUI();
   }
 
   updateMessageStatus(timestamp, status) {
@@ -516,24 +589,24 @@ export class ChatView extends View {
   }
 
   sendMessage(content) {
-    if (!this.friendId) {
-      console.error("No friend selected");
-      return;
-    }
-
     if (!content.trim()) return;
-
+  
+    const receiverId = this.chatState.getState().selectedConversation.user_id;
+    const senderId = this.chatState.getState().currentUserId;
+  
     try {
       const message = {
         content,
-        sender: this.chatState.getState().currentUserId,
-        receiver: this.friendId,
+        sender: senderId,
+        receiver: receiverId,
         time: new Date().toISOString(),
         status: "sending",
       };
-      const sent = wsManager.sendMessage(this.friendId, content);
-
+      
+      const sent = wsManager.sendMessage(receiverId, content);
+  
       this.updateMessageStatus(message.time, sent ? "sent" : "failed");
+  
       this.scrollToBottom();
     } catch (error) {
       this.messageHandler.error("Failed to send message. Please try again.");
@@ -555,19 +628,16 @@ export class ChatView extends View {
   }
 
   handleChatMessage(message) {
-    if (
-      message.sender === this.friendId ||
-      message.receiver === this.friendId
-    ) {
-      this.chatState.setState({
-        messages: [...this.chatState.getState().messages, message],
-      });
-
-      this.scrollToBottom();
-
-      wsManager.sendReadReceipt(message.id);
-    }
-
+    this.chatState.setState({
+      messages: [...this.chatState.getState().messages, message],
+    });
+  
+    this.renderConversationsList();
+  
+    this.scrollToBottom();
+    
+    wsManager.sendReadReceipt(message.id);
+  
     this.updateConversations();
   }
 
