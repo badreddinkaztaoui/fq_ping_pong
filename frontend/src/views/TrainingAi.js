@@ -1,6 +1,6 @@
 // Training.js
 import { View } from "../core/View";
-import "../styles/dashboard/games/training.css";
+import "../styles/dashboard/games/trainingAi.css";
 
 export class TrainingAiView extends View {
   constructor() {
@@ -34,9 +34,7 @@ export class TrainingAiView extends View {
     this.paddleHeight = 80;
 
     // AI settings
-    this.aiPredictionError = 0.1;
-    this.aiReactionDelay = 0;
-    this.aiLearningRate = 0.01;
+
     this.aiMemory = [];
     this.aiMaxMemory = 100;
 
@@ -45,8 +43,6 @@ export class TrainingAiView extends View {
     this.matchPoint = false;
     this.gameOver = false;
 
-    this.gameOverOverlay = null;
-    this.activeMode = "classic";
     this.aiSkillLevels = {
       easy: {
         reactionSpeed: 0.02,
@@ -228,22 +224,6 @@ export class TrainingAiView extends View {
             speedMultiplier: this.speedBoost || 1,
             angleModifier: 0,
           };
-        },
-        drawExtra: (ctx) => {
-          // Draw power-ups
-          if (this.powerUps) {
-            this.powerUps.forEach((powerUp) => {
-              ctx.beginPath();
-              ctx.arc(powerUp.x, powerUp.y, 15, 0, Math.PI * 2);
-              ctx.fillStyle = powerUp.color;
-              ctx.fill();
-
-              ctx.fillStyle = "#ffffff";
-              ctx.font = "12px Arial";
-              ctx.textAlign = "center";
-              ctx.fillText(powerUp.symbol, powerUp.x, powerUp.y + 4);
-            });
-          }
         },
       },
     };
@@ -521,16 +501,6 @@ export class TrainingAiView extends View {
     return template;
   }
 
-  getModeDescription() {
-    const descriptions = {
-      classic:
-        "Classic Pong gameplay. Score points by getting the ball past the AI paddle.",
-      speed: "Ball speed increases with each hit. Test your reflexes!",
-      zigzag: "Ball follows an unpredictable zigzag pattern. Can you keep up?",
-    };
-    return descriptions[this.gameMode] || descriptions.classic;
-  }
-
   async setupEventListeners() {
     // Menu controls
     const modeButtons = this.element.querySelectorAll("[data-mode]");
@@ -561,17 +531,6 @@ export class TrainingAiView extends View {
       this.addListener(difficultySelect, "change", (e) => {
         this.difficulty = e.target.value;
         this.resetGame();
-      });
-    }
-
-    const ballSpeedInput = this.element.querySelector("#ballSpeed");
-    if (ballSpeedInput) {
-      this.addListener(ballSpeedInput, "input", (e) => {
-        this.ballSpeed = parseInt(e.target.value);
-        const label = ballSpeedInput.previousElementSibling;
-        if (label) {
-          label.textContent = `Ball Speed: ${this.ballSpeed}`;
-        }
       });
     }
 
@@ -727,8 +686,6 @@ export class TrainingAiView extends View {
           angle: this.ballAngle + ((Math.random() - 0.5) * Math.PI) / 4,
         });
       }
-    } else if (this.gameMode === "gravity") {
-      this.ballVelocityY = 0;
     }
   }
 
@@ -969,66 +926,6 @@ export class TrainingAiView extends View {
         this.paddleHeight / 2,
         Math.min(this.canvas.height - this.paddleHeight / 2, this.aiPaddleY)
       );
-    }
-  }
-
-  updateReactiveAI(skillLevel) {
-    const targetY = this.ballY;
-    const diff = targetY - this.aiPaddleY;
-
-    // Add prediction for higher difficulties
-    if (this.difficulty === "hard" || this.difficulty === "expert") {
-      const predictedY =
-        this.ballY + Math.sin(this.ballAngle) * this.ballSpeed * 5;
-      const predictionDiff = predictedY - this.aiPaddleY;
-      this.aiPaddleY += predictionDiff * skillLevel.reactionSpeed;
-    } else {
-      this.aiPaddleY += diff * skillLevel.reactionSpeed;
-    }
-  }
-
-  updatePredictiveAI(skillLevel) {
-    const timeToIntercept =
-      (this.canvas.width - 20 - this.ballX) /
-      (Math.cos(this.ballAngle) * this.ballSpeed);
-
-    let predictedY =
-      this.ballY + Math.sin(this.ballAngle) * this.ballSpeed * timeToIntercept;
-
-    // Add intentional prediction error based on difficulty
-    const maxError = this.canvas.height * skillLevel.predictionError;
-    predictedY += (Math.random() - 0.5) * maxError;
-
-    // Add momentum-based movement
-    const diff = predictedY - this.aiPaddleY;
-    this.aiPaddleY += diff * skillLevel.reactionSpeed;
-  }
-
-  updateAdaptiveAI() {
-    // Store player actions in memory
-    if (this.ballX < this.canvas.width / 2) {
-      this.aiMemory.push({
-        ballY: this.ballY,
-        paddleY: this.paddleY,
-      });
-      if (this.aiMemory.length > this.aiMaxMemory) {
-        this.aiMemory.shift();
-      }
-    }
-
-    // Use memory to predict player behavior
-    const similarSituations = this.aiMemory.filter(
-      (mem) => Math.abs(mem.ballY - this.ballY) < 50
-    );
-
-    if (similarSituations.length > 0) {
-      const avgPaddleY =
-        similarSituations.reduce((sum, mem) => sum + mem.paddleY, 0) /
-        similarSituations.length;
-      const diff = avgPaddleY - this.aiPaddleY;
-      this.aiPaddleY += diff * this.aiLearningRate;
-    } else {
-      this.updateReactiveAI();
     }
   }
 
