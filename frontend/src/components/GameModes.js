@@ -3,7 +3,7 @@ import "../styles/dashboard/gamesModes.css";
 export function GameModes() {
   const standardModes = [
     {
-      id: "game",
+      id: "TrainingAi",
       title: "VS AI",
       desc: "Challenge our advanced AI system",
       theme: "blue",
@@ -15,7 +15,7 @@ export function GameModes() {
       theme: "red",
     },
     {
-      id: "training",
+      id: "game",
       title: "Train Mode",
       desc: "Perfect your skills",
       theme: "green",
