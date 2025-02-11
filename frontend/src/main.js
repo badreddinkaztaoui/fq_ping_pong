@@ -22,8 +22,7 @@ import { ResetPasswordView } from "./views/ResetPassword.js";
 import { ResetPasswordConfirmView } from "./views/ResetPasswordConfirm.js";
 import { FlapyBirdGameView } from "./views/FlapyBirdGame.js";
 import { CubeDiceGameView } from "./views/CubeDiceGame.js";
-import { TrainingView } from "./views/Training";
-
+import { TrainingAiView } from "./views/TrainingAi";
 
 const routes = [
   {
@@ -115,8 +114,8 @@ const routes = [
     handler: AuthGuard.requireAuth,
   },
   {
-    path: "/dashboard/training",
-    view: TrainingView,
+    path: "/dashboard/TrainingAi",
+    view: TrainingAiView,
     handler: AuthGuard.requireAuth,
   },
   {
