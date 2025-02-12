@@ -52,7 +52,7 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                     "dx": random.choice(BALL_DIRECTION_OPTIONS)[0], 
                     "dy": random.choice(BALL_DIRECTION_OPTIONS)[1]
                 },
-                "paddles": {"p1_y": 45, "p2_y": 45},
+                "paddles": {"p1_y": 50, "p2_y": 50},
                 "score": {"p1": 0, "p2": 0},
                 "speed": BALL_SPEED
             }
@@ -138,8 +138,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 else:
                     game["speed"] = BALL_SPEED
                     game["score"]["p2"] += 1
-                    game["paddles"]["p2_y"] = 45
-                    game["paddles"]["p1_y"] = 45
+                    game["paddles"]["p2_y"] = 50
+                    game["paddles"]["p1_y"] = 50
                     ball.update({
                         "x": 49, "y": 49,
                         "dx": random.choice(BALL_DIRECTION_OPTIONS)[0],
@@ -158,8 +158,8 @@ class PongGameConsumer(AsyncWebsocketConsumer):
                 else:
                     game["speed"] = BALL_SPEED
                     game["score"]["p1"] += 1
-                    game["paddles"]["p2_y"] = 45
-                    game["paddles"]["p1_y"] = 45
+                    game["paddles"]["p2_y"] = 50
+                    game["paddles"]["p1_y"] = 50
                     ball.update({
                         "x": 49, "y": 49,
                         "dx": random.choice(BALL_DIRECTION_OPTIONS)[0],
