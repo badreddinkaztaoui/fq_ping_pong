@@ -1,14 +1,14 @@
-.game-container {
+.pong-container {
   display: flex;
   height: 100%;
   background-color: #0f1923;
   color: #e8e8e8;
   font-family: "Arial", sans-serif;
   position: relative;
-  z-index: 5;
+  z-index: 10;
 }
 
-.game-container::before {
+.pong-container::before {
   content: "";
   position: absolute;
   top: 0;
@@ -17,16 +17,20 @@
   bottom: 0;
   background: linear-gradient(
     45deg,
-    rgba(255, 70, 85, 0.05),
+    rgba(190, 19, 33, 0.05),
     rgba(17, 255, 228, 0.05)
   );
   pointer-events: none;
   z-index: 1;
 }
 
-.game-main {
+.pong-main {
   flex: 3;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
 }
 
 #pongCanvas {
@@ -35,20 +39,29 @@
   background-color: #1a2634;
 }
 
-.game-overlay {
+.pong-overlay {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
+  width: 100%;
+  height: 100%;
   padding: 20px;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: center;
   z-index: 2;
+}
+
+.pong-stats {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
 }
 
 .score,
 .timer {
-  font-size: 28px;
+  font-size: 36px;
   font-weight: bold;
   color: #ff4655;
   text-shadow: 0 0 10px rgba(255, 70, 85, 0.5);
@@ -60,7 +73,65 @@
   transform: scale(1.1);
 }
 
-.game-sidebar {
+.pong-status {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translate(-50%, -8%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  z-index: 3;
+}
+
+.start-button {
+  padding: 15px 30px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffffff;
+  background-color: #ff4655;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 0 20px rgba(255, 70, 85, 0.3);
+}
+
+.start-button:hover {
+  background-color: #ff5f6d;
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(255, 70, 85, 0.5);
+}
+
+.start-button:active {
+  transform: translateY(1px);
+}
+
+.status-message {
+  font-size: 24px;
+  font-weight: bold;
+  color: #ffffff;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  text-align: center;
+  padding: 10px 20px;
+  border-radius: 5px;
+  background-color: rgba(26, 38, 52, 0.9);
+}
+
+.status-message.win {
+  color: #00ff88;
+  text-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+}
+
+.status-message.lose {
+  color: #ff4655;
+  text-shadow: 0 0 15px rgba(255, 70, 85, 0.5);
+}
+
+.pong-sidebar {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -70,8 +141,10 @@
   box-shadow: -5px 0 15px rgba(255, 70, 85, 0.1);
 }
 
-.chat-box-game,
-.game-history {
+.chat-box {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
   background-color: rgba(15, 25, 35, 0.9);
   border-radius: 10px;
   padding: 15px;
@@ -79,19 +152,13 @@
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.chat-box-game {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
-}
-
-.chat-messages,
-.history-list {
+.chat-messages {
+  flex-grow: 1;
   overflow-y: auto;
   padding: 10px;
   border-radius: 5px;
   background-color: rgba(56, 65, 77, 0.5);
-  height: 100%;
+  margin-bottom: 10px;
 }
 
 .chat-input {
@@ -101,8 +168,7 @@
   background-color: rgba(56, 65, 77, 0.8);
   color: #e8e8e8;
   border-radius: 5px;
-  margin-top: 10px;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .chat-input:focus {
@@ -111,12 +177,15 @@
   box-shadow: 0 0 0 2px #ff4655;
 }
 
-.game-history {
+.pong-history {
   flex: 1;
-  overflow-y: auto;
+  background-color: rgba(15, 25, 35, 0.9);
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
-.game-history h3 {
+.pong-history h3 {
   color: #ff4655;
   margin-bottom: 10px;
   font-size: 1.2em;
@@ -127,24 +196,31 @@
 .history-list {
   list-style-type: none;
   padding: 0;
+  overflow-y: auto;
+  max-height: calc(100% - 40px);
 }
 
 .history-list li {
-  padding: 5px 0;
+  padding: 10px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.history-list li:hover {
+  background-color: rgba(56, 65, 77, 0.3);
 }
 
 .history-list li:last-child {
   border-bottom: none;
 }
 
-.game-controls {
+.pong-controls {
   position: absolute;
   bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
-  gap: 10px;
+  gap: 15px;
   z-index: 20;
 }
 
@@ -180,4 +256,22 @@
   transform: translateY(-50%);
   color: #ff4655;
   pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .pong-container {
+    flex-direction: column;
+  }
+  
+  .pong-sidebar {
+    border-left: none;
+    border-top: 2px solid #ff4655;
+  }
+  
+  .pong-controls {
+    position: static;
+    transform: none;
+    padding: 20px;
+    justify-content: center;
+  }
 }
