@@ -156,7 +156,9 @@ export class ChatView extends View {
               }
             </div>
           </div>
-          <div class="chat-actions">
+          <div class="chat-actions"> 
+            <button class="game-invite-btn">Play</button>
+
             <button class="chat-menu-btn">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="1"></circle>
@@ -173,6 +175,15 @@ export class ChatView extends View {
       `;
 
       this.setupMenuEventListeners();
+    }
+  }
+
+  inviteToGame() {
+    const inviteButton = this.$(".game-invite-btn");
+    if (inviteButton) {
+      inviteButton.addEventListener("click", () => {
+        alert("Game invite feature coming soon!");
+      });
     }
   }
 
@@ -201,6 +212,8 @@ export class ChatView extends View {
         }
       });
     }
+
+    this.inviteToGame();
   }
 
   async handleMenuAction(action) {

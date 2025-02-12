@@ -1,5 +1,5 @@
-import { View } from '../core/View';
-import { State } from "../core/State"
+import { View } from "../core/View";
+import { State } from "../core/State";
 import "../styles/home.css";
 
 export class HomeView extends View {
@@ -9,8 +9,8 @@ export class HomeView extends View {
   }
 
   async render() {
-    const template = document.createElement('template');
-    template.innerHTML =  `
+    const template = document.createElement("template");
+    template.innerHTML = `
     <div id="page-container" class="hero">
            <div class="pattern-left"></div>
            <div class="pattern-right"></div>
@@ -88,7 +88,7 @@ export class HomeView extends View {
                </div>
              </div>
              
-             <div class="content">
+             <div class="content players">
                <h2 class="animate-fade-in">Your Player</h2>
                <div class="content-wrapper">
                  <h5 class="animate-fade-in">Forget paddles, unleash your power!</h5>
@@ -155,12 +155,25 @@ export class HomeView extends View {
   }
 
   async setupEventListeners() {
-    this.addListener(this.$("#play"), "click", this.redirectToLogin.bind(this), {});
+    this.addListener(
+      this.$("#play"),
+      "click",
+      this.redirectToLogin.bind(this),
+      {}
+    );
+    this.addListener(
+      this.$(".view-all-button"),
+      "click",
+      this.redirectToHero.bind(this),
+      {}
+    );
   }
 
   redirectToLogin() {
-    this.router.navigate("/login")
+    this.router.navigate("/login");
   }
 
+  redirectToHero() {
+    this.router.navigate("/heros");
+  }
 }
-

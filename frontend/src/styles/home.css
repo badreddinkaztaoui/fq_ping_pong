@@ -623,8 +623,12 @@
 .content {
   flex: 2;
   max-width: 600px;
-  /* padding: 2rem; */
+  padding: 2rem;
   position: relative;
+  
+}
+.players {
+  text-align: center;
 }
 
 .content h2 {

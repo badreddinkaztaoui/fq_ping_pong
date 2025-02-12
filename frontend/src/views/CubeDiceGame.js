@@ -7,7 +7,7 @@ export class CubeDiceGameView extends View {
     super();
     this.isRolling = false;
     this.selectedNumber = null;
-    this.coins = parseInt(localStorage.getItem("diceCoins")) || 1000;
+    this.coins = userState.state.user.coins;
     this.betAmount = 100;
     this.interactionLocked = false;
     this.container = null;
@@ -19,7 +19,6 @@ export class CubeDiceGameView extends View {
       5: { x: -90, y: 0, z: 0 },
       6: { x: 90, y: 0, z: 0 },
     };
-    console.log(userState.state.user);
   }
 
   getSecureRandomNumber() {
