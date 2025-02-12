@@ -47,7 +47,6 @@ export class DashboardView extends View {
           </div>
   
           <div class="tournament-card tournament-card-gambling">
-            <span class="live-badge">Win Coins</span>
             <div class="tournament-content">
               <h2 class="tournament-title">Coin Masters Challenge</h2>
               <p class="tournament-subtitle">Win Big, Risk More</p>
@@ -155,12 +154,22 @@ export class DashboardView extends View {
 
     if (toggleBtn && rightSection) {
       toggleBtn.addEventListener("click", () => {
+        toggleBtn.classList.toggle("active");
         rightSection.classList.toggle("active");
-        // Update aria-expanded for accessibility
+
         const isExpanded = rightSection.classList.contains("active");
         toggleBtn.setAttribute("aria-expanded", isExpanded);
-        if (isExpanded) toggleBtn.textContent = "X";
-        else toggleBtn.textContent = "MATCHES";
+
+        if (isExpanded) {
+          // Use setTimeout to sync with rotation animation
+          setTimeout(() => {
+            toggleBtn.textContent = "X";
+          }, 150); // Half of the rotation animation time
+        } else {
+          setTimeout(() => {
+            toggleBtn.textContent = "MATCHES";
+          }, 150);
+        }
       });
 
       // Close panel when clicking outside
@@ -170,16 +179,24 @@ export class DashboardView extends View {
           !toggleBtn.contains(e.target) &&
           rightSection.classList.contains("active")
         ) {
+          toggleBtn.classList.remove("active");
           rightSection.classList.remove("active");
           toggleBtn.setAttribute("aria-expanded", "false");
+          setTimeout(() => {
+            toggleBtn.textContent = "MATCHES";
+          }, 150);
         }
       });
 
       // Close panel on ESC key
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && rightSection.classList.contains("active")) {
+          toggleBtn.classList.remove("active");
           rightSection.classList.remove("active");
           toggleBtn.setAttribute("aria-expanded", "false");
+          setTimeout(() => {
+            toggleBtn.textContent = "MATCHES";
+          }, 150);
         }
       });
     }
