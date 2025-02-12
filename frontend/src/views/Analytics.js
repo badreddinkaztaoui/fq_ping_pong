@@ -13,7 +13,6 @@ export class AnalyticsView extends View {
       matches: 32,
       peakRating: 2000,
       winRate: 72,
-      specialSkill: "Killer Serve",
       recentMatches: [
         { opponent: "Jett", result: "Win", score: "11-8" },
         { opponent: "Omen", result: "Loss", score: "8-11" },
@@ -22,10 +21,8 @@ export class AnalyticsView extends View {
         { opponent: "Cypher", result: "Loss", score: "9-11" },
       ],
       performanceMetrics: {
-        avgPointsPerGame: 9.5,
-        serviceAccuracy: 78,
-        backhandWinRate: 65,
-        forehandWinRate: 82,
+        GoalScores: 85,
+        goalsConceded: 15,
       },
     };
   }
@@ -88,27 +85,22 @@ export class AnalyticsView extends View {
   }
 
   renderSkillBreakdown() {
-    const { serviceAccuracy, backhandWinRate, forehandWinRate } =
-      this.player.performanceMetrics;
+    const { GoalScores, goalsConceded } = this.player.performanceMetrics;
     return `
       <div class="skill-breakdown">
         <h2>Skill Breakdown</h2>
         <div class="skill-chart">
           <div class="skill-item" data-aos="slide-right" data-aos-delay="100">
-            <span class="skill-label">Service Accuracy</span>
-            <div class="skill-value skill-animated" data-target="${serviceAccuracy}">${serviceAccuracy}%</div>
-            <div class="skill-meter" style="width: ${serviceAccuracy}%"></div>
+            <span class="skill-label">GoalScores</span>
+            <div class="skill-value skill-animated" data-target="${GoalScores}">${GoalScores}%</div>
+            <div class="skill-meter" style="width: ${GoalScores}%"></div>
           </div>
           <div class="skill-item" data-aos="slide-right" data-aos-delay="200">
-            <span class="skill-label">Backhand Win Rate</span>
-            <div class="skill-value skill-animated" data-target="${backhandWinRate}">${backhandWinRate}%</div>
-            <div class="skill-meter" style="width: ${backhandWinRate}%"></div>
+            <span class="skill-label">goals Conceded</span>
+            <div class="skill-value skill-animated" data-target="${goalsConceded}">${goalsConceded}%</div>
+            <div class="skill-meter" style="width: ${goalsConceded}%"></div>
           </div>
-          <div class="skill-item" data-aos="slide-right" data-aos-delay="300">
-            <span class="skill-label">Forehand Win Rate</span>
-            <div class="skill-value skill-animated" data-target="${forehandWinRate}">${forehandWinRate}%</div>
-            <div class="skill-meter" style="width: ${forehandWinRate}%"></div>
-          </div>
+          
         </div>
       </div>
     `;

@@ -359,11 +359,10 @@ export class Layout {
           burgerMenu.classList.remove("close");
           overlay.classList.remove("overlay");
         });
-
         links.forEach((link) => {
           link.addEventListener("click", (e) => {
             e.preventDefault();
-            const path = link.getAttribute('data-link="/"');
+            const path = link.dataset.link;
             if (path && this.router) {
               this.router.navigate(path);
               burgerMenu?.classList.remove("close");
@@ -461,7 +460,9 @@ export class Layout {
       ".notification-icon-wrapper"
     );
     const markAllReadBtn = this.element?.querySelector(".mark-all-read");
-    const notificationsList = this.element?.querySelector(".notifications-list");
+    const notificationsList = this.element?.querySelector(
+      ".notifications-list"
+    );
     const viewAllLink = this.element?.querySelector(".view-all");
 
     if (notificationIcon) {
@@ -551,7 +552,9 @@ export class Layout {
   async updateNotificationsList() {
     if (!this.element) return;
     const notifications = await this.fetchNotifications();
-    const notificationsList = this.element?.querySelector(".notifications-list");
+    const notificationsList = this.element?.querySelector(
+      ".notifications-list"
+    );
     const badge = this.element?.querySelector(".notification-badge");
 
     if (!notificationsList || !badge) return;

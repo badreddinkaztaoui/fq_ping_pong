@@ -1,5 +1,5 @@
-import "../styles/dashboard/matches.css"
-import { matches } from '../mocks/sampleData.js';
+import "../styles/dashboard/matches.css";
+import { matches } from "../mocks/sampleData.js";
 
 export function MatchList() {
   if (!matches || matches.length === 0) {
@@ -28,17 +28,23 @@ export function MatchList() {
    <div class="vx-matches">
      <h2 class="vx-matches__header">MATCH HISTORY</h2>
      <div class="vx-matches__list">
-       ${matches.map(match => {
-    const isXerxesPlayer1 = match.player1.name === 'XERXES';
-    const xerxesScore = isXerxesPlayer1 ? match.score.split(':')[0] : match.score.split(':')[1];
-    const opponentScore = isXerxesPlayer1 ? match.score.split(':')[1] : match.score.split(':')[0];
-    const opponent = isXerxesPlayer1 ? match.player2 : match.player1;
-    const isWinner = parseInt(xerxesScore) > parseInt(opponentScore);
-
-    return `
-           <div class="vx-matches__item ${isWinner ? 'winner' : 'looser'}">
+       ${matches
+         .map((match) => {
+           const isXerxesPlayer1 = match.player1.name === "XERXES";
+           const xerxesScore = isXerxesPlayer1
+             ? match.score.split(":")[0]
+             : match.score.split(":")[1];
+           const opponentScore = isXerxesPlayer1
+             ? match.score.split(":")[1]
+             : match.score.split(":")[0];
+           const opponent = isXerxesPlayer1 ? match.player2 : match.player1;
+           const isWinner = parseInt(xerxesScore) > parseInt(opponentScore);
+           return `
+           <div class="vx-matches__item ${isWinner ? "winner" : "looser"}">
              <div class="vx-matches__vs-info">
-               <img src="${opponent.avatar}" alt="${opponent.name}" class="vx-matches__avatar">
+               <img src="${opponent.avatar}" alt="${
+             opponent.name
+           }" class="vx-matches__avatar">
                <div class="vx-matches__details">
                  <span class="vx-matches__vs-text">VS</span>
                  <span class="vx-matches__opponent">${opponent.name}</span>
@@ -49,7 +55,8 @@ export function MatchList() {
              </div>
            </div>
          `;
-  }).join('')}
+         })
+         .join("")}
      </div>
    </div>
  `;

@@ -8,7 +8,6 @@ export class TrainingAiView extends View {
     // Core game elements
     this.canvas = null;
     this.ctx = null;
-    this.powerUps = [];
     // Game state
     this.isGameActive = false;
     this.isPaused = false;
@@ -75,7 +74,6 @@ export class TrainingAiView extends View {
         init: () => {
           this.ballSpeed = 5;
           this.paddleHeight = 80;
-          this.powerUps = [];
         },
         updateBall: () => {
           return { speedMultiplier: 1, angleModifier: 0 };
@@ -152,139 +150,8 @@ export class TrainingAiView extends View {
             });
             ctx.globalAlpha = 1.0;
           }
-
-          // Draw power-ups with enhanced visuals
-          if (this.powerUps) {
-            this.powerUps.forEach((powerUp) => {
-              ctx.beginPath();
-              ctx.arc(powerUp.x, powerUp.y, 15, 0, Math.PI * 2);
-
-              // Add gradient effect
-              const gradient = ctx.createRadialGradient(
-                powerUp.x,
-                powerUp.y,
-                0,
-                powerUp.x,
-                powerUp.y,
-                15
-              );
-              gradient.addColorStop(0, powerUp.color);
-              gradient.addColorStop(1, "rgba(255, 255, 255, 0.2)");
-              ctx.fillStyle = gradient;
-              ctx.fill();
-
-              // Add power-up symbol with glow
-              ctx.fillStyle = "#ffffff";
-              ctx.shadowBlur = 10;
-              ctx.shadowColor = "white";
-              ctx.font = "bold 12px Arial";
-              ctx.textAlign = "center";
-              ctx.fillText(powerUp.symbol, powerUp.x, powerUp.y + 4);
-              ctx.shadowBlur = 0;
-            });
-          }
         },
       },
-      power: {
-        name: "Power Up",
-        description:
-          "Collect power-ups to gain advantages! Watch out for traps!",
-        init: () => {
-          this.ballSpeed = 5;
-          this.paddleHeight = 80;
-          this.powerUps = [];
-          this.powerUpTimer = 0;
-          this.spawnPowerUp();
-        },
-        updateBall: () => {
-          // Update power-ups
-          this.powerUpTimer++;
-          if (this.powerUpTimer >= 180) {
-            // Spawn new power-up every 3 seconds
-            this.spawnPowerUp();
-            this.powerUpTimer = 0;
-          }
-
-          // Check power-up collisions
-          if (this.powerUps) {
-            this.powerUps.forEach((powerUp, index) => {
-              const dx = this.ballX - powerUp.x;
-              const dy = this.ballY - powerUp.y;
-              const distance = Math.sqrt(dx * dx + dy * dy);
-
-              if (distance < 25) {
-                // Ball hits power-up
-                this.activatePowerUp(powerUp);
-                this.powerUps.splice(index, 1);
-              }
-            });
-          }
-
-          return {
-            speedMultiplier: this.speedBoost || 1,
-            angleModifier: 0,
-          };
-        },
-      },
-    };
-
-    // Add power-up related methods to the class
-    this.spawnPowerUp = () => {
-      const powerUpTypes = [
-        {
-          type: "speed",
-          color: "#ffaa00",
-          symbol: "⚡",
-          effect: () => {
-            this.speedBoost = 3;
-            setTimeout(() => {
-              this.speedBoost = 1;
-            }, 5000);
-          },
-        },
-        {
-          type: "size",
-          color: "#00ff00",
-          symbol: "↕",
-          effect: () => {
-            const originalHeight = this.paddleHeight;
-            this.paddleHeight *= 1.5;
-            setTimeout(() => {
-              this.paddleHeight = originalHeight;
-            }, 5000);
-          },
-        },
-        {
-          type: "slow",
-          color: "#ff0000",
-          symbol: "⏳",
-          effect: () => {
-            const originalSpeed = this.ballSpeed;
-            this.ballSpeed *= 0.7;
-            setTimeout(() => {
-              this.ballSpeed = originalSpeed;
-            }, 3000);
-          },
-        },
-      ];
-
-      const powerUp =
-        powerUpTypes[Math.floor(Math.random() * powerUpTypes.length)];
-
-      // Position power-up randomly on the field, but not too close to paddles
-      const x =
-        this.canvas.width * 0.3 + Math.random() * (this.canvas.width * 0.4);
-      const y = 50 + Math.random() * (this.canvas.height - 100);
-
-      this.powerUps.push({
-        x,
-        y,
-        ...powerUp,
-      });
-    };
-
-    this.activatePowerUp = (powerUp) => {
-      powerUp.effect();
     };
 
     // Enhanced AI behaviors
@@ -590,8 +457,6 @@ export class TrainingAiView extends View {
     this.matchPoint = false;
     this.updateStats();
     this.isGameActive = false;
-    this.powerUps = [];
-    this.speedBoost = 1;
 
     const startButton = this.element.querySelector("#startGame");
     if (startButton) {
@@ -766,23 +631,6 @@ export class TrainingAiView extends View {
         this.ballY <= ballRadius ? ballRadius : this.canvas.height - ballRadius;
     }
 
-    // Check for power-up collisions only for AI paddle
-    if (this.powerUps && this.ballX > this.canvas.width / 2) {
-      this.powerUps.forEach((powerUp, index) => {
-        const dx = this.ballX - powerUp.x;
-        const dy = this.ballY - powerUp.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        if (distance < 25) {
-          // Only activate power-up if AI paddle hits it
-          if (this.ballX > this.canvas.width / 2) {
-            this.activatePowerUp(powerUp);
-          }
-          this.powerUps.splice(index, 1);
-        }
-      });
-    }
-
     // Handle paddle collisions and scoring
     if (this.checkPaddleCollision()) {
       this.handlePaddleHit();
@@ -838,18 +686,18 @@ export class TrainingAiView extends View {
     const content = `
     <h2 class="game-over-title">${winner} Wins!</h2>
     <div class="game-over-stats">
-      <div class="stat-item">
+      <div class="stat-item-ping">
         <span>Final Score</span>
         <div class="score-display">
           <span>You: ${this.score}</span>
           <span>AI: ${this.aiScore}</span>
         </div>
       </div>
-      <div class="stat-item">
+      <div class="stat-item-ping">
         <span>Total Hits</span>
         <span>${this.totalHits}</span>
       </div>
-      <div class="stat-item">
+      <div class="stat-item-ping">
         <span>Game Time</span>
         <span>${this.formatTime(this.sessionTime)}</span>
       </div>
