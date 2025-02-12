@@ -76,32 +76,37 @@ echo "Starting database initialization..."
 
 create_schema "auth"
 create_schema "chat"
+create_schema "game"
 
 create_service_user "$AUTH_DB_USER" "$AUTH_DB_PASSWORD"
 create_service_user "$CHAT_DB_USER" "$CHAT_DB_PASSWORD"
+create_service_user "$GAME_DB_USER" "$GAME_DB_PASSWORD"
 
 grant_schema_privileges "auth" "$AUTH_DB_USER" "ALL PRIVILEGES"
 grant_schema_privileges "chat" "$CHAT_DB_USER" "ALL PRIVILEGES"
+grant_schema_privileges "game" "$GAME_DB_USER" "ALL PRIVILEGES"
 
 grant_public_privileges "$AUTH_DB_USER"
 grant_public_privileges "$CHAT_DB_USER"
+grant_public_privileges "$GAME_DB_USER"
 
 set_search_path "$AUTH_DB_USER" "auth,public"
 set_search_path "$CHAT_DB_USER" "chat,public"
+set_search_path "$GAME_DB_USER" "game,public"
 
 echo "Database initialization completed successfully!"
 
 echo "Verifying permissions..."
 psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
     -- Verify schema existence
-    SELECT nspname FROM pg_namespace WHERE nspname IN ('auth', 'chat');
+    SELECT nspname FROM pg_namespace WHERE nspname IN ('auth', 'chat', 'game');
     
     -- Verify user existence
-    SELECT usename FROM pg_user WHERE usename IN ('$AUTH_DB_USER', '$CHAT_DB_USER');
+    SELECT usename FROM pg_user WHERE usename IN ('$AUTH_DB_USER', '$CHAT_DB_USER', '$GAME_DB_USER');
     
     -- Verify schema privileges
     SELECT grantee, table_schema, privilege_type 
     FROM information_schema.role_table_grants 
-    WHERE grantee IN ('$AUTH_DB_USER', '$CHAT_DB_USER')
+    WHERE grantee IN ('$AUTH_DB_USER', '$CHAT_DB_USER', '$GAME_DB_USER')
     ORDER BY grantee, table_schema, privilege_type;
 EOSQL

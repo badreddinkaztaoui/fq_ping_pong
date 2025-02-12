@@ -10,7 +10,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 from django_redis import get_redis_connection
-from api.models import Game
+
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -46,36 +46,6 @@ def health_check(request):
             'matchmaking_queue_size': 0
         }
     }
-
-    try:
-        connections['default'].ensure_connection()
-        health_status['components']['database'] = 'available'
-        
-        health_status['metrics']['total_games'] = Game.objects.count()
-        health_status['metrics']['active_games'] = Game.objects.filter(
-            status='IN_PROGRESS'
-        ).count()
-        
-    except OperationalError as e:
-        health_status['status'] = 'unhealthy'
-        health_status['error'] = f"Database Error: {str(e)}"
-
-    try:
-        redis_client = get_redis_connection("default")
-        redis_client.ping()
-        health_status['components']['redis'] = 'available'
-        
-        queue_size = redis_client.llen('matchmaking_queue')
-        if queue_size >= 0:
-            health_status['components']['matchmaking'] = 'available'
-            health_status['metrics']['matchmaking_queue_size'] = queue_size
-            
-        redis_active_games = redis_client.scard('active_games')
-        health_status['metrics']['redis_active_games'] = redis_active_games
-        
-    except Exception as e:
-        health_status['status'] = 'unhealthy'
-        health_status['error'] = f"Redis Error: {str(e)}"
 
     response_status = (
         status.HTTP_200_OK
